@@ -1,11 +1,12 @@
 <template>
-	<view style="display: flex;flex-direction: column; height: 100vh;width: 100vw; padding: 10px;color: black;">
+	<view style="display: flex;flex-direction: column; height: 100vh;padding: 10px;color: black;">
 		<view style="display: flex; justify-content: center;">
 			<image class="img" src="../../../static/icons/success.png"></image>
 		</view>
-		<view style="margin-top: 60px;text-align: center; font-weight: bold;font-size: 16px;">{{$t('gongxiangitem.title_13')}} {{name}} {{$t('gongxiangitem.title_14')}}。
+		<view style="margin-top: 20px;text-align: center; font-weight: 600;font-size: 17px;">
+			{{$t('您已向')}} {{name}} {{$t('发出共享健康数据邀请')}}。
 		</view>
-		<button class="btn_BG" @click="btn_click()">{{$t('login.text_13')}}</button>
+		<button class="btn_BG" @click="btn_click()">{{$t('确定')}}</button>
 	</view>
 </template>
 
@@ -14,17 +15,17 @@
 		data() {
 			return {
 				name: ""
-
 			}
 		},
 
 		onLoad(res) {
+			console.log(res.NAME)
 			this.name = res.NAME
 		},
 
 		onShow() {
 			uni.setNavigationBarTitle({
-				title: this.$t('gongxiangitem.title_11')
+				title: this.$t('共享给')
 			})
 		},
 
@@ -42,19 +43,25 @@
 
 <style>
 	.img {
-		margin-top: 80px;
-		width: 80px;
-		height: 80px;
+		margin-top: 108px;
+		width: 68px;
+		height: 68px;
 	}
 
 	.btn_BG {
+		width: auto;
+		height: 48px;
+		font-weight: 600;
+		font-size: 16px;
 		position: fixed;
 		bottom: 50px;
-		left: 5vw;
-		width: 88vw;
+		left: 20px;
+		right: 20px;
 		background: #3298F7;
 		color: white;
-		font-weight: bold;
+		display: flex;
+		justify-content: center;
+		align-items: center;
 		border-radius: 50px;
 	}
 </style>

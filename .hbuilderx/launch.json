@@ -4,6 +4,9 @@
     "version" : "0.0",
     "configurations" : [
         {
+            "app" : {
+                "launchtype" : "remote"
+            },
             "app-plus" : {
                 "launchtype" : "remote"
             },
@@ -13,15 +16,22 @@
             "h5" : {
                 "launchtype" : "remote"
             },
+            "mp-weixin" : {
+                "launchtype" : "local"
+            },
             "provider" : "aliyun",
             "type" : "uniCloud"
         },
         {
-            "playground" : "custom",
+            "playground" : "standard",
             "type" : "uni-app:app-android"
         },
         {
-            "playground" : "standard",
+            "bundleId" : "io.dcloud.jakob",
+            "certificateFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife.p12",
+            "certificateProfileFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife.mobileprovision",
+            "playground" : "custom",
+            "runSignStatus" : 0,
             "type" : "uni-app:app-ios"
         }
     ]

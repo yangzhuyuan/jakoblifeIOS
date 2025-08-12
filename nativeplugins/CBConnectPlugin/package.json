@@ -1,0 +1,24 @@
+{
+	"name": "TestCBCPlugin",
+	"id": "CBConnectPlugin",
+	"version": "1.0.0",
+	"description": "uni示例插件",
+	"_dp_type": "nativeplugin",
+	"_dp_nativeplugin": {
+		"ios": {
+			"plugins": [{
+				"type": "module",
+				"name": "CBConnectPlugin-CBCModule",
+				"class": "CBCModule"
+			}],
+			"capabilities": {
+				"entitlements": {
+					"com.apple.security.device.bluetooth": true
+				}
+			},
+			"frameworks": ["CoreBluetooth.framework"],
+			"integrateType": "framework",
+			"deploymentTarget": "13.0"
+		}
+	}
+}

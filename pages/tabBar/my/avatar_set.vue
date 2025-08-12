@@ -1,11 +1,11 @@
 <template>
 	<view style=" height: 100vh;background: #EFEFF4; color: black;padding: 20px;">
 		<view class="avatar_bg" @click="choessimg()">
-			<view style="width: 75vw;margin-left: 10px;">从手机相册选择</view>
+			<view style="width: 75vw;margin-left: 10px;">{{$t("从手机相册选择")}}</view>
 			<uni-icons type="right" size="18"></uni-icons>
 		</view>
 		<view style="margin-top: 20px;font-weight: bold;">
-			<view>选择头像</view>
+			<view>{{$t("选择头像")}}</view>
 			<view style="margin-top: 20px;align-items: center">
 				<image class="avatar_img_bg" :src="image_1" @click="click_avatar_1()" :style="getback('0')"></image>
 				<image class="avatar_img_bg" :src="image_2" @click="click_avatar_2()" :style="getback('1')"></image>
@@ -50,6 +50,11 @@
 			}
 		},
 
+		onShow() {
+			uni.setNavigationBarTitle({
+				title: this.$t("头像设置")
+			})
+		},
 
 
 		methods: {

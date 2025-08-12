@@ -94,7 +94,7 @@
 
 		<view
 			style="width:100vw;height: 80px;  display: flex;position: fixed;bottom: 0; flex-direction: column; padding-top: 40rpx; padding-bottom: 50rpx;">
-			<button class="button_bg_color" @click="canvasImage.save">打印</button>
+			<button class="button_bg_color" @click="canvasImage.save">{{$t("打印")}}</button>
 		</view>
 	</view>
 </template>
@@ -334,9 +334,6 @@
 				})
 			},
 			async save(e, ownerFun) {
-				console.log("esdadadadaqdadsad")
-				console.log("esdadadadaqdadsad111111", ownerFun)
-				console.log("aaa", "asdasdgadgasd、111")
 				let img = await this.generateImage().then()
 				ownerFun.callMethod('receiveRenderData', img)
 			},

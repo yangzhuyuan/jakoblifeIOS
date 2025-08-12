@@ -2,35 +2,31 @@
 	<view>
 		<view v-if="agreeid == 1" class="splash_bg">
 			<view>
-				<view style=" text-align: center;font-size: 26px;font-weight: bold;">欢迎使用</view>
+				<view style=" text-align: center;font-size: 26px;font-weight: bold;">{{$t("欢迎使用")}}</view>
 				<view style=" text-align: center;margin-top: 20px;font-size: 26px;font-weight: bold;">JakobLife
 				</view>
 				<view style="display: flex; justify-content:center;">
-					<image style="width: 180px;height: 180px;" src="../../static/icons/14.png" />
+					<image style="width: 180px;height: 180px;" :src="loginimg" />
 				</view>
-				<view class="warp">
+				<!-- <view class="warp">
 					<view class="view_circle1"></view>
 					<view class="view_circle2"></view>
 					<view class="view_circle3"></view>
-				</view>
+				</view> -->
 			</view>
 		</view>
 		<view v-else class="dialog">
 			<view class="bg"></view>
-			<view class="title">服务协议和隐私政策</view>
+			<view class="title">{{$t("服务协议和隐私政策")}}</view>
 			<view class="content">
-				1.请你务必审慎阅读、充分理解“服务协议”和“隐私政策”各条款，包括但不限于：为了更好的向你提供服务，我们需要收集你的设备标识、操作日志等信息用于分析、优化应用性能。<br /><text style="height: auto;
-			padding: 0 0 0 18px;text-indent: 1em;">
-					2.你可阅读</text>
-				<text class="link" @click="linkClick(1)">《服务协议》</text>和
-				<text class="link" @click="linkClick(2)">《隐私政策》</text>
-				了解详细信息。如果你同意，请点击下面按钮开始接受我们的服务。
+				{{$t("服务协议和隐私政策1")}}<br />
+				<text style="height: auto;padding: 0 0 0 18px;text-indent: 1em;">{{$t("你可阅读")}}</text>
+				<text class="link" @click="linkClick(1)">{{$t("服务协议")}}</text>{{$t("和")}}
+				<text class="link" @click="linkClick(2)">{{$t("隐私政策")}}</text>{{$t("服务协议和隐私政策2")}}
 			</view>
 			<view class="btn">
-				<button style="margin-top: 20px; width: 40vw;border-radius: 50px;background: #3298F7;color: white;"
-					@click="agree">同意并接受</button>
-				<button style="margin:20px 0; width: 40vw;border-radius: 50px;background: #F55A5A;color: white;"
-					@click="disagree">暂时同意</button>
+				<button class="buttonst" @click="agree()">{{$t("同意并接受")}}</button>
+				<button class="buttonst_1" @click="disagree()">{{$t("拒绝")}}</button>
 			</view>
 		</view>
 	</view>
@@ -39,19 +35,17 @@
 	export default {
 		data() {
 			return {
-				refCode: '',
-				agreeid: uni.getStorageSync("agree")
+				agreeid: uni.getStorageSync('agree'),
+				loginimg: ''
 			}
 		},
-		onLoad(option) {
-			if (option.refCode) {
-				this.refCode = option.refCode;
-				uni.setStorageSync('refCode', option.refCode);
-			}
-		},
-
-
 		onShow() {
+			const lan = uni.getLocale()
+			if (lan == 'zh-Hans') {
+				this.loginimg = "/static/icons/14.png"
+			} else {
+				this.loginimg = "/static/icons/loginssss.png"
+			}
 			if (this.agreeid == 1) {
 				uni.getStorageInfo({
 					success(res) {
@@ -60,15 +54,14 @@
 								uni.switchTab({
 									url: "../tabBar/main/Main"
 								})
-							}, 1000);
+							}, 3000);
 						} else {
 							setTimeout(function() {
 								uni.redirectTo({
 									url: "../login/login_land"
 								})
-							}, 1000);
+							}, 3000);
 						}
-
 					}
 				})
 			}
@@ -93,10 +86,14 @@
 				})
 			},
 			disagree() {
-				uni.navigateBack()
-				// // #ifdef APP-PLUS
-				// plus.ios.import("UIApplication").sharedApplication().performSelector("exit")
-				// // #endif
+				const platform = uni.getSystemInfoSync().platform;
+				if (platform === "android") {
+					plus.runtime.quit()
+				} else {
+					// #ifdef APP-PLUS
+					plus.ios.import("UIApplication").sharedApplication().performSelector("exit")
+					// #endif
+				}
 			}
 		}
 	}
@@ -163,7 +160,7 @@
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			width: 80vw;
+			width: 100%;
 
 		}
 	}
@@ -211,5 +208,34 @@
 		to {
 			margin-top: 10px
 		}
+	}
+
+	.buttonst {
+		width: 50vw;
+		height: 48px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin: 20px 20px 20px 20px;
+		border-radius: 50px;
+		background: #3298F7;
+		font-size: 16px;
+		font-weight: 600;
+		color: white;
+	}
+
+	.buttonst_1 {
+		width: 50vw;
+		height: 48px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		margin: 0 20px 20px 20px;
+		border-radius: 50px;
+		background: #3298F7;
+		font-size: 16px;
+		font-weight: 600;
+		color: white;
+		background: #F55A5A;
 	}
 </style>

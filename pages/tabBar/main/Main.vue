@@ -1,343 +1,480 @@
 <template>
 	<view class="all">
-		<view style="background: #3298F7;height: 300px;">
+		<swiper class="scroll-view-height" :style="{height: screenHeight + 'px'}" @change="swipeIndex"
+			:current="currentIndex">
 			<!-- 血压计 -->
-			<view v-if="main_type" style="padding-top: 110px;">
-				<view class="title_zs">注:本页面显示均为最近测量数据</view>
-				<view class="data_bg">
-					<view style="display: flex; flex-direction: row;">
-						<view class="icon_bg">
-							<image src="../../../static/icons/3.png" class="img_style"></image>
-							<text class="icon_text_bg">{{$t('shouye_item.title_1')}}</text>
+			<swiper-item>
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
+					<view style="background: #3298F7;">
+						<view class="title_zs">{{$t("本页面显示均为最近测量数据")}}</view>
+						<view class="data_bg">
+							<view class="icon_bg" @click="xueyaclick()">
+								<image src="../../../static/icons/3.png" class="img_style" mode="aspectFit"></image>
+								<text class="icon_text_bg">{{$t('血压')}}</text>
+							</view>
+							<view
+								style="display: flex;flex-direction: column; margin-left: 10px; margin-right: 20px; flex: 4;">
+								<view v-if="xueya == 0" style="display: flex;flex-direction: row; align-items: center;">
+									<view class="xueya_bg"></view>
+									<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
+									</view>
+									<uni-icons type="help" size="15" style="margin-left: 5px;"
+										@tap="xueya_tap"></uni-icons>
+								</view>
+								<view v-else-if="xueya == 1"
+									style="display: flex;flex-direction: row;align-items: center;">
+									<view style="width: 14px; height:14px;background: #FFEC01;border-radius: 50px;">
+									</view>
+									<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
+									</view>
+									<uni-icons type="help" size="15" style="margin-left: 5px;"
+										@tap="xueya_tap"></uni-icons>
+								</view>
+								<view v-else-if="xueya == 2"
+									style="display: flex;flex-direction: row;align-items: center;">
+									<view style="width: 14px; height:14px;background: #FCCD41;border-radius: 50px;">
+									</view>
+									<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
+									</view>
+									<uni-icons type="help" size="15" style="margin-left: 5px;"
+										@tap="xueya_tap"></uni-icons>
+								</view>
+								<view v-else-if="xueya == 3"
+									style="display: flex;flex-direction: row;align-items: center;">
+									<view style="width: 14px; height:14px;background: #F55A5A;border-radius: 50px;">
+									</view>
+									<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
+									</view>
+									<uni-icons type="help" size="15" style="margin-left: 5px;"
+										@tap="xueya_tap"></uni-icons>
+								</view>
+								<view v-else-if="xueya == 4"
+									style="display: flex;flex-direction: row;align-items: center;">
+									<view style="width: 14px; height:14px;background: #FFFFFF;border-radius: 50px;">
+									</view>
+									<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
+									</view>
+									<uni-icons type="help" size="15" style="margin-left: 5px;"
+										@tap="xueya_tap"></uni-icons>
+								</view>
+								<view style="width: auto; background:#CCCCCC;height:1px;margin-top: 5px;"></view>
+								<view @click="xueyaclick()"
+									style="display: flex;flex-direction: row; margin-top: 5px;align-items: center; justify-content: space-between;">
+									<view>
+										<view style="color: #999999;font-size: 10px;font-weight: 400;">
+											{{$t('收缩压')}}/{{Blood}}
+										</view>
+										<view style="font-weight: bold;margin-top: 10px;font-size: 16px;">
+											{{highPressure}}
+										</view>
+									</view>
+									<view>
+										<view style="color: #999999;font-size: 10px;font-weight: 400;">
+											{{$t('舒张压')}}/{{Blood}}
+										</view>
+										<view style="font-weight: bold;margin-top: 10px;font-size: 16px;">
+											{{lowPressure}}
+										</view>
+									</view>
+									<view style="margin-left: 10px;">
+										<view style="color: #999999;font-size: 10px;font-weight: 400;">{{$t('脉搏')}}/BPM
+										</view>
+										<view style="font-weight: bold;margin-top: 10px;font-size: 16px;">{{pulse}}
+										</view>
+									</view>
+								</view>
+							</view>
 						</view>
-						<view style="display: flex;flex-direction: column; margin-left: 10px;margin-top: 10px;">
-							<view v-if="xueya == 0" style="display: flex;flex-direction: row; align-items: center;">
-								<view class="xueya_bg"></view>
-								<view style="margin-left: 6px;">{{title_name}}</view>
-								<uni-icons type="help" size="15" style="margin-left: 5px;" @tap="xueya_tap"></uni-icons>
-							</view>
-							<view v-else-if="xueya == 1" style="display: flex;flex-direction: row;">
-								<view style="width: 20px; height:20px;background: #7AE545;border-radius: 50px;"></view>
-								<view style="margin-left: 10px;">{{title_name}}</view>
-								<uni-icons type="help" size="15" style="margin-left: 5px;" @tap="xueya_tap"></uni-icons>
-							</view>
-							<view v-else-if="xueya == 2" style="display: flex;flex-direction: row;">
-								<view style="width: 20px; height:20px;background: #FCCD41;border-radius: 50px;"></view>
-								<view style="margin-left: 10px;">{{title_name}}</view>
-								<uni-icons type="help" size="15" style="margin-left: 5px;" @tap="xueya_tap"></uni-icons>
-							</view>
-							<view v-else-if="xueya == 3" style="display: flex;flex-direction: row;">
-								<view style="width: 20px; height:20px;background: #F55A5A;border-radius: 50px;"></view>
-								<view style="margin-left: 10px;">{{title_name}}</view>
-								<uni-icons type="help" size="15" style="margin-left: 5px;" @tap="xueya_tap"></uni-icons>
-							</view>
-							<view v-else-if="xueya == 4" style="display: flex;flex-direction: row;">
-								<view style="width: 20px; height:20px;background: #FFFFFF;border-radius: 50px;"></view>
-								<view style="margin-left: 10px;">{{title_name}}</view>
-								<uni-icons type="help" size="15" style="margin-left: 5px;" @tap="xueya_tap"></uni-icons>
-							</view>
-							<view style="border-top: 1px solid gainsboro;width: 65vw;margin-top: 5px;"></view>
-							<view style="display: flex;flex-direction: row;margin-top: 5px;">
-								<view>
-									<view style="color: gray;font-size: 12px;">舒张压/mmHg
-									</view>
-									<view style="font-weight: bold;margin-top: 10px;font-size: 18px;">{{lowPressure}}
-									</view>
-								</view>
-								<view style="margin-left: 10px;">
-									<view style="color: gray;font-size: 12px;">收缩压/mmHg
-									</view>
-									<view style="font-weight: bold;margin-top: 10px;font-size: 18px;">{{highPressure}}
-									</view>
-								</view>
-								<view style="margin-left: 10px;">
-									<view style="color: gray;font-size: 12px;">脉搏/BMP
-									</view>
-									<view style="font-weight: bold;margin-top: 10px;font-size: 18px;">{{pulse}}</view>
-								</view>
-							</view>
-						</view>
-					</view>
-				</view>
+						<view class="data_bg_A">
+							<view class="title_zs1">{{$t('血压计注意事项')}}</view>
+							<view v-show="binaji" class="tzkpsx" @click="tiaozhen()">{{$t("编辑数据卡片")}}</view>
+							<view class="drag-containersss">
+								<basic-drag v-model="list" :disabled="disabledsaaa" itemKey="title" :column="2"
+									itemHeight="130px">
+									<template #item="{element}">
+										<view class="data_item_bgsss" :class="'animation-' + animation">
+											<view class="icon_bgsss">
+												<image :src="element.image" class="img_style" mode="aspectFit" />
+												<text class="icon_text_bgsss">{{element.title}}</text>
+											</view>
+											<view
+												style="display: flex; flex-direction: column;font-weight: bold;margin-right: 5px;">
+												<view v-if="element.bmi_show">
+													<view
+														style="display: flex; flex-direction: row;align-items: center;">
+														<text
+															style="margin-left: 5px; color: black;font-size: 10px;white-space: nowrap;text-overflow: ellipsis;overflow: auto;width: 45px;text-align: right;">{{element.BMI_ys}}</text>
+														<uni-icons type="help" size="15"
+															@tap="BMI_tap(element.title)"></uni-icons>
+													</view>
+												</view>
+												<view
+													style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end;">
+													<view v-if="element.bmi_show">
 
-				<view class="data_bg_A">
-					<view v-show="binaji" class="tzkpsx" @click="tiaozhen()">编辑数据卡片</view>
-					<view class="drag-containersss">
-						<basic-drag v-model="list" :disableds="aaa" itemKey="title" :column="2" itemHeight="130px">
-							<template #item="{element}">
-								<view class="data_item_bgsss" :class="'animation-' + animation">
-									<view class="icon_bgsss">
-										<image :src="element.image" class="img_style" />
-										<text class="icon_text_bgsss">{{element.title}}</text>
-									</view>
-									<view
-										style="display: flex; flex-direction: column;font-weight: bold;margin-right: 5px;">
-										<view v-if="element.bmi_show">
-											<view style="display: flex; flex-direction: row;align-items: center;">
+														<view v-if="element.BMI_TF == 0">
+															<view
+																style="width: 10px; height:10px;background: #FCCD41;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==1"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==2"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #FC7F41;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==3"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #F55A5A;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==4"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #7A0101;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==10"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #333333;border-radius: 50px;">
+															</view>
+														</view>
+													</view>
+													<text
+														style="text-align: right;font-size: 16px;margin-left: 10px;">{{element.Step_number}}</text>
+												</view>
 												<text
-													style="margin-left: 5px; color: black;font-size: 12px;white-space: nowrap;text-overflow: ellipsis;overflow: auto;width: 45px;text-align: right;">{{element.BMI_ys}}</text>
-												<uni-icons type="help" size="15"
-													@tap="BMI_tap(element.title)"></uni-icons>
+													style="text-align: right;color: gray;font-size: 10px;">{{element.type_LX}}</text>
+												<text
+													style="text-align: right;font-size: 14px;font-size: 13px;font-weight: 400px;">{{element.Step_count}}</text>
+											</view>
+											<view v-show="delate_icon" style="position: fixed; left: 0; top: 0;">
+												<uni-icons type="minus-filled" size="25px" color="red"
+													@click="delate_icon_cl(element.title,element)"></uni-icons>
 											</view>
 										</view>
-										<view
-											style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end;">
-											<view v-if="element.bmi_show">
+									</template>
+								</basic-drag>
+							</view>
 
-												<view v-if="element.BMI_TF == 0">
-													<view
-														style="width: 10px; height:10px;background: #FCCD41;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==1"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==2"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #FC7F41;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==3"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #F55A5A;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==4"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #7A0101;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #333333;border-radius: 50px;">
-													</view>
-												</view>
-											</view>
-
-											<text
-												style="text-align: right;font-size: 16px;margin-left: 10px;">{{element.Step_number}}</text>
-										</view>
-										<text
-											style="text-align: right;color: gray;font-size: 12px;">{{element.type_LX}}</text>
-										<text style="text-align: right;font-size: 14px;">{{element.Step_count}}</text>
+							<view v-show="button_show" style="display: flex;flex-direction: column;margin: 20px 0;">
+								<view style="display: flex;justify-content: center;color: gray;">{{$t('拖动可调整数据卡片位置')}}
+								</view>
+								<view
+									style="display: flex;flex-direction: row;justify-content: space-between; align-items: center; margin-top: 20px;">
+									<view @click="ture_bt()" class="cardstyle_1">
+										{{$t('确认')}}
 									</view>
-									<view v-show="delate_icon" style="position: fixed; left: 0; top: 0;">
-										<uni-icons type="minus-filled" size="18px" color="red"
-											@click="delate_icon_cl(element.title,element)"></uni-icons>
+									<view @click="add_bt_xy()" class="cardstyle_2">
+										{{$t('添加数据卡片')}}
 									</view>
 								</view>
-							</template>
-						</basic-drag>
-					</view>
-					<view v-show="button_show" style="display: flex;flex-direction: column;margin: 20px 0;">
-						<view style="display: flex;justify-content: center;color: gray;">拖动可调整数据卡片位置</view>
-						<view
-							style="display: flex;flex-direction: row;justify-content: space-between; align-items: center; margin-top: 20px;">
-							<view @click="ture_bt()"
-								style="background: white;color: #3298F7;width: 120px;border-radius: 10px; padding: 10px;text-align: center;margin-right: 10px;margin-left: 10vw;">
-								确认</view>
-							<view @click="add_bt_xy()"
-								style="background: white;color: #3298F7;width: 120px;border-radius: 10px; padding: 10px;text-align: center;margin-left: 10px;margin-right: 10vw;">
-								添加数据卡片</view>
+							</view>
+							<view>
+								<image src="/static/image/yundomng.png"
+									style="width: 88vw;height: 220px; margin: 0 20px 120px 20px;border-radius: 20px;">
+								</image>
+							</view>
 						</view>
 					</view>
-					<view style="background: #F7F7F7;">
-						<image src="/static/image/yundomng.png"
-							style="width: 88vw;height: 200px; margin: 0 20px 120px 20px;border-radius: 20px;">
-						</image>
-					</view>
-				</view>
-			</view>
+				</scroll-view>
+			</swiper-item>
 			<!-- 体脂秤 -->
-			<view v-else style="margin-top: 105px;">
-				<view class="title_zs">{{$t('shouye_item.title_0')}}</view>
-				<view style="display: flex;flex-direction: row;margin-top: 20px;">
-
-					<!-- 最新体重 -->
-					<view @click="new_latest()"
-						style="background: white; border-radius: 20px;padding: 10px; width: 45vw;margin-left: 20px;">
-						<view style="display: flex;align-items: center;">
-							<image src="../../../static/icons/6.png" style="width: 25px; height: 25px;"></image>
-							<text style="font-size: 18px;margin-left: 10px;">最新体重</text>
-						</view>
-						<view
-							style="margin-top: 30px; display: flex;flex-direction: row;justify-content: center; align-items: center;">
-							<text style="font-size: 44px;font-weight: bold;">{{Latest_weight}}</text>
-							<text style="margin-top: 15px; margin-left: 10px;">KG</text>
-						</view>
-						<view style="text-align: right;margin-top: 20px; font-size: 18px;">{{Latest_date}}</view>
-					</view>
-					<view
-						style=" margin-left: 20px; margin-right: 20px; width: 40vw;background: white; border-radius: 20px;">
-						<!-- 初始体重 -->
-						<view @click="Initial()">
-							<view style="display: flex;align-items: center;padding: 10px;">
-								<image src="../../../static/icons/6.png" style="width: 20px; height: 20px;"></image>
-								<text style="margin-left: 5px;">初始体重</text>
+			<swiper-item>
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
+					<view style="background: #3298F7;">
+						<view class="title_zs">{{$t('本页面显示均为最近测量数据')}}</view>
+						<view style="display: flex;flex-direction: row;margin-top: 5px;">
+							<!-- 最新体重 -->
+							<view @click="new_latest()"
+								style="background: white; border-radius: 20px;padding: 10px; width: 45vw;margin-left: 20px;box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);">
+								<view style="display: flex;align-items: center;">
+									<image src="../../../static/icons/6.png" style="width: 25px; height: 25px;"></image>
+									<text style="font-size: 18px;margin-left: 10px;">{{$t('最新体重')}}</text>
+								</view>
+								<view
+									style="margin-top: 30px; display: flex;flex-direction: row;justify-content: center; align-items: center;">
+									<text style="font-size: 44px;font-weight: bold;">{{Latest_weight}}</text>
+									<text style="margin-top: 15px; margin-left: 10px;">{{newweightKG}}</text>
+								</view>
+								<view style="text-align: right;margin-top: 20px; font-size: 18px;">{{Latest_date}}
+								</view>
 							</view>
-							<view class="tizhong_item_2">
-								<text style="font-size: 18px;font-weight: bold;color: black;">{{Initial_weight}}</text>
-								<text style="margin-left: 5px; color: gray;">kg</text>
-							</view>
-						</view>
-						<view style="margin:5px 0 5px 8px; background: gainsboro; width: 33vw; height: 1px;"></view>
-						<!-- 目标体重 -->
-						<view @click="Target()">
-							<view style="display: flex;align-items: center;padding: 10px;">
-								<image src="../../../static/icons/6.png" style="width: 20px; height: 20px;"></image>
-								<text style="margin-left: 5px;">目标体重</text>
-							</view>
-							<view class="tizhong_item_2">
-								<text style="font-size: 18px;font-weight: bold;">{{Target_weight}}</text>
-								<text style="margin-left: 5px;color: gray;">kg</text>
-							</view>
-						</view>
-					</view>
-				</view>
-				<view class="data_bg_A">
-					<view class="tzkpsx" v-show="binaji2" @click="tiaozhen2()">编辑数据卡片</view>
-					<view class="drag-containersss">
-						<basic-drag v-model="list2" :disableds="aaa2" itemKey="title" :column="2" itemHeight="130px">
-							<template #item="{element}">
-								<view class="data_item_bgsss" :class="'animation-' + animation">
-									<view class="icon_bgsss">
-										<image :src="element.image" class="img_style" />
-										<text class="icon_text_bgsss">{{element.title}}</text>
+							<view
+								style=" margin-left: 20px; margin-right: 20px; width: 40vw;background: white; border-radius: 20px;box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);">
+								<!-- 初始体重 -->
+								<view @click="Initial()">
+									<view style="display: flex;align-items: center;padding: 10px;">
+										<image src="../../../static/icons/6.png" style="width: 20px; height: 20px;">
+										</image>
+										<text style="margin-left: 5px;">{{$t('初始体重')}}</text>
 									</view>
-									<view
-										style="display: flex; flex-direction: column;font-weight: bold;margin-right: 5px;">
-										<view v-if="element.bmi_show">
-											<view style="display: flex; flex-direction: row;align-items: center;">
-												<text
-													style="margin-left: 5px; color: black;font-size: 12px;white-space: nowrap;text-overflow: ellipsis;overflow: auto;width: 60px;text-align: right;">{{element.BMI_ys}}</text>
-												<uni-icons type="help" size="15"
-													@tap="BMI_tap(element.title)"></uni-icons>
-											</view>
-										</view>
-										<view
-											style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end;">
-											<view v-if="element.bmi_show">
-
-												<view v-if="element.BMI_TF == 0">
-													<view
-														style="width: 10px; height:10px;background: #FCCD41;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==1"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==2"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #FC7F41;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==3"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #F55A5A;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else-if="element.BMI_TF ==4"
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #7A0101;border-radius: 50px;">
-													</view>
-												</view>
-												<view v-else
-													style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-													<view
-														style="width: 10px; height:10px;background: #333333;border-radius: 50px;">
-													</view>
-												</view>
-											</view>
-
-											<text
-												style="text-align: right;font-size: 16px;margin-left: 10px;">{{element.Step_number}}</text>
-										</view>
+									<view class="tizhong_item_2">
 										<text
-											style="text-align: right;color: gray;font-size: 12px;">{{element.type_LX}}</text>
-										<text style="text-align: right;font-size: 14px;">{{element.Step_count}}</text>
-									</view>
-									<view v-show="delate_icon" style="position: fixed; left: 0; top: 0;">
-										<uni-icons type="minus-filled" size="18px" color="red"
-											@click="delate_icon_cl_2(element.title,element)"></uni-icons>
+											style="font-size: 18px;font-weight: bold;color: black;">{{Initial_weight}}</text>
+										<text style="margin-left: 5px; color: gray;">{{chuhsikg}}</text>
 									</view>
 								</view>
-							</template>
-						</basic-drag>
-					</view>
-					<view v-show="button_show2" style="display: flex;flex-direction: column;margin-top: 20px;">
-						<view style="display: flex;justify-content: center;color: gray;">拖动可调整数据卡片位置</view>
-						<view
-							style="display: flex;flex-direction: row;justify-content: space-between; align-items: center; margin-top: 20px;">
-							<view @click="ture_bt2()"
-								style="background: white;color: #3298F7;width: 120px;border-radius: 10px; padding: 10px;text-align: center;margin-right: 10px;margin-left: 10vw;">
-								确认</view>
-							<view @click="add_bt2()"
-								style="background: white;color: #3298F7;width: 120px;border-radius: 10px; padding: 10px;text-align: center;margin-left: 10px;margin-right: 10vw;">
-								添加数据卡片</view>
-						</view>
-					</view>
-
-					<view style="background: #F7F7F7; padding: 10px 20px 220px 20px;">
-						<view style="background: white; border-radius: 20px;padding: 10px;">
-							<view class="tiwei_bg">
-								<view style="font-weight: bold;">{{$t('shouye_item.title_10')}}</view>
-								<view style="color: gray;">{{$t('shouye_item.title_11')}}</view>
-							</view>
-							<view class="tiwei_bg">
-								<view class="tiwei_item_bg">
-									<text class="text_title_bg">{{$t('shouye_item.title_12')}}</text>
-									<text class="tiwei_item_item_bg">{{Chest_circumference}}</text>
+								<view style="margin:5px 0 5px 8px; background: gainsboro; width: 33vw; height: 1px;">
 								</view>
-								<view class="tiwei_item_bg">
-									<text class="text_title_bg">{{$t('shouye_item.title_13')}}</text>
-									<text class="tiwei_item_item_bg">{{waistline}}</text>
-								</view>
-								<view class="tiwei_item_bg">
-									<text class="text_title_bg">{{$t('shouye_item.title_14')}}</text>
-									<text class="tiwei_item_item_bg">{{Hip_circumference}}</text>
-								</view>
-								<view class="tiwei_item_bg">
-									<text class="text_title_bg">{{$t('shouye_item.title_15')}}</text>
-									<text class="tiwei_item_item_bg">{{Upper_Chest_circumference}}</text>
-								</view>
-								<view class="tiwei_item_bg">
-									<text class="text_title_bg">{{$t('shouye_item.title_16')}}</text>
-									<text class="tiwei_item_item_bg">{{Thigh_circumference}}</text>
-								</view>
-								<view class="tiwei_item_bg">
-									<text class="text_title_bg">{{$t('shouye_item.title_17')}}</text>
-									<text class="tiwei_item_item_bg">{{Calf_circumference}}</text>
+								<!-- 目标体重 -->
+								<view @click="Target()">
+									<view style="display: flex;align-items: center;padding: 10px;">
+										<image src="../../../static/icons/6.png" style="width: 20px; height: 20px;">
+										</image>
+										<text style="margin-left: 5px;">{{$t('目标体重')}}</text>
+									</view>
+									<view class="tizhong_item_2">
+										<text style="font-size: 18px;font-weight: bold;">{{Target_weight}}</text>
+										<text style="margin-left: 5px;color: gray;">{{chuhsikg}}</text>
+									</view>
 								</view>
 							</view>
 						</view>
+						<view class="data_bg_A">
+							<view class="title_zs1">{{$t('体脂秤注意事项')}}</view>
+							<view class="tzkpsx" v-show="binaji2" @click="tiaozhen2()">{{$t("编辑数据卡片")}}</view>
+							<view class="drag-containersss">
+								<basic-drag v-model="list2" :disabled="disabledsaaa2" itemKey="title" :column="2"
+									itemHeight="130px">
+									<template #item="{element}">
+										<view class="data_item_bgsss" :class="'animation2-' + animation2">
+											<view class="icon_bgsss">
+												<image :src="element.image" class="img_style" mode="aspectFit" />
+												<text class="icon_text_bgsss">{{element.title}}</text>
+											</view>
+											<view
+												style="display: flex; flex-direction: column;font-weight: bold;margin-right: 5px;">
+												<view v-if="element.bmi_show">
+													<view
+														style="display: flex; flex-direction: row;align-items: center;">
+														<text
+															style="margin-left: 5px; color: black;font-size: 10px;white-space: nowrap;text-overflow: ellipsis;overflow: auto;width: 45px;text-align: right;">{{element.BMI_ys}}</text>
+														<uni-icons type="help" size="15"
+															@tap="BMI_tap(element.title)"></uni-icons>
+													</view>
+												</view>
+												<view
+													style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end;">
+													<view v-if="element.bmi_show">
+														<view v-if="element.BMI_TF == 0">
+															<view
+																style="width: 10px; height:10px;background: #FCCD41;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==1"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==2"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #FC7F41;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==3"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #F55A5A;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==4"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #7A0101;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else-if="element.BMI_TF ==10"
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
+															</view>
+														</view>
+														<view v-else
+															style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
+															<view
+																style="width: 10px; height:10px;background: #333333;border-radius: 50px;">
+															</view>
+														</view>
+													</view>
+													<text
+														style="text-align: right;font-size: 16px;margin-left: 10px;">{{element.Step_number}}</text>
+												</view>
+												<text
+													style="text-align: right;color: gray;font-size: 10px;">{{element.type_LX}}</text>
+												<text
+													style="text-align: right;font-size: 13px;">{{element.Step_count}}</text>
+											</view>
+											<view v-show="delate_icon2" style="position: fixed; left: 0; top: 0;">
+												<uni-icons type="minus-filled" size="25px" color="red"
+													@click="delate_icon_cl_2(element.title,element)"></uni-icons>
+											</view>
+										</view>
+									</template>
+								</basic-drag>
+							</view>
+							<view v-show="button_show2" style="display: flex;flex-direction: column;">
+								<view style="display: flex;justify-content: center;color: gray;">{{$t('拖动可调整数据卡片位置')}}
+								</view>
+								<view
+									style="display: flex;flex-direction: row;justify-content: space-between; align-items: center; margin-top: 20px;">
+									<view @click="ture_bt2()" class="cardstyle_1">{{$t('确认')}}
+									</view>
+									<view @click="add_bt2()" class="cardstyle_2">
+										{{$t('添加数据卡片')}}
+									</view>
+								</view>
+							</view>
+							<view style="padding: 20px 20px 220px 20px;" @click="tizhiclick()">
+								<view
+									style="background: white; border-radius: 20px;padding: 10px;box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);">
+									<view class="tiwei_bg">
+										<view style="font-weight: bold;">{{$t('体围数据')}}</view>
+										<view style="color: gray;">{{$t('单位')}}</view>
+									</view>
+									<view class="tiwei_bg">
+										<view class="tiwei_item_bg">
+											<text class="text_title_bg">{{$t('胸围')}}</text>
+											<text class="tiwei_item_item_bg">{{Chest_circumference}}</text>
+										</view>
+										<view class="tiwei_item_bg">
+											<text class="text_title_bg">{{$t('腰围')}}</text>
+											<text class="tiwei_item_item_bg">{{waistline}}</text>
+										</view>
+										<view class="tiwei_item_bg">
+											<text class="text_title_bg">{{$t('臀围')}}</text>
+											<text class="tiwei_item_item_bg">{{Hip_circumference}}</text>
+										</view>
+										<view class="tiwei_item_bg">
+											<text class="text_title_bg">{{$t('上臂围')}}</text>
+											<text class="tiwei_item_item_bg">{{Upper_Chest_circumference}}</text>
+										</view>
+										<view class="tiwei_item_bg">
+											<text class="text_title_bg">{{$t('大腿围')}}</text>
+											<text class="tiwei_item_item_bg">{{Thigh_circumference}}</text>
+										</view>
+										<view class="tiwei_item_bg">
+											<text class="text_title_bg">{{$t('小腿围')}}</text>
+											<text class="tiwei_item_item_bg">{{Calf_circumference}}</text>
+										</view>
+									</view>
+								</view>
+							</view>
+						</view>
 					</view>
+				</scroll-view>
+			</swiper-item>
+			<!-- 压力 -->
+			<swiper-item>
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
+					<view style="background: #3298F7;">
+						<view class="title_zs">{{$t("本页面显示均为最近测量数据")}}</view>
+						<view class="data_bg">
+							<view class="icon_bg" @click="xueyaclick()">
+								<image src="../../../static/icons/3.png" class="img_style" mode="aspectFit"></image>
+								<text class="icon_text_bg">{{$t('压力')}}</text>
+							</view>
+							<view
+								style="flex: 2;display: flex;flex-direction: column;align-items: center;justify-content: center;">
+								<view style="font-weight: bold;font-size: 16px;">{{yali}}</view>
+								<view style="color: #999999;font-size: 10px;font-weight: 400;">kPa</view>
+								<view style="text-align: right;font-size: 13px;">{{yali_time}}</view>
+							</view>
+						</view>
+						<view class="data_bg_A" style="padding: 40px;font-size: 16px; font-weight: 400; color: black;">
+							<view style="display: flex;justify-content: space-between;">
+								<view>0～25:</view>
+								<view>{{$t("容易")}}</view>
+							</view>
+							<view
+								style="background: gainsboro;width: auto;height: 1px;margin-top: 10px;margin-bottom: 5px;">
+							</view>
+							<view style="display: flex;justify-content: space-between;">
+								<view>26～50:</view>
+								<view>{{$t("低压")}}</view>
+							</view>
+							<view
+								style="background: gainsboro;width: auto;height: 1px;margin-top: 10px;margin-bottom: 5px;">
+							</view>
+							<view style="display: flex;justify-content: space-between;">
+								<view>51～75:</view>
+								<view>{{$t("适度的压力")}}</view>
+							</view>
+							<view
+								style="background: gainsboro;width: auto;height: 1px;margin-top: 10px;margin-bottom: 5px;">
+							</view>
+							<view style="display: flex;justify-content: space-between;">
+								<view>76～100:</view>
+								<view>{{$t("高度的压力")}}</view>
+							</view>
+						</view>
+					</view>
+				</scroll-view>
+			</swiper-item>
+			<!-- 步数 -->
+			<swiper-item>
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
+					<view style="background: #3298F7;">
+						<view class="title_zs">{{$t("本页面显示均为最近测量数据")}}</view>
+						<view class="data_bg">
+							<view class="icon_bg" @click="xueyaclick()">
+								<image src="../../../static/icons/1.png" class="img_style" mode="aspectFit"></image>
+								<text class="icon_text_bg">{{$t('步数')}}</text>
+							</view>
+							<view
+								style="flex: 2;display: flex;flex-direction: column;align-items: center;justify-content: center;">
+								<view style="font-weight: bold;font-size: 16px;">{{bushu}}</view>
+								<view style="color: #999999;font-size: 10px;font-weight: 400;">{{$t('计步')}}</view>
+								<view style="text-align: right;font-size: 13px;">{{bushu_time}}</view>
+							</view>
+						</view>
+						<view class="data_bg_A">
+							<view class="charts-box-2">
+								<qiun-data-charts type="column" :opts="opts" :chartData="chartData" />
+							</view>
+						</view>
+					</view>
+				</scroll-view>
+			</swiper-item>
+		</swiper>
+		<!--标题 -->
+		<view class="title_all">
+			<view class="title_all_1">
+				<image :src="msg ? '../../../static/icons/19.png' : '../../../static/icons/20.png'" mode="aspectFit"
+					style="width: 25px; height: 25px; padding-left: 20px;object-fit: contain;"
+					@click="Historical_record()">
+				</image>
+				<view class="title">{{$t('首页')}}</view>
+				<view style="padding-right: 20px;color: white;font-size: 16px;" @click="helperclick()">{{$t("帮助")}}
 				</view>
 			</view>
-			<!-- 悬浮按钮 -->
-			<uni-fab ref="fab" :pattern="pattern" :content="content" :horizontal="horizontal" :vertical="vertical"
-				:direction="direction" @trigger="trigger" @fabClick="fabClick" />
-
-			<!-- 标题 -->
-			<view class="title_all">
-				<image @click="qiehuan()" src="../../../static/qiehuan.png" style="width: 25px; height: 25px;"></image>
-				<view class="title">首页</view>
-			</view>
+			<scroll-view scroll-x class="navscroll" :scroll-left="scrollLeft">
+				<view class="nav-container">
+					<view class="item" v-for="(item, index) in tabs" :key="index">
+						<view @click="swtichSwiper(index)" class="tab-text" :class="{ active: currentIndex === index }">
+							{{ item }}
+						</view>
+						<view class="underline" v-if="currentIndex === index"></view>
+					</view>
+				</view>
+			</scroll-view>
 		</view>
-
-
 		<!-- 悬浮弹窗 -->
 		<view class="showTotal" v-show="fillOut">
 			<view class="over">
@@ -345,7 +482,7 @@
 					<view style="margin-top: 220px;">
 						<view style="color: black;font-size: 38px; font-weight: bold;">{{showTotal_date}}</view>
 						<view style="background: black; width: 50%; height: 1px;margin-top: 20px;"></view>
-						<view style="color: #2595D3;margin-top: 5px;">{{$t('shouye_item.title_18')}}</view>
+						<view style="color: #2595D3;margin-top: 5px;">{{$t('确保每天摄入足够的水')}}</view>
 					</view>
 					<view style="display: flex; flex-direction: row;  margin-top: 180px;margin-left: 10px;">
 						<view style="display: flex;flex-direction: column; align-items: center;" @click="Keep()">
@@ -353,7 +490,7 @@
 								style="width: 50px; height: 50px;border-radius: 40px;">
 							</image>
 							<text
-								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('shouye_item.title_19')}}</text>
+								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('记体重')}}</text>
 						</view>
 						<view style="display: flex;flex-direction: column;  align-items: center;margin-left: 10px;"
 							@click="Body_circumference()">
@@ -361,7 +498,7 @@
 								style="width: 50px; height: 50px;border-radius: 40px;">
 							</image>
 							<text
-								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('shouye_item.title_20')}}</text>
+								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('记体围')}}</text>
 						</view>
 					</view>
 					<view style="display: flex;justify-content: center;margin-top: 60px;" @click="closess()">
@@ -373,71 +510,118 @@
 		<!-- 血压普通弹窗 -->
 		<view>
 			<uni-popup ref="popup" :mask-click="false">
-				<view
-					style="border-radius: 20px;background:#fff;width: 280px;text-align: center; padding-bottom: 20px;">
-					<view>
-						<image style="width: 200px; height: 280px;" src="../../../static/image/3.png"></image>
+				<view class="xueyastyle">
+					<view style="font-size: 17px; font-weight: 600;">{{$t("血压分类")}}</view>
+					<view style="font-size: 14px; font-weight: 400;margin-top: 10px;color: #999999;">
+						{{$t("根据WHOISH的血压分类2020年修订版")}}
+					</view>
+					<view
+						style="background:#222328; color: white;padding: 10px; margin:10px 10px 0 10px; display: flex;justify-content: center; align-items: center;width: 90%;">
+						<view style="flex: 1;text-align: center;">{{$t("血压类别")}}</view>
+						<view style="flex: 1;text-align: center;">{{$t("收缩压")}}</view>
+						<view style="flex: 1;text-align: center;">{{$t("和或")}}</view>
+						<view style="flex: 1;text-align: center;">{{$t("舒张压")}}</view>
+					</view>
+					<view
+						style="background:#A6CE39; color: black;padding: 10px; margin:0 10px; display: flex;justify-content: center; align-items: center;width: 90%;">
+						<view style="flex: 1;text-align: center;">{{$t("正常血压")}}</view>
+						<view style="flex: 1;text-align: center;">91-120</view>
+						<view style="flex: 1;text-align: center;">{{$t("和")}}</view>
+						<view style="flex: 1;text-align: center;">61-80</view>
+					</view>
+					<view
+						style="background:#FFEC01; color: black;padding: 10px; margin:0 10px; display: flex;justify-content: center; align-items: center;width: 90%;">
+						<view style="flex: 1;text-align: center;">{{$t("正常高血压值")}}</view>
+						<view style="flex: 1;text-align: center;">121-140</view>
+						<view style="flex: 1;text-align: center;">{{$t("或")}}</view>
+						<view style="flex: 1;text-align: center;">81-90</view>
+					</view>
+					<view
+						style="background:#FFB602; color: black;padding: 10px; margin:0 10px; display: flex;justify-content: center; align-items: center;width: 90%;">
+						<view style="flex: 1;text-align: center;">{{$t("一级高血压")}}</view>
+						<view style="flex: 1;text-align: center;">141-160</view>
+						<view style="flex: 1;text-align: center;">{{$t("或")}}</view>
+						<view style="flex: 1;text-align: center;">91-100</view>
+					</view>
+					<view
+						style="background:#BB3A01; color: black;padding: 10px; margin:0 10px; display: flex;justify-content: center; align-items: center;width: 90%;">
+						<view style="flex: 1;text-align: center;">{{$t("二级高血压")}}</view>
+						<view style="flex: 1;text-align: center;">161-180</view>
+						<view style="flex: 1;text-align: center;">{{$t("或")}}</view>
+						<view style="flex: 1;text-align: center;">101-110</view>
 					</view>
 					<button @tap="knowe()"
-						style="margin: 0 50px 20px 50px; border-radius: 20px;background: #3298F7;color: white;">{{$t('BDSBitem.title_8')}}</button>
+						style="width: 120px; height: 48px;  border-radius: 20px;background: #3298F7;color: white;margin-top: 20px">{{$t('知道了')}}</button>
 				</view>
 			</uni-popup>
 		</view>
 		<!-- BMI普通弹窗 -->
 		<view>
 			<uni-popup ref="popup1" :mask-click="false">
-				<view style="border-radius: 20px;background:#fff;padding-bottom: 20px;width: 280px;text-align: center;">
-					<view>
-						<view style="font-weight: bold;padding-top: 20px;font-size: 16px;">BMI分类</view>
-						<view style="color: gray;font-size: 12px;margin-top: 10px;">根据世界卫生组织（WHO)的最新BMI分类</view>
+				<view
+					style="background: #FFFFFF; border-radius: 24px; width: 90vw; padding-bottom: 20px;  margin: 0 10vw 0 10vw;">
+					<view style="padding: 20px; ">
+						<view style="font-weight: 600;text-align: center; font-size: 16px;">{{$t('BMI分类')}}</view>
+						<view style="color: #999999;font-size: 10px;margin-top: 20px;text-align: center;">
+							{{$t('根据世界卫生组织的最新BMI分类')}}
+						</view>
 						<view
 							style="display: flex; flex-direction: row; padding: 5px; align-items: center;margin-top: 20px; margin-left: 10px;">
-							<view style="font-weight: bold;width: 20vw">BMI范围</view>
-							<view style="font-weight: bold;width: 20vw">分类</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;">{{$t('BMI范围')}}</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;">{{$t('分类')}}</view>
 						</view>
 						<view
 							style="padding: 5px;background: #FCCD41; width: 88%;margin-top: 10px; display: flex; flex-direction: row; align-items: center;margin-left: 10px;">
-							<view style="font-weight: bold;width: 20vw;color: white;">&lt;18.5</view>
-							<view style="font-weight: bold;width: 20vw;color: white;">体重过轻</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">&lt;18.5</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">{{$t('体重过轻')}}
+							</view>
 						</view>
 						<view
 							style="padding: 5px;background: #58BF78; width: 88%;display: flex; flex-direction: row; align-items: center;margin-left: 10px;">
-							<view style="font-weight: bold;width: 20vw;color: white;">18.5-24.9</view>
-							<view style="font-weight: bold;width: 20vw;color: white;">正常体重</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">18.5-24.9</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">{{$t('正常体重')}}
+							</view>
 						</view>
 						<view
 							style="padding: 5px;background: #FC7F41; width: 88%;display: flex; flex-direction: row; align-items: center;margin-left: 10px;">
-							<view style="font-weight: bold;width: 20vw;color: white;">25.0-29.9</view>
-							<view style="font-weight: bold;width: 20vw;color: white;">超重</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">25.0-29.9</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">{{$t('超重')}}
+							</view>
 						</view>
 						<view
 							style="padding: 5px;background: #F55A5A; width: 88%;display: flex; flex-direction: row; align-items: center;margin-left: 10px;">
-							<view style="font-weight: bold;width: 20vw;color: white;">25.0-29.9</view>
-							<view style="font-weight: bold;width: 20vw;color: white;">一级肥胖</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">25.0-29.9</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">{{$t('一级肥胖')}}
+							</view>
 						</view>
 						<view
 							style="padding: 5px;background: #7A0101; width: 88%;display: flex; flex-direction: row; align-items: center;margin-left: 10px;">
-							<view style="font-weight: bold;width: 20vw;color: white;">25.0-29.9</view>
-							<view style="font-weight: bold;width: 20vw;color: white;">二级肥胖</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">25.0-29.9</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">{{$t('二级肥胖')}}
+							</view>
 						</view>
 						<view
 							style="padding: 5px;background: #333333; width: 88%;display: flex; flex-direction: row; align-items: center;margin-left: 10px;">
-							<view style="font-weight: bold;width: 20vw;color: white;">25.0-29.9</view>
-							<view style="font-weight: bold;width: 40vw;color: white;">三级肥胖或病态肥胖</view>
+							<view style="font-weight: 600;width: 20vw;font-size: 8px;color: white;">25.0-29.9</view>
+							<view style="font-weight: 600;width: 40vw;font-size: 8px;color: white;">
+								{{$t('三级肥胖或病态肥胖')}}
+							</view>
 						</view>
 					</view>
 					<button @tap="knowe1()"
-						style="margin: 40px 50px 20px 50px;border-radius: 20px;background: #3298F7;color: white;">{{$t('BDSBitem.title_8')}}</button>
+						style="width: 120px; height: 48px; border-radius: 100px;background: #3298F7;color: white;display: flex;justify-content: center;align-items: center;">{{$t('知道了')}}</button>
 				</view>
 			</uni-popup>
 		</view>
-
 		<!-- 血氧 -->
 		<view>
 			<uni-popup ref="popup2" :mask-click="false">
-				<view style="border-radius: 20px;background:#fff;padding-bottom: 20px;width: 280px;text-align: center;">
-					<view>
-						<view style="font-weight: bold;padding-top: 20px;font-size: 16px;">血氧分类</view>
+				<view
+					style="background: #FFFFFF; border-radius: 24px; width: 90vw; padding-bottom: 20px;  margin: 0 10vw 0 10vw;">
+					<view style="padding: 20px; ">
+						<view style="font-weight: bold;padding-top: 20px;font-size: 16px; text-align: center;">
+							{{$t('血氧分类')}}
+						</view>
 						<view
 							style="color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
 							<view style="width: 90px;display: flex;justify-content: flex-end;">95%</view>
@@ -452,29 +636,28 @@
 						</view>
 						<view
 							style="color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
-							<view style="width: 80px;height: 10px;">偏低</view>
-							<view style="width: 80px;height: 10px;">正常</view>
-							<view style="width: 80px;height: 10px;">偏高</view>
+							<view style="width: 80px;height: 10px;">{{$t('偏低')}}</view>
+							<view style="width: 80px;height: 10px;">{{$t('正常')}}</view>
+							<view style="width: 80px;height: 10px;">{{$t('偏高')}}</view>
 						</view>
 						<view
 							style="padding: 10px; color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
-							1.检测注意：情绪激动、憋气或检测中的不规范处理均可能会导致动脉血氧饱和度结果不准确
+							{{$t('血氧1')}}
 						</view>
 						<view
 							style="padding: 10px; color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
-							2.偏高提示：动脉血氧饱和度>98%，提示若当机体摄入氧浓度过高，一般没有临床意义。在接受高浓度吸氧、高压氧治疗的人群，动脉血氧饱和度可接近100%。
+							{{$t('血氧2')}}
 						</view>
 						<view
 							style="padding: 10px; color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
-							3.偏低提示：动脉血氧饱和度&lt;90%，需考虑机体存在缺氧的可能，提示机体存在低氧血症。
+							{{$t('血氧3')}}
 						</view>
 					</view>
 					<button @tap="knowe2()"
-						style="margin: 40px 50px 20px 50px;border-radius: 20px;background: #3298F7;color: white;">{{$t('BDSBitem.title_8')}}</button>
+						style="width: 120px; height:48px; display: flex;justify-content: center;align-items: center; border-radius: 100px;background: #3298F7;color: white;">{{$t('知道了')}}</button>
 				</view>
 			</uni-popup>
 		</view>
-
 		<!--体脂秤首页滑动-->
 		<view>
 			<uni-popup ref="tihzi_popup_hd" :mask-click="false">
@@ -483,14 +666,14 @@
 						<view @click="hd_closess()">✖</view>
 						<view style=" margin-left: 50px;">
 							<text @click="dataclick1()">{{birthday1}}</text>
-							<uni-icons type="bottom" size="16"></uni-icons>
+							<uni-icons type="bottom" size="16"></uni-icons>f
 						</view>
-						<view style="color: #3298F7;" @click="sdsr()">{{$t('shouye_item.title_22')}}</view>
+						<view style="color: #3298F7;" @click="sdsr()">{{$t('手动输入')}}</view>
 					</view>
 					<scroll-view scroll-y="true" class="scroll-Y">
 						<view>
 							<view style="display: flex;justify-content: space-between;margin-top: 10px;">
-								<view class="title_select_ruler">{{$t('shouye_item.title_12')}}</view>
+								<view class="title_select_ruler">{{$t('胸围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{xw_value}}</view>
 									<text style="margin-left: 5px;">cm</text>
@@ -502,7 +685,7 @@
 									:defaultValue="1000" @change="xw_handleChange"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
-								<view class="title_select_ruler">{{$t('shouye_item.title_13')}}</view>
+								<view class="title_select_ruler">{{$t('腰围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{yw_value}}</view>
 									<text style="margin-left: 5px;">cm</text>
@@ -514,7 +697,7 @@
 									:defaultValue="1000" @change="yw_handleChange"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
-								<view class="title_select_ruler">{{$t('shouye_item.title_14')}}</view>
+								<view class="title_select_ruler">{{$t('臀围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{tw_value}}</view>
 									<text style="margin-left: 5px;">cm</text>
@@ -526,7 +709,7 @@
 									:defaultValue="1000" @change="tw_handleChange"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
-								<view class="title_select_ruler">{{$t('shouye_item.title_15')}}</view>
+								<view class="title_select_ruler">{{$t('上臂围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{stw_value}}</view>
 									<text style="margin-left: 5px;">cm</text>
@@ -538,7 +721,7 @@
 									:defaultValue="1000" @change="stw_handleChange"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
-								<view class="title_select_ruler">{{$t('shouye_item.title_16')}}</view>
+								<view class="title_select_ruler">{{$t('大腿围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{dtw_value}}</view>
 									<text style="margin-left: 5px;">cm</text>
@@ -550,7 +733,7 @@
 									:defaultValue="1000" @change="dtw_handleChange"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
-								<view class="title_select_ruler">{{$t('shouye_item.title_17')}}</view>
+								<view class="title_select_ruler">{{$t('小腿围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{xtw_value}}</view>
 									<text style="margin-left: 5px;">cm</text>
@@ -563,12 +746,11 @@
 							</view>
 						</view>
 						<button @tap="select_ruler()"
-							style="margin: 40px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('gongxiangitem.title_29')}}</button>
+							style="margin: 40px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('确认')}}</button>
 					</scroll-view>
 				</view>
 			</uni-popup>
 		</view>
-
 		<view>
 			<uni-popup ref="qs_popup" :mask-click="true">
 				<view style="border-radius: 20px;background:#fff; padding-bottom: 10px;align-items: center;">
@@ -584,31 +766,28 @@
 					<view style="padding: 10px;width: 80vw;">
 						<view
 							style="margin:0 20px 0 20px; display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="shuzhangya" :placeholder="$t('qushiitem.title_5')"
+							<input type="number" v-model="shousuoya" :placeholder="$t('请输入收缩压')"
 								style="text-align: center;" />
-							<text style="margin-left: 5px;">mmHg</text>
+							<text style="margin-left: 5px;">{{Blood}}</text>
 						</view>
 						<view
 							style="margin:20px 20px 0 20px; display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="shousuoya" :placeholder="$t('qushiitem.title_4')"
+							<input type="number" v-model="shuzhangya" :placeholder="$t('请输入舒张压')"
 								style="text-align: center;" />
-							<text style="margin-left: 5px;">mmHg</text>
+							<text style="margin-left: 5px;">{{Blood}}</text>
 						</view>
 						<view
 							style="margin:20px 20px 0 20px; display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="maibo" :placeholder="$t('qushiitem.title_6')"
+							<input type="number" v-model="maibo" :placeholder="$t('请输入脉搏')"
 								style="text-align: center;" />
-							<text style="margin-left: 5px;">BMP</text>
+							<text style="margin-left: 5px;">BPM</text>
 						</view>
 
 					</view>
-					<button @tap="truesss()"
-						style="margin: 20px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">确
-						认</button>
+					<button class="buttonstylesds" @tap="truesss()">{{$t('确认')}}</button>
 				</view>
 			</uni-popup>
 		</view>
-
 		<!-- 体脂秤首页手动 -->
 		<view>
 			<uni-popup ref="tihzi_popup_sd" :mask-click="false">
@@ -619,57 +798,55 @@
 							<text @click="dataclick()">{{birthday}}</text>
 							<uni-icons type="bottom" size="16"></uni-icons>
 						</view>
-						<view style="color: #3298F7;" @click="hdsr()">{{$t('shouye_item.title_23')}}</view>
+						<view style="color: #3298F7;" @click="hdsr()">{{$t('滑动输入')}}</view>
 					</view>
 					<scroll-view scroll-y="true" class="scroll-Y">
 						<view style="padding-bottom: 10px;align-items: center;">
 							<view style="padding: 10px;">
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-									<input type="number" v-model="xiongwei" :placeholder="$t('shouye_item.title_24')"
+									<input type="number" v-model="xiongwei" :placeholder="$t('请输入胸围')"
 										style="text-align: center;width: 80vw;" />
 									<text>cm</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
-									<input type="number" v-model="yaowei" :placeholder="$t('shouye_item.title_25')"
+									<input type="number" v-model="yaowei" :placeholder="$t('请输入腰围')"
 										style="text-align: center;width: 80vw;" />
 									<text>cm</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
-									<input type="number" v-model="tunwei" :placeholder="$t('shouye_item.title_26')"
+									<input type="number" v-model="tunwei" :placeholder="$t('请输入臀围')"
 										style="text-align: center;width: 80vw;" />
 									<text>cm</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
-									<input type="number" v-model="shangtunwei" :placeholder="$t('shouye_item.title_27')"
+									<input type="number" v-model="shangtunwei" :placeholder="$t('请输入上臂围')"
 										style="text-align: center;width: 80vw;" />
 									<text>cm</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
-									<input type="number" v-model="datuiwei" :placeholder="$t('shouye_item.title_28')"
+									<input type="number" v-model="datuiwei" :placeholder="$t('请输入大腿围')"
 										style="text-align: center;width: 80vw;" />
 									<text>cm</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
-									<input type="number" v-model="xiaotuiwei" :placeholder="$t('shouye_item.title_29')"
+									<input type="number" v-model="xiaotuiwei" :placeholder="$t('请输入小腿围')"
 										style="text-align: center;width: 80vw;" />
 									<text>cm</text>
 								</view>
-
 							</view>
 							<button @tap="popup_sd()"
-								style="margin: 40px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('gongxiangitem.title_29')}}</button>
+								style="margin: 40px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('确认')}}</button>
 						</view>
 					</scroll-view>
 				</view>
 			</uni-popup>
 		</view>
-
 		<!-- 记体重popup -->
 		<view>
 			<uni-popup ref="tizhong_popup" :mask-click="false">
@@ -693,18 +870,16 @@
 					<view style="padding: 20px;width: 75vw;">
 						<view
 							style="display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="tizhong" :placeholder="$t('zhuceitem.toast_9')"
+							<input type="number" v-model="tizhong" :placeholder="$t('请输入体重')"
 								style="text-align: center;width: 80vw;" />
 							<text>kg</text>
 						</view>
 					</view>
 					<button @tap="jitizhong_tc()"
-						style="margin: 40px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('gongxiangitem.title_29')}}</button>
+						style="margin: 40px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('确认')}}</button>
 				</view>
 			</uni-popup>
 		</view>
-
-
 		<!-- 目标体重弹窗 -->
 		<view>
 			<uni-popup ref="mubiao_popup" :mask-click="false">
@@ -715,171 +890,211 @@
 					<view style="padding: 20px;width: 75vw;">
 						<view
 							style="display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="mubiao" placeholder="请输入目标体重"
+							<input type="number" v-model="mubiao" :placeholder="$t('请输入目标体重')"
 								style="text-align: center;width: 80vw;" />
 							<text>kg</text>
 						</view>
 					</view>
 					<button @tap="mubiao_weight()"
-						style="margin: 20px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('gongxiangitem.title_29')}}</button>
+						style="margin: 20px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t('确认')}}</button>
 				</view>
 			</uni-popup>
 		</view>
-
 		<view>
 			<yt-dateTimePicker ref="myPicker" @submit="handleSubmit" :start-year="2000" :end-year="2099"
 				:time-init="datass" :time-hide="[true, true, true, true, true, false]"
-				:time-label="[$t('shouye_item.title_30'), $t('shouye_item.title_31'), $t('shouye_item.title_32'), $t('shouye_item.title_33'), $t('shouye_item.title_34'), $t('shouye_item.title_35')]" />
+				:time-label="[$t('年'), $t('月'), $t('日'), $t('时'), $t('分'), $t('周')]" />
 		</view>
 		<view>
 			<yt-dateTimePicker ref="myPicker1" @submit="handleSubmit1" :start-year="2000" :end-year="2099"
 				:time-init="datass" :time-hide="[true, true, true, true, true, false]"
-				:time-label="[$t('shouye_item.title_30'), $t('shouye_item.title_31'), $t('shouye_item.title_32'), $t('shouye_item.title_33'), $t('shouye_item.title_34'), $t('shouye_item.title_35')]" />
+				:time-label="[$t('年'), $t('月'), $t('日'), $t('时'), $t('分'), $t('周')]" />
 		</view>
 	</view>
 </template>
-<script>
+<script setup>
+	const systemInfo = uni.getSystemInfoSync();
+	const windowHeight = systemInfo.windowHeight;
 	import BasicDrag from '@/components/basic-drag/index.vue';
-
+	import BluetoothManager from '../../api/BluetoothManager.js';
+	import {
+		isInChinaByIP
+	} from 'pages/api/isInChinaByIP.js';
 	import {
 		mapState,
 		mapMutations
 	} from 'vuex'
-
 	export default {
 		components: {
 			BasicDrag
 		},
-
 		computed: {
-			...mapState(['info']),
+			...mapState(['info', 'getpendinglenth', 'acktypes', 'xueyehuilian', 'xueyjitypesd']),
 		},
-
 		data() {
 			return {
+				Blood: uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa",
+				bluetoothManager: new BluetoothManager(),
+				stepsData: {}, // 用于存储每天步数的对象
+				timer: null, // 定时器变量
+				timertwslist: null,
+				screenHeight: windowHeight,
+				tabs: [this.$t("心血管"), this.$t("体重"), this.$t("情绪"), this.$t("运动")],
+				// swiper索引
+				currentIndex: 0,
+				scrollLeft: 0,
+				msg: true,
+				connectedDevices: {}, // 存储已连接设备的信息
+				deviceList: [], // 存储搜索到的设备列表
 				endtimesss: new Date().toISOString().slice(0, 10),
 				list: [{
 					bmi_show: false,
 					image: "../../../static/icons/1.png",
 					Step_number: "-",
-					title: "步数",
-					type_LX: "计步",
+					title: this.$t('步数'),
+					type_LX: this.$t('计步'),
 					Step_count: "-"
 				}, {
 					bmi_show: false,
 					image: "../../../static/icons/2.png",
 					Step_number: "-",
-					title: "身高",
+					title: this.$t('身高'),
 					type_LX: "cm",
 					Step_count: "-"
+				}, {
+					BMI_TF: 0,
+					BMI_ys: "-",
+					bmi_show: true,
+					image: "../../../static/page_icon/10.png",
+					Step_number: "-",
+					title: this.$t('血氧'),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/9.png",
+					Step_number: "-",
+					title: this.$t("压力"),
+					type_LX: "kPa",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/9.png",
+					Step_number: "-",
+					title: this.$t("体温"),
+					type_LX: "℃",
+					Step_count: "-",
+					checkbox: false,
 				}],
-
 				list2: [{
-						image: "../../../static/icons/1.png",
-						Step_number: "-",
-						title: "步数",
-						type_LX: "计步",
-						Step_count: "-"
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/3.png",
-						Step_number: "-",
-						title: "骨含BM",
-						type_LX: "kg",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/7.png",
-						Step_number: "-",
-						title: "肌肉量",
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/4.png",
-						Step_number: "-",
-						title: "蛋白率",
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/5.jpg",
-						Step_number: "-",
-						title: "水分",
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/8.png",
-						Step_number: "-",
-						title: "内脏脂肪指数",
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/6.png",
-						Step_number: "-",
-						title: "脂肪率",
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/1.png",
-						Step_number: "-",
-						title: "基础代谢率",
-						type_LX: "KCAL",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/2.png",
-						Step_number: "-",
-						title: "皮下脂肪率",
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/9.png",
-						Step_number: "-",
-						title: "身体年龄",
-						type_LX: "岁",
-						Step_count: "-",
-						checkbox: false,
-					}
-				],
-
+					image: "../../../static/icons/1.png",
+					Step_number: "0",
+					title: this.$t('步数'),
+					type_LX: this.$t('计步'),
+					Step_count: "0"
+				}, {
+					bmi_show: false,
+					image: "../../../static/icons/2.png",
+					Step_number: "-",
+					title: this.$t('身高'),
+					type_LX: "cm",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					BMI_TF: 0,
+					BMI_ys: "-",
+					bmi_show: true,
+					image: "../../../static/icons/4.png",
+					Step_number: "-",
+					title: 'BMI',
+					type_LX: "kg/m²",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/3.png",
+					Step_number: "-",
+					title: this.$t("骨含量"),
+					type_LX: "kg",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/7.png",
+					Step_number: "-",
+					title: this.$t("肌肉量"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/4.png",
+					Step_number: "-",
+					title: this.$t("蛋白率"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/5.jpg",
+					Step_number: "-",
+					title: this.$t("水分"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/8.png",
+					Step_number: "-",
+					title: this.$t("内脏脂肪指数"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/6.png",
+					Step_number: "-",
+					title: this.$t("脂肪率"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/1.png",
+					Step_number: "-",
+					title: this.$t("基础代谢率"),
+					type_LX: "KCAL",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/2.png",
+					Step_number: "-",
+					title: this.$t("皮下脂肪率"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/9.png",
+					Step_number: "-",
+					title: this.$t("身体年龄"),
+					type_LX: this.$t("岁"),
+					Step_count: "-",
+					checkbox: false,
+				}],
 				show: true,
-				main_type: '',
 				fillOut: false,
 				Latest_weight: "-",
+				newweightKG: "KG",
 				Latest_date: "-",
 				Initial_weight: "--",
 				Target_weight: "-",
+				chuhsikg: "kg",
 				Step_number_1: "-",
 				Step_count_1: "-",
-				heat: "-",
-				heat_date: "-",
-				Height_1: '-',
-				Step_Height_1: "-",
-				BMI_ys_1: "正常",
-				BMI_1: "-",
-				Step_bmi_1: "-",
-				BMI_TF_1: 0,
 				Chest_circumference: "-",
 				waistline: "-",
 				Hip_circumference: "-",
@@ -893,58 +1108,15 @@
 				pulse: "-",
 				Step_number: "20000",
 				Step_count: "06/23",
-				Height: '173',
-				Step_height: "05/24",
-				Width: "73",
-				Step_width: "05/24",
 				bmi_show: true,
 				BMI_ys: "-",
 				BMI: "19.6",
-				Step_bmi: "05/24",
 				BMI_TF: 0,
-				title: 'uni-fab',
-				directionStr: '垂直',
-				horizontal: 'right',
-				vertical: 'bottom',
-				direction: 'horizontal',
-				pattern: {
-					// color: '#7A7E83',
-					color: "#000",
-					backgroundColor: '#fff',
-					selectedColor: '#007AFF',
-					buttonColor: '#007AFF',
-					iconColor: '#fff',
-				},
-				is_color_type: false,
-				content: [
-					// {
-					// iconPath: '/static/image.png',
-					// selectedIconPath: '/static/image-active.png',
-					// text: '相册',
-					// active: false
-					// },
-					// {
-					// 	iconPath: '/static/home.png',
-					// 	selectedIconPath: '/static/home-active.png',
-					// 	text: '首页',
-					// 	active: false
-					// },
-					// {
-					// 	iconPath: '/static/star.png',
-					// 	selectedIconPath: '/static/star-active.png',
-					// 	text: '收藏',
-					// 	active: false
-					// }
-				],
-
 				showTotal_date: new Date().toISOString().slice(5, 7) + "/" + new Date().toISOString().slice(8, 10),
-				birthday: this.$t('shouye_item.title_21'),
-				birthday1: this.$t('shouye_item.title_21'),
-				birthday2: this.$t('shouye_item.title_21'),
-
+				birthday: this.$t('今天'),
+				birthday1: this.$t('今天'),
+				birthday2: this.$t('今天'),
 				datass: new Date().toISOString(),
-
-
 				xw_value: "",
 				yw_value: "",
 				tw_value: "",
@@ -959,122 +1131,1903 @@
 				shangtunwei: "",
 				datuiwei: "",
 				xiaotuiwei: "",
-				aaa: true,
-				aaa2: true,
+				disabledsaaa: true,
+				disabledsaaa2: true,
 				binaji: true,
 				binaji2: true,
 				animation: '', // 动画样式
+				animation2: '', // 动画样式
 				button_show: false,
 				button_show2: false,
-
 				stepCount: 0, //步数
 				lastTime: 0, //上次更新时间
 				lastx: 0, //上次X轴细速度
 				lasty: 0, // 上杀r轴加速更
 				lastl: 0, // 上称Z釉加速度
-
 				delate_icon: false,
-
+				delate_icon2: false,
 				shousuoya: "",
 				shuzhangya: "",
 				maibo: "",
-				birthday1111: this.$t('shouye_item.title_21'),
+				birthday1111: this.$t('今天'),
 				localData: uni.getStorageSync("settept"),
+				loact: '',
+				arrrylist: [],
+				yali: '0',
+				yali_time: new Date().toISOString().slice(5, 7) + "/" + new Date().toISOString().slice(8, 10),
+				bushu: '--/--',
+				bushu_time: '--/--',
+				chartData: {
+					categories: [],
+					series: [{
+						name: this.$t("步数"),
+						data: []
+					}, ]
+				},
+				opts: {
+					color: ["#EE6666"],
+					padding: [15, 15, 0, 5],
+					enableScroll: false,
+					legend: {},
+					xAxis: {
+						disableGrid: true
+					},
+					yAxis: {
+						splitNumber: 5,
+						data: [{
+							min: 0,
+							max: 10000,
+						}]
+					},
+					extra: {
+						column: {
+							type: "group",
+							width: 30,
+							activeBgColor: "#000000",
+							activeBgOpacity: 0.08
+						}
+					}
+				},
+
+				tempBuffer: 0,
+				quotient: 0,
+				quotient1: 0,
+				dataBuffer: [],
+				Protocolsubcommand: '',
+				writeuuid: '',
+				xeuyejisn: '0',
+				xeuyejimac: '0',
+				shoubiaosn: '0',
+				shoubiaomac: '0',
+				timsdpad: null,
+				characteristicsCache: new Set(), // 用于记录已获取特征值的设备ID
+				connectedDevices: {}, // 用于记录已连接的设备
+				devicdsdmac: [],
+				devicdsdmac1: []
 			}
 		},
 
-		onBackPress() {
-			if (this.$refs.fab.isShow) {
-				this.$refs.fab.close()
-				return true
+
+		mounted() {
+			// 初始化时加载本地存储的数据
+			this.loadStepsFromStorage();
+			// 每天检查并保存步数数据
+			this.timer = setInterval(this.saveDailySteps, 24 * 60 * 60 * 1000); // 每24小时触发一次
+		},
+
+		beforeDestroy() {
+			// 清除定时器，避免内存泄漏
+			clearInterval(this.timer);
+		},
+
+		onHide() {
+			this.sethuilian(false);
+			if (this.timsdpad) {
+				clearInterval(this.timsdpad);
+				this.timsdpad = null;
 			}
-			return false
 		},
 
 		onShow() {
-			console.log("token:", uni.getStorageSync("token"))
 			let that = this
-			if (uni.getStorageSync("token") === "" || uni.getStorageSync("token") === undefined) {
-				uni.redirectTo({
-					url: "/pages/login/login_land"
-				})
-			} else {
-				that.getUserInfo()
-			}
+			that.sethuilian(true)
+			that.Blood = uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa"
+			isInChinaByIP().then(isInChina => {
+				that.loact = isInChina ? "境内" : "境外";
+				const token = uni.getStorageSync("token");
+				if (!token) {
+					uni.redirectTo({
+						url: "/pages/login/login_land"
+					});
+					return;
+				}
+				that.deviceList = undefined;
+				that.deviceLists = []
+				that.getUserInfo();
+			});
 		},
-
 		methods: {
-			...mapMutations(['getInfo']),
+			...mapMutations(['getInfo', 'setacktypes', 'setbanhua', 'sethuilian', 'setxueyjitypesd']),
 
-			getUserInfo() {
+			async initBluetooth() {
+				this.bluetoothManager = new BluetoothManager();
+				this.openBluetoothAdapter()
+			},
+
+			async disconnectAll(mac) {
+				this.bluetoothManager = new BluetoothManager();
+				this.bluetoothManager.disconnectDevice(mac)
+			},
+
+			// 加载本地存储的步数数据
+			loadStepsFromStorage() {
+				try {
+					const storedData = uni.getStorageSync("weeklySteps");
+					if (storedData) {
+						this.stepsData = JSON.parse(storedData);
+					}
+				} catch (e) {}
+			},
+			// 保存当天的步数数据到本地存储
+			saveDailySteps(bushu, bushu_time) {
+				const currentDate = bushu_time; // 当前日期，格式为 YYYY-MM-DD
+				const steps = bushu; // 获取当天步数
+				// 更新步数数据
+				this.stepsData[currentDate] = steps;
+				// 如果超过一周的数据，删除最早的一天数据
+				const dates = Object.keys(this.stepsData);
+				if (dates.length > 7) {
+					const earliestDate = dates.sort()[0];
+					delete this.stepsData[earliestDate];
+				}
+				// 保存到本地存储
+				try {
+					uni.setStorageSync("weeklySteps", JSON.stringify(this.stepsData));
+					// 按日期排序
+					const sortedDates = Object.keys(this.stepsData).sort();
+					const categories = sortedDates; // 日期数组
+					const seriesData = sortedDates.map(date => this.stepsData[date]); // 步数数组
+					this.chartData = {
+						categories: categories,
+						series: [{
+							name: this.$t("步数"),
+							data: seriesData
+						}]
+					};
+				} catch (e) {}
+			},
+
+			// 点击顶部tab切换
+			swtichSwiper(index) {
+				this.currentIndex = index
+				this.resetStates();
+				this.getUserInfo();
+				const token = uni.getStorageSync("token");
+				if (!token) {
+					uni.redirectTo({
+						url: "/pages/login/login_land"
+					});
+					return false;
+				}
+				return true;
+
+			},
+			swipeIndex(index) {
+				// 获得swiper切换后的current索引
+				this.currentIndex = index.detail.current;
+			},
+
+			resetStates() {
+				this.deviceList = [];
+				this.deviceLists = [];
+				this.binaji = true;
+				this.animation = '';
+				this.button_show = false;
+				this.delate_icon = false;
+				this.disabledsaaa = true;
+				this.binaji2 = true;
+				this.animation2 = '';
+				this.button_show2 = false;
+				this.delate_icon2 = false;
+				this.disabledsaaa2 = true;
+			},
+
+			//帮助
+			helperclick() {
+				uni.navigateTo({
+					url: "/pages/tabBar/my/Help_center"
+				})
+			},
+
+			async openBluetoothAdapter() {
 				let that = this
-				uni.request({
-					url: that.$url_getInfo,
-					method: 'GET',
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				uni.openBluetoothAdapter({
+					success(openBluetoothAdapter) {
+						// 修改后的定时器代码
+						if (Vue.prototype.$globalTimers.heartbeatInterval) {
+							clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+							Vue.prototype.$globalTimers.heartbeatInterval = null;
+						}
+						Vue.prototype.$globalTimers.heartbeatInterval = setInterval(() => {
+							that.onBluetoothDeviceFound()
+						}, 500);
 					},
-					success: function(res) {
-						console.log("获取用户信息成功:", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								that.Initial_weight = res.data.data.weight
-								if (res.data.data.phonenumber === null || res.data.data.phonenumber === "") {
-									uni.reLaunch({
-										url: '../../login/Force_binding_phone'
-									})
-								} else {
-									that.getInfo(res.data.data)
-									that.queryDevices()
-									that.getUserInfo1()
+					fail: function(err) {
+						if (Vue.prototype.$globalTimers.heartbeatInterval) {
+							clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+							Vue.prototype.$globalTimers.heartbeatInterval = null;
+						}
+						Vue.prototype.$globalTimers.heartbeatInterval = setInterval(() => {
+							that.onBluetoothDeviceFound()
+						}, 500);
+					}
+				})
+			},
+
+			openBLE() {
+				if (systemInfo.platform === "android") {
+					var main = plus.android.runtimeMainActivity();
+					var Intent = plus.android.importClass("android.content.Intent");
+					var mIntent = new Intent('android.settings.BLUETOOTH_SETTINGS');
+					main.startActivity(mIntent);
+				} else if (systemInfo.platform === "ios") {
+					plus.runtime.launchApplication({
+						action: 'App-Prefs:root=BLE'
+					}, function(e) {});
+				}
+			},
+
+			async onBluetoothDeviceFound() {
+				let uniqueArr = this.deviceList.filter((item, index) => this.deviceList.indexOf(item) === index);
+				let uniqueArr1 = this.devicdsdmac.filter((item, index) => this.devicdsdmac.indexOf(item) === index);
+				let uniqueArr2 = this.devicdsdmac1.filter((item, index) => this.devicdsdmac1.indexOf(item) === index);
+				if (uniqueArr1) {
+					this.connectMultipleDevices(uniqueArr1)
+				}
+				setTimeout(() => {
+					if (uniqueArr2) {
+						this.connectMultipleDevices(uniqueArr2)
+					}
+				}, 3000)
+			},
+
+			async connectMultipleDevices(uniqueArr) {
+				let that = this
+				const deviceIds = uniqueArr; // 替换为实际的设备 ID
+				for (const deviceId of deviceIds) {
+					try {
+						that.bluetoothManager.connectDevice(deviceId);
+					} catch (error) {
+						continue
+					}
+				}
+				that.connectedDevices = that.bluetoothManager.connectedDevices;
+				// console.log(that.connectedDevices)
+				// 解析 JSON 数据为数组
+				const devicesArray = Object.values(that.connectedDevices);
+				that.geturl_queryDevices(devicesArray)
+			},
+
+			geturl_queryDevices(devicesArray) {
+				this.$post(this.$url_queryDevices, {}, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8'
+				}).then(res => {
+					if (res.code === 200) {
+						for (let rowIndex = 0; rowIndex < res.rows.length; rowIndex++) {
+							const row = res.rows[rowIndex];
+							for (let deviceIndex = 0; deviceIndex < devicesArray
+								.length; deviceIndex++) {
+								const device = devicesArray[deviceIndex];
+								// 只有当设备ID匹配时才继续处理
+								if (device.deviceId !== row.mac) continue;
+								// 设置MTU的条件可以合并
+								if (device.services.length === 1) {
+									uni.setBLEMTU({
+										deviceId: device.deviceId,
+										mtu: 512,
+									});
 								}
-
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
+								if (row.deviceModelId === "10005") {
+									this.xeuyejisn = row.deviceSn
+									this.xeuyejimac = device.deviceId
+								}
+								if (row.deviceModelId === "30000") {
+									this.shoubiaosn = row.deviceSn
+									this.shoubiaomac = device.deviceId
+								}
+								// 根据服务数量选择不同的处理方式
+								switch (device.services.length) {
+									case 1:
+										if (this.xueyehuilian == true) {
+											uni.setBLEMTU({
+												deviceId: device.deviceId,
+												mtu: 512,
+											});
+											this.getBLEDeviceCharacteristics1(device.deviceId, device
+												.services[0].uuid, row.deviceSn);
+											this.xeuyejisn = row.deviceSn
+											this.xeuyejimac = device.deviceId
+										}
+										break;
+									case 2:
+										this.getBLEDeviceCharacteristics2(device.deviceId, device
+											.services[
+												1].uuid, row.deviceSn);
+										break;
+									case 3:
+										this.getBLEDeviceCharacteristics3(device.deviceId, device
+											.services[1].uuid, row.deviceSn);
+										break;
+									case 4:
+										this.getBLEDeviceCharacteristics2(device.deviceId, device
+											.services[
+												3].uuid, row.deviceSn);
+										break;
+								}
+								break;
 							}
-						} else {
-							console.log("获取数据错误")
 						}
-					},
-					fail(err) {
-						console.log(err)
 					}
 				})
 			},
 
-			getUserInfo1() {
+
+			//获取蓝牙外围设备的特征值
+			getBLEDeviceCharacteristics1(deviceId, serviceId, deviceSn) {
 				let that = this
-				uni.request({
-					url: that.$url_getInfo,
-					method: 'GET',
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-					},
-					success: function(res) {
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								that.Initial_weight = res.data.data.weight
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
+				uni.getBLEDeviceCharacteristics({
+					deviceId: deviceId,
+					serviceId: serviceId,
+					success: (res) => {
+						console.log("获取蓝牙设备某个服务中所有特征值(characteristic)1", res)
+						for (let i = 0; res.characteristics.length > i; i++) {
+							let item = res.characteristics[i]
+							//蓝牙消息通知
+							if (item.properties.notify) {
+								that.notifyUuid = res.characteristics[i].uuid
+								uni.notifyBLECharacteristicValueChange({
+									state: true, // 启用 notify 功能
+									deviceId: deviceId,
+									serviceId: serviceId,
+									characteristicId: item.uuid,
+									success: (notifyres) => {
+										this.$nextTick(() => {
+											console.log(that.xueyehuilian)
+										});
+										that.onBLECharacteristicValueChange1(deviceId,
+											serviceId, deviceSn);
+									},
+									fail: (notifyerr) => {}
 								})
 							}
-						} else {
-							console.log("获取数据错误")
 						}
 					},
-					fail(err) {
-						console.log(err)
+					fail(erroe) {
+						console.log("获取蓝牙设备某个服务中所有特征值失败111", erroe)
+						if (Vue.prototype.$globalTimers.heartbeatInterval) {
+							clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+							Vue.prototype.$globalTimers.heartbeatInterval = null;
+						}
+						that.deviceLists = undefined
+						that.disconnectAll(deviceId)
+						that.deviceList = []
+						that.getUserInfo()
+					}
+				})
+			},
+			// 获取蓝牙外围设备的特征值
+			getBLEDeviceCharacteristics3(deviceId, serviceId, deviceSn) {
+				let that = this
+				that.deviceLists = []
+				// 检查是否已经获取过该设备的特征值
+				if (that.characteristicsCache.has(deviceId)) {
+					uni.openBluetoothAdapter({
+						success: () => {
+							uni.onBLEConnectionStateChange(function(change) {
+								if (!change.connected) {
+									console.log('蓝牙设备已断开');
+									if (that.characteristicsCache.has(deviceId)) {
+										console.log(`清除设备 ${deviceId} 的特征值缓存`);
+										that.characteristicsCache.delete(deviceId);
+									}
+									that.deviceLists = that.deviceList.filter(deviceIds =>
+										deviceIds !== deviceId);
+									console.log(that.deviceLists)
+
+									setTimeout(() => {
+										that.deviceList = [];
+										that.setacktypes("0")
+										that.queryDevices()
+									})
+									const plugin = uni.requireNativePlugin(
+										"CBConnectPlugin-CBCModule");
+									plugin.connectPeripheral({
+										identifier: deviceId
+									}, (result, keepAlive) => {
+										console.log(result)
+									});
+									// 在这里处理设备断开后的逻辑，例如尝试重新连接等
+								}
+							});
+						},
+						fail: (err) => {
+							console.error('蓝牙适配器初始化失败', err);
+							if (that.characteristicsCache.has(deviceId)) {
+								console.log(`清除设备 ${deviceId} 的特征值缓存`);
+								that.characteristicsCache.delete(deviceId);
+							}
+							const plugin = uni.requireNativePlugin("CBConnectPlugin-CBCModule");
+							plugin.connectPeripheral({
+								identifier: deviceId
+							}, (result, keepAlive) => {
+								console.log(result)
+							});
+						}
+					});
+					return;
+				}
+				uni.getBLEDeviceCharacteristics({
+					deviceId: deviceId,
+					serviceId: serviceId,
+					success: (res) => {
+						console.log("获取蓝牙设备某个服务中所有特征值成功3333", that.acktypes)
+						const plugin = uni.requireNativePlugin("CBConnectPlugin-CBCModule");
+						plugin.connectPeripheral({
+							identifier: deviceId
+						}, (result, keepAlive) => {});
+						that.characteristicsCache.add(deviceId); // 缓存设备ID，
+						for (let i = 0; res.characteristics.length > i; i++) {
+							let item = res.characteristics[i]
+							if (that.acktypes === "0") {
+								if (item.properties.write) {
+									const buffer = that.toArrayBuffer("e00006e8000000000101");
+									uni.writeBLECharacteristicValue({
+										deviceId: deviceId,
+										serviceId: serviceId,
+										characteristicId: item.uuid,
+										writeType: "write",
+										value: buffer,
+										complete(complete) {
+											console.log("发送命令成功", complete);
+											that.writeuuid = item.uuid
+											const plugin = uni.requireNativePlugin(
+												"CBConnectPlugin-CBCModule");
+											plugin.connectPeripheral({
+												identifier: deviceId
+											}, (result, keepAlive) => {
+												console.log(result)
+											});
+										}
+									});
+									that.setacktypes("1")
+								}
+							}
+							if (item.properties.notify) {
+								uni.setStorageSync("landeviceId", deviceId)
+								uni.setStorageSync("lanserviceId", serviceId)
+								uni.setStorageSync("landcharacteristicId", item.uuid)
+								that.notifyUuid = res.characteristics[i].uuid
+								uni.notifyBLECharacteristicValueChange({
+									state: true, // 启用 notify 功能
+									deviceId: deviceId,
+									serviceId: serviceId,
+									characteristicId: item.uuid,
+									success: (notifyres) => {
+										that.writeuuid = item.uuid
+										that.onBLECharacteristicValueChange3(
+											deviceId, serviceId, deviceSn);
+									},
+									fail: (notifyerr) => {}
+								})
+							}
+						}
+					},
+					fail(res) {
+						console.error('获取蓝牙设备某个服务中所有特征值失败222', res)
+						if (Vue.prototype.$globalTimers.heartbeatInterval) {
+							clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+							Vue.prototype.$globalTimers.heartbeatInterval = null;
+						}
+						that.deviceLists = that.deviceList.filter(deviceIds =>
+							deviceIds !== deviceId);
+
+						setTimeout(() => {
+							that.deviceList = []
+							that.disconnectAll(deviceId)
+							that.setacktypes("0")
+							that.getUserInfo()
+						})
 					}
 				})
 			},
 
+			// 16进制转2进制
+			hexToBinary(hexString) {
+				let binaryString = '';
+				for (let i = 0; i < hexString.length; i++) {
+					// 将每个16进制字符转换为4位二进制
+					const binaryChar = parseInt(hexString[i], 16).toString(2).padStart(4, '0');
+					binaryString += binaryChar;
+				}
+				return binaryString;
+			},
+
+			onBLECharacteristicValueChange1(deviceId, serviceId, deviceSn) {
+				uni.onBLECharacteristicValueChange(async (res) => {
+					try {
+						let hexData = this.ab2hex(res.value)
+						let asciiString = this.hexToAscii(hexData)
+						if (asciiString === "error") {
+							uni.closeBLEConnection({
+								deviceId: deviceId,
+								success() {},
+								fail() {}
+							})
+							this.disconnectAll(deviceId)
+							this.deviceList = []
+							this.getUserInfo()
+							return
+						} else if (hexData.length === 388 &&
+							!hexData.startsWith("0e") &&
+							!hexData.startsWith("e0") &&
+							this.xueyehuilian &&
+							this.xeuyejisn !== "0" &&
+							this.xeuyejimac !== "0") {
+							let parsedData = this.parseQueryString(asciiString);
+							this.jakoblife_fat_scale(deviceId, parsedData, deviceSn)
+							this.resetDataState();
+							return
+						} else {
+							// 添加到数据缓冲区
+							this.dataBuffer.push(hexData);
+							// 解析协议头和命令
+							const protocolId = hexData.slice(0, 2);
+							const cmd = hexData.slice(8, 10);
+							// 根据协议类型处理
+							if (protocolId === "e0") {
+								switch (cmd) {
+									case "00":
+										await this.handleCMD00(hexData, this.shoubiaomac,
+											"81EEA001-E735-49EC-8A11-7E32CAE1E14E");
+										break;
+									case "04":
+										await this.handleCMD04(hexData, this.shoubiaomac,
+											"81EEA001-E735-49EC-8A11-7E32CAE1E14E", this
+											.shoubiaosn);
+										break;
+									case "03":
+										this.handleCMD03(hexData);
+										break;
+									case "11":
+										this.resetDataState();
+										break;
+									default:
+										console.log("未知CMD:", cmd);
+								}
+							} else if (protocolId === "0e") {
+								this.resetDataState();
+							}
+							// 检查并处理完整数据集
+							this.processCompleteDataSets(this.shoubiaomac, this.shoubiaosn)
+						}
+					} catch (error) {
+						this.resetDataState();
+					}
+				})
+			},
+
+
+			onBLECharacteristicValueChange3(deviceId, serviceId, deviceSn) {
+				let that = this;
+				this.resetDataState();
+				// 监听蓝牙特征值变化
+				uni.onBLECharacteristicValueChange(async (res) => {
+					try {
+						// 转换数据为十六进制字符串
+						let hexData = that.ab2hex(res.value);
+						let asciiString = that.hexToAscii(hexData)
+						// 调试输出
+						// console.log(`Received packet: ${hexData}`);
+						// 处理特殊断开请求包
+						if (asciiString === "error") {
+							that.handleDisconnectRequest(deviceId);
+							return;
+						}
+						// 处理慧联设备数据
+						if (hexData.length === 388 &&
+							!hexData.startsWith("0e") &&
+							!hexData.startsWith("e0") &&
+							that.xueyehuilian &&
+							that.xeuyejisn !== "0" &&
+							that.xeuyejimac !== "0") {
+							await that.handleHuiLianDeviceData(res.value, that.xeuyejisn, that
+								.xeuyejimac);
+							return;
+						}
+						// 添加到数据缓冲区
+						that.dataBuffer.push(hexData);
+						// 解析协议头和命令
+						const protocolId = hexData.slice(0, 2);
+						const cmd = hexData.slice(8, 10);
+						// 根据协议类型处理
+						if (protocolId === "e0") {
+							switch (cmd) {
+								case "00":
+									await that.handleCMD00(hexData, deviceId, serviceId);
+									break;
+								case "04":
+									await that.handleCMD04(hexData, deviceId, serviceId, deviceSn);
+									break;
+								case "03":
+									that.handleCMD03(hexData);
+									break;
+								case "11":
+									that.resetDataState();
+									break;
+								default:
+									console.log("未知CMD:", cmd);
+							}
+						} else if (protocolId === "0e") {
+							that.resetDataState();
+						}
+						// 检查并处理完整数据集
+						that.processCompleteDataSets(deviceId, deviceSn);
+					} catch (error) {
+						that.resetDataState();
+					}
+				});
+			},
+
+
+			// 处理断开连接请求
+			handleDisconnectRequest(deviceId) {
+				uni.closeBLEConnection({
+					deviceId
+				});
+				this.disconnectAll(deviceId);
+				this.queryDevices();
+				this.resetDataState();
+			},
+
+			// 处理慧联设备数据
+			async handleHuiLianDeviceData(arrayBuffer, deviceSn, deviceMAC) {
+				const asciiString = this.hexToAscii(this.ab2hex(arrayBuffer));
+				const parsedData = this.parseQueryString(asciiString);
+				await this.jakoblife_fat_scale(deviceSn, parsedData, deviceSn);
+				this.resetDataState();
+			},
+			// 处理完整的数据集
+			processCompleteDataSets(deviceId, deviceSn) {
+				// 情况1：同时有血压和心率数据
+				if (this.quotient > 0 && this.quotient1 > 0 &&
+					this.dataBuffer.length === this.quotient + this.quotient1) {
+					this.processCombinedBloodPressureAndHeartRate(deviceId, deviceSn);
+				}
+				// 情况2：只有心率/血氧数据
+				else if (this.quotient === 0 && this.quotient1 > 0 &&
+					this.dataBuffer.length === this.quotient1) {
+					this.processSingleDataType(deviceId, deviceSn);
+				}
+			},
+
+			// 处理单一类型数据（心率或血氧）
+			processSingleDataType(deviceId, deviceSn) {
+				let that = this;
+				// 合并数据
+				const allData = that.formatData(that.dataBuffer);
+				console.log(allData)
+				// 解析协议数据
+				const protocolData = that.parseProtocolData(allData);
+				console.log(protocolData)
+				// 根据子命令类型处理不同数据
+				switch (protocolData.Protocolsubcommand) {
+					case "00": // 心率
+						const heartRateValue = that.parseHeartRateData(protocolData.Covmamlueand);
+						that.jakoblife_fat_scale22(deviceId, "", "", heartRateValue.diastolic, deviceSn);
+						break;
+					case "02": // 血氧
+						const oxygenValue = that.parseOxygenData(protocolData.Covmamlueand);
+						that.storeOxygenData(oxygenValue);
+						that.jakoblife_fat_scale3(deviceId, oxygenValue, deviceSn, "血氧");
+						break;
+				}
+				// 重置状态
+				that.resetDataState();
+			},
+
+			// 处理CMD00命令
+			async handleCMD00(hexData, deviceId, serviceId) {
+				await this.sendack(hexData, deviceId, serviceId, this.writeuuid);
+				await this.calculateChecksumsss(hexData, deviceId, serviceId, this.writeuuid);
+				this.resetDataState();
+			},
+
+			// 处理CMD04命令（步数）
+			async handleCMD04(hexData, deviceId, serviceId, deviceSn) {
+				await this.sendack(hexData, deviceId, serviceId, this.writeuuid);
+				const step = hexData.slice(18, 26); // 步数数据位置
+				const stepCount = parseInt(step, 16);
+				uni.setStorageSync("settept1", stepCount);
+				await this.jakoblife_fat_scale3(deviceId, stepCount, deviceSn, "步数");
+				this.resetDataState();
+			},
+
+			// 处理CMD03命令
+			handleCMD03(hexData) {
+				const subCmd = hexData.slice(12, 14);
+				const lengthHex = hexData.slice(4, 6); // 长度字段的后1字节
+				const dataLength = parseInt(lengthHex, 16);
+				// 完整包长度 = 协议头(3字节) + 数据长度(包含校验和等)
+				const fullPacketLength = dataLength + 3;
+				// 根据子命令类型计算分包数量
+				switch (subCmd) {
+					case "01": // 血压
+						this.quotient = this.calculateQuotient(fullPacketLength, 80); // 每个分包40字节
+						// console.log(`血压数据需要分包: ${this.quotient}包`);
+						break;
+					case "00": // 心率
+					case "02": // 血氧
+						this.quotient1 = this.calculateQuotient(fullPacketLength, 80); // 每个分包40字节
+						// console.log(`心率/血氧数据需要分包: ${this.quotient1}包`);
+						break;
+					default:
+						console.warn("未知子命令:", subCmd);
+						this.resetDataState();
+				}
+			},
+
+			// 处理合并的血压和心率数据
+			processCombinedBloodPressureAndHeartRate(deviceId, deviceSn) {
+				// 分离血压和心率数据包
+				const [bpPackets, hrPackets] = this.splitPacketsByHeader();
+				// 格式化数据
+				const bpData = this.formatData(bpPackets);
+				const hrData = this.formatData(hrPackets);
+				// console.log("完整血压数据:", bpData);
+				// console.log("完整心率数据:", hrData);
+				// 解析血压数据
+				const bpValues = this.parseBloodPressureData(bpData);
+				// 解析心率数据
+				const hrValue = this.parseHeartRateData(hrData);
+				// 保存并处理数据
+				this.jakoblife_fat_scale22(
+					deviceId,
+					bpValues.systolic,
+					bpValues.diastolic,
+					hrValue.diastolic,
+					deviceSn
+				);
+				this.resetDataState();
+			},
+
+			// 根据包头分离数据包
+			splitPacketsByHeader() {
+				const bpPackets = []; // 血压数据包
+				const hrPackets = []; // 心率数据包
+				let currentTarget = bpPackets;
+				this.dataBuffer.forEach(packet => {
+					// 遇到新的e0包头，切换到另一个数据集
+					if (packet.startsWith('e0') &&
+						(bpPackets.length > 0 || hrPackets.length > 0)) {
+						currentTarget = currentTarget === bpPackets ? hrPackets :
+							bpPackets;
+					}
+					currentTarget.push(packet);
+				});
+				return [bpPackets, hrPackets];
+			},
+			// 存储血氧数据
+			storeOxygenData(value) {
+				const now = new Date();
+				const month = String(now.getMonth() + 1).padStart(2, '0');
+				const day = String(now.getDate()).padStart(2, '0');
+				uni.setStorageSync("xueyang", value);
+				uni.setStorageSync("xueyangtimes", `${month}/${day}`);
+				this.list_recipe();
+			},
+			// 重置数据状态
+			resetDataState() {
+				this.dataBuffer = [];
+				this.quotient = 0;
+				this.quotient1 = 0;
+			},
+			// 解析血氧数据
+			parseOxygenData(stringdata) {
+				const hexData = stringdata.slice(stringdata.length - 16, stringdata
+					.length); // 最后8个字节
+				const secondsHex = hexData.substring(0, 8); // 秒（4 字节）
+				const bloodPressureTypeHex = hexData.substring(8, 10); // 心率值类型（1 字节）
+				const reservedHex = hexData.substring(10, 12); // 预留（1 字节）
+				const systolicHex = hexData.substring(12, 14); // 预留（1 字节）
+				const diastolicHex = hexData.substring(14, 16); // 心率值（1 字节）
+				const seconds = parseInt(secondsHex, 16);
+				const bloodPressureType = parseInt(bloodPressureTypeHex, 16);
+				const reserved = parseInt(reservedHex, 16);
+				const systolic = parseInt(systolicHex, 16);
+				const diastolic = parseInt(diastolicHex, 16);
+				console.log(diastolic)
+				return diastolic
+
+			},
+			// 辅助方法：计算分包数量
+			calculateQuotient(totalLength, packetSize) {
+				return Math.ceil(totalLength / packetSize);
+			},
+			// ArrayBuffer转十六进制字符串
+			ab2hex(buffer) {
+				var hexArr = Array.prototype.map.call(
+					new Uint8Array(buffer),
+					function(bit) {
+						return ('00' + bit.toString(16)).slice(-2)
+					}
+				)
+				return hexArr.join('');
+			},
+			ab2str(buf) {
+				return String.fromCharCode.apply(null, new Uint8Array(buf));
+			},
+			// 十六进制转ASCII
+			hexToAscii(hex) {
+				let str = '';
+				for (let i = 0; i < hex.length; i += 2) {
+					str += String.fromCharCode(parseInt(hex.substr(i, 2), 16));
+				}
+				return str;
+			},
+
+
+			async sendack(dataList, deviceId, serviceId, writeuuid) {
+				let that = this
+				that.dataBuffer = [];
+				that.quotient = 0;
+				that.quotient1 = 0;
+				const hexString = dataList
+				// 将十六进制字符串转换为字节数组
+				const bytes = [];
+				for (let i = 0; i < hexString.length; i += 2) {
+					bytes.push(parseInt(hexString.substring(i, i + 2), 16));
+				}
+				// 协议格式解析
+				const protocolMarker = bytes[0]; // 协议标识位
+				const protocolLength = bytes[1] * 256 + bytes[2]; // 协议长度（2字节）
+				const protocolChecksum = bytes[3]; // 协议校准位
+				const protocolCommand = bytes[4]; // 协议命令
+				const protocolVersion = bytes[5]; // 协议版本号
+				const protocolSubcommand = bytes[6]; // 协议子命令
+				const commandLength = bytes[7] * 256 + bytes[8]; // 命令指令长度（2字节）
+				const commandValue = bytes.slice(9); // 命令指令值
+				// 计算字节和（除去协议校准位）
+				let sumBytes = 0;
+				for (let i = 0; i < bytes.length; i++) {
+					if (i !== 3) { // 跳过校准位
+						sumBytes += bytes[i];
+					}
+				}
+				const calculatedChecksum = sumBytes % 256; // 取低8位	
+				if (calculatedChecksum === protocolChecksum) {
+					// 假设以下变量已经定义
+					const ACK_RESPONSE_HEADER = 0x0E; // 示例值
+					const commandId =
+						`0x${protocolCommand.toString(16).padStart(2, '0')}`; // 示例值
+					const commandKey =
+						`0x${protocolSubcommand.toString(16).padStart(2, '0')}`; // 示例值
+					const BleDeviceConfig = {
+						PROTOCOL_VERSION: `0x${protocolVersion.toString(16).padStart(2, '0')}` // 示例协议版本
+					};
+					const code = 0x00; // 示例 code 值
+					const ackConfigByte = new Uint8Array(9);
+					ackConfigByte[0] = ACK_RESPONSE_HEADER;
+					ackConfigByte[1] = 0x00;
+					ackConfigByte[2] = 0x06;
+					ackConfigByte[3] = commandId;
+					ackConfigByte[4] = BleDeviceConfig.PROTOCOL_VERSION;
+					ackConfigByte[5] = commandKey;
+					ackConfigByte[6] = 0x00;
+					ackConfigByte[7] = 0x01;
+					ackConfigByte[8] = code;
+					let ackConfigBytesum = 0;
+					for (let i = 0; i < ackConfigByte.length -
+						1; i++) { // 遍历 command 数组的前 command.length - 1 个元素
+						ackConfigBytesum += ackConfigByte[i]; // 累加每个元素的值
+					}
+					ackConfigBytesum = ackConfigBytesum % 256; // 取模 256，得到低 8 位的和
+					// 创建新的数组，将校验和插入到第四个字节中
+					const modifiedCommand = new Uint8Array(ackConfigByte.length +
+						1); // 第四个字节的插入，数组长度加1
+					modifiedCommand.set(ackConfigByte.subarray(0, 3), 0);
+					modifiedCommand[3] = ackConfigBytesum;
+					modifiedCommand.set(ackConfigByte.subarray(3), 4);
+					const hexCommand = Array.from(modifiedCommand).map(byte => byte
+						.toString(16).padStart(2, '0')).join('');
+					const buffer = that.toArrayBuffer(hexCommand); // 转换为 ArrayBuffer获取设备信息
+					uni.writeBLECharacteristicValue({
+						deviceId: deviceId,
+						serviceId: serviceId,
+						characteristicId: writeuuid,
+						value: buffer,
+						success(res) {},
+						fail(err) {},
+					})
+				}
+			},
+
+			calculateQuotient(bufferSize, chunkSize) {
+				return Math.ceil(bufferSize / chunkSize);
+			},
+			// 提取数据格式化函数
+			formatData(dataArray) {
+				return dataArray.map(item => item.replace(/[""]/g, "")).join("");
+			},
+
+			// 提取二进制时间解析函数
+			parseBinaryTime(hexTime) {
+				const binaryTime = this.hexToBinary(hexTime);
+				const year = parseInt(binaryTime.slice(1, 7), 2) + 2000;
+				const month = parseInt(binaryTime.slice(7, 11), 2);
+				const day = parseInt(binaryTime.slice(11), 2);
+				return {
+					year,
+					month,
+					day
+				};
+			},
+
+			// 提取时间格式化函数
+			formatTime(seconds) {
+				const hours = Math.floor(seconds / 3600);
+				const minutes = Math.floor((seconds % 3600) / 60);
+				const secs = seconds % 60;
+				return `${hours}:${minutes}:${secs}`;
+			},
+
+			// 提取血压数据解析函数
+			parseBloodPressureData(stringdata) {
+				console.log("stringdata", stringdata)
+				const Covmamlueand = stringdata.slice(18, stringdata.length);
+				const data = Covmamlueand.slice(Covmamlueand.length - 16, Covmamlueand.length);
+				const secondsHex = data.substring(0, 8); // 秒（4 字节）
+				const bloodPressureTypeHex = data.substring(8, 10); // 血压类型（1 字节）
+				const reservedHex = data.substring(10, 12); // 预留（1 字节）
+				const systolicHex = data.substring(12, 14); // 高压值（1 字节）
+				const diastolicHex = data.substring(14, 16); // 低压值（1 字节）
+				const seconds = parseInt(secondsHex, 16);
+				const bloodPressureType = parseInt(bloodPressureTypeHex, 16);
+				const reserved = parseInt(reservedHex, 16);
+				const systolic = parseInt(systolicHex, 16);
+				const diastolic = parseInt(diastolicHex, 16);
+				const time = this.formatTime(seconds);
+				return {
+					systolic,
+					diastolic
+				};
+			},
+
+
+			// 提取心率数据解析函数
+			parseHeartRateData(stringdata) {
+				const Covmamlueand = stringdata.slice(18, stringdata.length);
+				const hexData = Covmamlueand.slice(Covmamlueand.length - 16, Covmamlueand
+					.length);
+				const secondsHex = hexData.substring(0, 8); // 秒（4 字节）
+				const bloodPressureTypeHex = hexData.substring(8, 10); // 心率值类型（1 字节）
+				const reservedHex = hexData.substring(10, 12); // 预留（1 字节）
+				const systolicHex = hexData.substring(12, 14); // 预留（1 字节）
+				const diastolicHex = hexData.substring(14, 16); // 心率值（1 字节）
+				const seconds = parseInt(secondsHex, 16);
+				const bloodPressureType = parseInt(bloodPressureTypeHex, 16);
+				const reserved = parseInt(reservedHex, 16);
+				const systolic = parseInt(systolicHex, 16);
+				const diastolic = parseInt(diastolicHex, 16);
+				return {
+					time: this.formatTime(seconds),
+					bloodPressureType,
+					reserved,
+					systolic,
+					diastolic
+				};
+			},
+
+			// 辅助函数：解析数值
+			parseValue(hexValue) {
+				return parseInt(hexValue, 16);
+			},
+
+			// 提取协议解析函数
+			parseProtocolData(alltypearray) {
+				const Protocollength = alltypearray.slice(2, 6); // 协议长度 2个byte
+				const Protocolcalibrationposition = alltypearray.slice(6, 8);
+				const Protocolcommand = alltypearray.slice(8, 10); // 协议命令 1个byte
+				const Versionprotocol = alltypearray.slice(10, 12); // 协议版本号 1个byte
+				const Protocolsubcommand = alltypearray.slice(12, 14); // 协议子命令 1个byte
+				const Commandlinelength = alltypearray.slice(14, 18); // 命令指令长度 2个byte
+				const Covmamlueand = alltypearray.slice(18, alltypearray
+					.length); // 命令指令值 1~503Byte
+				return {
+					Protocollength,
+					Protocolcalibrationposition,
+					Protocolcommand,
+					Versionprotocol,
+					Protocolsubcommand,
+					Commandlinelength,
+					Covmamlueand
+				};
+			},
+
+			// 定义一个函数来计算校验和
+			calculateChecksumsss(hexString, deviceId, serviceId, writeuuid) {
+				let that = this
+				// 将十六进制字符串转换为字节数组
+				const bytes = [];
+				for (let i = 0; i < hexString.length; i += 2) {
+					bytes.push(parseInt(hexString.substring(i, i + 2), 16));
+				}
+				// 协议格式解析
+				const protocolMarker = bytes[0]; // 协议标识位
+				const protocolLength = bytes[1] * 256 + bytes[2]; // 协议长度（2字节）
+				const protocolChecksum = bytes[3]; // 协议校准位
+				const protocolCommand = bytes[4]; // 协议命令
+				const protocolVersion = bytes[5]; // 协议版本号
+				const protocolSubcommand = bytes[6]; // 协议子命令
+				const commandLength = bytes[7] * 256 + bytes[8]; // 命令指令长度（2字节）
+				const commandValue = bytes.slice(9); // 命令指令值
+				// 计算字节和（除去协议校准位）
+				let sumBytes = 0;
+				for (let i = 0; i < bytes.length; i++) {
+					if (i !== 3) { // 跳过校准位
+						sumBytes += bytes[i];
+					}
+				}
+				const calculatedChecksum = sumBytes % 256; // 取低8位
+				const ACK_HEADER = 0xe0 // 示例值
+				const commandId = 0x02 // 示例值
+				const commandKey = 0x08 // 示例值
+				const BleDeviceConfig = {
+					PROTOCOL_VERSION: `0x${protocolVersion.toString(16).padStart(2, '0')}` // 示例协议版本
+				};
+				// 获取当前时间
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = now.getMonth() + 1; // getMonth() 返回的是 0-11，需要加 1
+				const day = now.getDate();
+				const hour = now.getHours();
+				const minutes = now.getMinutes();
+				const seconds = now.getSeconds();
+				// 创建一个 4 字节的数组
+				const bytes1 = new Uint8Array(4);
+				// 按照 Java 代码中的逻辑进行位运算
+				bytes1[0] = (((year - 2000) << 2) + ((month & 0xFF) >> 2)) & 0xFF;
+				bytes1[1] = (((month & 0x03) << 6) + (day << 1) + (hour >> 4)) & 0xFF;
+				bytes1[2] = (((hour & 0x0F) << 4) + (minutes >> 2)) & 0xFF;
+				bytes1[3] = (((minutes & 0x03) << 6) + seconds) & 0xFF;
+				const dataLen = bytes1.length;
+				// 创建一个 dataLen + 8 字节的数组
+				const command = new Uint8Array(dataLen + 8);
+				// 按照 Java 代码中的逻辑填充数组
+				command[0] = ACK_HEADER;
+				command[1] = ((5 + dataLen) >> 8) & 0xFF;
+				command[2] = (5 + dataLen) & 0xFF;
+				command[3] = commandId;
+				command[4] = BleDeviceConfig.PROTOCOL_VERSION;
+				command[5] = commandKey;
+				command[6] = (dataLen >> 8) & 0xFF;
+				command[7] = dataLen & 0xFF;
+				command.set(bytes1, 8);
+				const hexCommand1 = Array.from(command).map(byte => byte.toString(16).padStart(
+					2, '0')).join(
+					'');
+				// 将字符串转换为字节数组
+				const bytesnew = new Uint8Array(hexCommand1.match(/../g).map(byte => parseInt(
+					byte, 16)));
+				// 将每个字节转换为 0x00 格式的字符串
+				const formattedBytes = Array.from(bytesnew).map(byte =>
+					`0x${byte.toString(16).padStart(2, '0')}`);
+				// 将十六进制字符串转换为十进制数值
+				const bytes333 = formattedBytes.map(byte => parseInt(byte, 16));
+				// 计算累加和
+				let sum = 0;
+				for (let i = 0; i < bytes333.length; i++) {
+					sum += bytes333[i];
+				}
+				// 取模 256，得到低 8 位的和
+				sum = sum % 256;
+				const modifiedCommand = new Uint8Array(command.length + 1); // 第四个字节的插入，数组长度加1
+				modifiedCommand.set(command.subarray(0, 3), 0);
+				modifiedCommand[3] = sum;
+				modifiedCommand.set(command.subarray(3), 4);
+				// 将整个命令数组转换为16进制字符串
+				const hexCommand = Array.from(modifiedCommand).map(byte => byte.toString(16)
+						.padStart(2, '0'))
+					.join('');
+				const buffer = that.toArrayBuffer(hexCommand); // 转换为 ArrayBuffer获取设备信息
+				uni.writeBLECharacteristicValue({
+					deviceId: deviceId,
+					serviceId: serviceId,
+					characteristicId: writeuuid,
+					writeType: "write",
+					value: buffer,
+					complete(res) {
+						console.log("发送命令")
+						that.dataBuffer = []
+						that.getsetp(deviceId, serviceId, writeuuid, BleDeviceConfig
+							.PROTOCOL_VERSION)
+					}
+				})
+
+			},
+
+
+
+			getsetp(deviceId, serviceId, writeuuid, PROTOCOL_VERSION) {
+				// 运动命令
+				const ackConfigByteset = new Uint8Array(9);
+				ackConfigByteset[0] = 0xE0;
+				ackConfigByteset[1] = 0x00;
+				ackConfigByteset[2] = 0x06;
+				ackConfigByteset[3] = 0x02;
+				ackConfigByteset[4] = PROTOCOL_VERSION;
+				ackConfigByteset[5] = 0x02;
+				ackConfigByteset[6] = 0x00;
+				ackConfigByteset[7] = 0x01;
+				ackConfigByteset[8] = 0x01;
+				let ackConfigBytesum2 = 0;
+				for (let i = 0; i < ackConfigByteset
+					.length; i++) { // 遍历 command 数组的前 command.length - 1 个元素
+					ackConfigBytesum2 += ackConfigByteset[i]; // 累加每个元素的值
+				}
+				ackConfigBytesum2 = ackConfigBytesum2 % 256; // 取模 256，得到低 8 位的和
+				// 创建新的数组，将校验和插入到第四个字节中
+				const modifiedCommand2 = new Uint8Array(ackConfigByteset.length +
+					1); // 第四个字节的插入，数组长度加1
+				modifiedCommand2.set(ackConfigByteset.subarray(0, 3), 0);
+				modifiedCommand2[3] = ackConfigBytesum2;
+				modifiedCommand2.set(ackConfigByteset.subarray(3), 4);
+				const hexCommand2 = Array.from(modifiedCommand2).map(byte => byte
+					.toString(16).padStart(2, '0')).join('');
+				const buffer2 = this.toArrayBuffer(hexCommand2); // 转换为 ArrayBuffer获取设备信息
+				setTimeout(() => {
+					uni.writeBLECharacteristicValue({
+						deviceId: deviceId,
+						serviceId: serviceId,
+						characteristicId: writeuuid,
+						value: buffer2,
+						success(res) {
+							console.log("运动数据回复成功：", res)
+						},
+						fail(err) {
+							console.log("运动数据回复失败：", err)
+							this.dataBuffer = []
+						},
+					})
+				}, 300)
+			},
+
+			//获取蓝牙外围设备的特征值
+			getBLEDeviceCharacteristics2(deviceId, serviceId, deviceSn) {
+				let that = this
+				uni.getBLEDeviceCharacteristics({
+					deviceId: deviceId,
+					serviceId: serviceId,
+					success: (res) => {
+						// console.log('获取蓝牙设备某个服务中所有特征值(characteristic)2', res.characteristics)
+						for (let i = 0; res.characteristics.length > i; i++) {
+							let item = res.characteristics[i]
+							if (item.properties.notify) {
+								uni.setStorageSync("landeviceId", deviceId)
+								uni.setStorageSync("lanserviceId", serviceId)
+								uni.setStorageSync("landcharacteristicId", item
+									.uuid)
+								that.notifyUuid = res.characteristics[i].uuid
+								uni.notifyBLECharacteristicValueChange({
+									state: true, // 启用 notify 功能
+									deviceId: deviceId,
+									serviceId: serviceId,
+									characteristicId: item.uuid,
+									success: (notifyres) => {
+										that.onBLECharacteristicValueChange2(
+											deviceId, serviceId,
+											deviceSn);
+									},
+									fail: (notifyerr) => {}
+								})
+							}
+							setTimeout(() => {
+								if (item.properties.write) {
+									// 当前时间
+									const now = new Date();
+									const year = now.getFullYear()
+										.toString();
+									const month = now.getMonth() +
+										1; // 月份从0开始
+									const day = now.getDate();
+									const hour = now.getHours();
+									const minute = now.getMinutes();
+									const second = now.getSeconds();
+									that.sendLargeData(deviceId, serviceId,
+										item.uuid, year, month, day,
+										hour, minute,
+										second);
+								}
+							}, 1000)
+						}
+					},
+					fail(res) {}
+				})
+			},
+
+
+
+
+			parseQueryString(queryString) {
+				let params = queryString.split('&');
+				let result = {};
+				params.forEach(param => {
+					let [key, value] = param.split('=');
+					result[key] = value;
+				});
+				return result;
+			},
+
+			// 创建通知
+			createNotification(title, content, url) {
+				const payload = {
+					url: url
+				};
+				uni.createPushMessage({
+					title: title,
+					content: content,
+					payload: payload,
+					options: {
+						cover: false, // 是否覆盖上次通知
+						when: new Date(), // 通知时间
+					}
+				});
+			},
+
+			Notificationss(name) {
+				this.createNotification(this.$t("通知标题"), name,
+					'/pages/tabBar/my/Alarms')
+			},
+
+
+			onBLECharacteristicValueChange2(deviceId, serviceId, deviceSn) {
+				let that = this
+				uni.onBLECharacteristicValueChange((res) => {
+					const dataList = that.ab2hex(res.value)
+					if (dataList.length === 10) {
+						uni.closeBLEConnection({
+							deviceId: deviceId,
+							success() {},
+							fail() {}
+						})
+						that.disconnectAll(deviceId)
+						that.queryDevices()
+					} else if (dataList.length > 200) {
+						let aaa = that.ab2str(res.value)
+						let hexString = that.ab2hex(res.value)
+						let asciiString = that.hexToAscii(hexString)
+						let parsedData = that.parseQueryString(asciiString);
+						that.jakoblife_fat_scale(deviceId, parsedData, deviceSn)
+					} else {
+						const resheart = dataList.slice(0, 4);
+						const reslength = dataList.slice(4, 6);
+						const respackage = dataList.slice(6, 10);
+						const respackage1 = dataList.slice(10, 14);
+						const restype = dataList.slice(14, 16);
+						const otherData = dataList.slice(16, dataList.length - 2);
+						const otherDatatiwen1 = dataList.slice(16, 20);
+						const otherDatatiwen2 = dataList.slice(20, dataList.length -
+							2);
+						const otherData1 = dataList.slice(16, 24);
+						const otherData2 = dataList.slice(24, 28);
+						const otherData3 = dataList.slice(28, dataList.length - 2);
+						const otherall = dataList.slice(dataList.length - 2, dataList
+							.length);
+						const hexBytes = [];
+						for (let i = 0; i < otherData.length; i += 2) {
+							hexBytes.push(otherData.substring(i, i + 2));
+						}
+						const decimalArray = hexBytes.map(hexByte => {
+							return parseInt(hexByte, 16);
+						});
+						//01表示心率数据，02表示血压数据，03表示血氧数据,04表示步数和千卡数据，07表示体温 08表示压力
+						switch (restype) {
+							case "01":
+								const xinlv = decimalArray[0]
+								that.jakoblife_fat_scale2(deviceId, "", "", xinlv,
+									deviceSn)
+								break
+							case "02":
+								const shousuoye = decimalArray[0]
+								const shuzhangya = decimalArray[1]
+								const length = decimalArray.length - 2
+								const maibo = decimalArray[length]
+								that.jakoblife_fat_scale2(deviceId, shousuoye,
+									shuzhangya, maibo,
+									deviceSn)
+								break
+							case "03":
+								const xueyang = decimalArray[0]
+								const xueyangtimes = decimalArray[3] + "/" +
+									decimalArray[4]
+								uni.setStorageSync("xueyang", xueyang)
+								uni.setStorageSync("xueyangtimes", xueyangtimes)
+								that.list_recipe()
+								break
+							case "05":
+								const settept1 = decimalArray[1]
+								uni.setStorageSync("settept1", settept1)
+								that.list_recipe()
+								break
+							case "07":
+								let tiwen = parseInt(otherDatatiwen1, 16) /
+									10 // 第二个参数16表示输入是16进制
+								let parts = otherDatatiwen2.match(/.{1,2}/g);
+								let tiwentimes = parts.map(p => parseInt(p, 16))[2] +
+									"/" + parts.map(
+										p =>
+										parseInt(p, 16))[3]
+								uni.setStorageSync("tiwen", tiwen)
+								uni.setStorageSync("tiwentimes", tiwentimes)
+								that.list_recipe()
+								break
+							case "08":
+
+								break
+							case "22":
+								const sum = decimalArray.reduce((acc, curr) => acc +
+									curr, 0);
+								that.isSumZero = sum === 0;
+								if (that.isSumZero === false) {
+									const shousuoye = decimalArray[1]
+									const shuzhangya = decimalArray[2]
+									const length = decimalArray.length - 1
+									const maibo = decimalArray[3]
+									const year = that.hexToDecimal(otherData2)
+									that.jakoblife_fat_scale2(deviceId, shousuoye,
+										shuzhangya, maibo,
+										deviceSn)
+								}
+								break
+							default:
+								// console.log("血压手表其他数据类型", restype)
+						}
+					}
+				})
+			},
+
+			bgaaa(lowPressure, highPressure) {
+				let that = this;
+				if ((lowPressure >= 81 && lowPressure <= 90) || (highPressure >= 121 &&
+						highPressure <= 140)) {
+					uni.showModal({
+						title: that.$t("提示"),
+						content: that.$t("显示结果弹窗"),
+						showCancel: false,
+						success: function(res) {
+							if (res.confirm) {
+								console.log('用户点击确定');
+							} else if (res.cancel) {
+								console.log('用户点击取消');
+							}
+						}
+					});
+				} else if ((lowPressure >= 91 && lowPressure <= 100) || (highPressure >= 141 &&
+						highPressure <=
+						160)) {
+					uni.showModal({
+						title: that.$t("提示"),
+						content: that.$t("显示结果弹窗"),
+						success: function(res) {
+							if (res.confirm) {
+								console.log('用户点击确定');
+							} else if (res.cancel) {
+								console.log('用户点击取消');
+							}
+						}
+					});
+				} else if ((lowPressure >= 101 && lowPressure <= 110) || (highPressure >=
+						161 &&
+						highPressure <= 180)) {
+					uni.showModal({
+						title: that.$t("提示"),
+						content: that.$t("显示结果弹窗"),
+						success: function(res) {
+							if (res.confirm) {
+								console.log('用户点击确定');
+							} else if (res.cancel) {
+								console.log('用户点击取消');
+							}
+						}
+					});
+				}
+			},
+			//上报血压计血压数据
+			jakoblife_fat_scale(deviceId, parsedData, deviceSn) {
+				console.log("deviceId", deviceId)
+				console.log("parsedData", parsedData)
+				console.log("deviceSn", deviceSn)
+				let aaa = {
+					lowPressure: parsedData.dia.trim(),
+					highPressure: parsedData.sys.trim(),
+					heartrate: parsedData.pul.trim(),
+				}
+				let timess = this.datatime(this.dundatetime())
+				const data = {
+					deviceSn: deviceSn,
+					deviceTypeId: "1",
+					mac: deviceId,
+					slaveData: aaa,
+					time: timess
+				}
+				this.$post(this.$url_jakoblife_fat_scale, data, {
+					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				}).then(resaa => {
+					if (resaa.code === 500) {
+						// uni.showToast({
+						// 	title: this.$("失败"),
+						// 	icon: 'none'
+						// })
+						return
+					}
+					this.setbanhua(1)
+					this.get_device_info(deviceSn)
+					this.queryDevices()
+					this.bgaaa(aaa.lowPressure, aaa.highPressure)
+					setTimeout(() => {
+						this.StorageInfo(aaa)
+					}, 1000)
+				})
+			},
+			// // 上报体脂秤数据
+			jakoblife_fat_scale1(deviceSn, deviceId, parsedData, listleng) {
+				const data = {
+					deviceSn: deviceSn,
+					mac: deviceId,
+					deviceTypeId: "0",
+					slaveData: {
+						weight: parsedData.weight,
+						adc: parsedData.adc
+					},
+					time: parsedData.createTime
+				}
+				this.$post(this.$url_jakoblife_fat_scale, data, {
+					'content-type': 'application/json;charset=UTF-8'
+				}).then(res => {
+					if (res.code === 500) {
+						// uni.showToast({
+						// 	title: this.$("失败"),
+						// 	icon: 'none'
+						// })
+						return
+					}
+					if (parsedData.weightUnit === 0) {
+						uni.setStorageSync("newweight", "KG")
+					} else {
+						uni.setStorageSync("newweight", "lb")
+					}
+					this.setbanhua(1)
+					if (systemInfo.platform === "ios") {
+						if (listleng === 150) {
+							this.get_device_info(deviceSn)
+							this.get_device_data(deviceSn)
+							setTimeout(() => {
+								this.arrrylist = []
+							}, 10000)
+						}
+					} else {
+						this.get_device_info(deviceSn)
+						this.get_device_data(deviceSn)
+					}
+				})
+			},
+			//上报mC手表血压计数据
+			jakoblife_fat_scale2(deviceId, shousuoye, shuzhangya, maibo, deviceSn) {
+				let timess = this.datatime(this.dundatetime())
+				let aaa = {
+					heartrate: maibo,
+				};
+				if (shousuoye !== "" && shuzhangya !== "") {
+					aaa.lowPressure = shuzhangya;
+					aaa.highPressure = shousuoye;
+				}
+				const data = {
+					deviceSn: deviceSn,
+					mac: deviceId,
+					deviceTypeId: "1",
+					slaveData: aaa,
+					time: timess
+				}
+				this.$post(this.$url_jakoblife_fat_scale, data, {
+					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				}).then(reslk => {
+					if (reslk.code === 500) {
+						// uni.showToast({
+						// 	title: this.$("失败"),
+						// 	icon: 'none'
+						// })
+						return
+					} else {
+						this.setbanhua(1)
+						this.bgaaa(aaa.lowPressure, aaa.highPressure)
+						this.get_device_info(deviceSn)
+						setTimeout(() => {
+							this.StorageInfo(aaa)
+						}, 1000)
+					}
+				})
+			},
+			//上报mC手表血压计数据
+			jakoblife_fat_scale2(deviceId, shousuoye, shuzhangya, maibo, deviceSn) {
+				let timess = this.datatime(this.dundatetime())
+				let aaa = {
+					heartrate: maibo,
+				};
+				if (shousuoye !== "" && shuzhangya !== "") {
+					aaa.lowPressure = shuzhangya;
+					aaa.highPressure = shousuoye;
+				}
+				const data = {
+					deviceSn: deviceSn,
+					mac: deviceId,
+					deviceTypeId: "1",
+					slaveData: aaa,
+					time: timess
+				}
+				this.$post(this.$url_jakoblife_fat_scale, data, {
+					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				}).then(reslk => {
+					if (reslk.code === 500) {
+						// uni.showToast({
+						// 	title: this.$("失败"),
+						// 	icon: 'none'
+						// })
+						return
+					} else {
+						this.setbanhua(1)
+						this.bgaaa(aaa.lowPressure, aaa.highPressure)
+						this.get_device_info(deviceSn)
+						setTimeout(() => {
+							this.StorageInfo(aaa)
+						}, 1000)
+					}
+				})
+			},
+			// 上报金亿帝手表血压数据
+			jakoblife_fat_scale22(deviceId, shousuoye, shuzhangya, maibo, deviceSn) {
+				console.log(deviceId)
+				console.log(shousuoye)
+				console.log(shuzhangya)
+				console.log(maibo)
+				console.log(deviceSn)
+				let aaa = {
+					heartrate: maibo,
+				};
+				if (shousuoye !== "" && shuzhangya !== "") {
+					aaa.lowPressure = shuzhangya;
+					aaa.highPressure = shousuoye;
+				}
+				let timess = this.datatime(this.dundatetime())
+				console.log(uni.getStorageSync("deviceSn"))
+				let data = {
+					deviceSn: deviceSn === "undefined" || deviceSn === undefined ? uni
+						.getStorageSync("deviceSn") : deviceSn,
+					mac: deviceId,
+					deviceTypeId: "2",
+					slaveData: aaa,
+					time: timess
+				}
+				this.$post(this.$url_jakoblife_fat_scale, data, {
+					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				}).then(res => {
+					console.log("上报数据手表", res)
+					if (res.code === 500) {
+						// uni.showToast({
+						// 	title: "上报数据手表失败：" + deviceId + "｜" + shousuoye +
+						// 		"｜" + shuzhangya + "｜" +
+						// 		maibo + "｜" + deviceSn,
+						// 	icon: 'none'
+						// })
+						return
+					} else {
+						this.list_recipe()
+						this.get_device_info(deviceSn)
+						this.setbanhua(1)
+						this.bgaaa(aaa.lowPressure, aaa.highPressure)
+						setTimeout(() => {
+							this.StorageInfo(aaa)
+						}, 1000)
+					}
+				}).catch(errro => {
+					console.log("errro", errro)
+				})
+			},
+			// 上报金亿帝手表单独测量数据
+			jakoblife_fat_scale3(deviceId, datapar, deviceSn, type) {
+				const aaa = this.buildReportData(type, datapar);
+				const timess = this.datatime(this.dundatetime())
+				const data = {
+					deviceSn: deviceSn,
+					mac: deviceId,
+					deviceTypeId: "2",
+					slaveData: aaa,
+					time: timess
+				}
+				this.$post(this.$url_jakoblife_fat_scale, data, {
+					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				}).then(resdb => {
+					if (resdb.code === 500) {
+						// uni.showToast({
+						// 	title: this.$("失败"),
+						// 	icon: 'none'
+						// })
+						return
+					}
+					this.setbanhua(1)
+					this.bgaaa(aaa.lowPressure, aaa.highPressure)
+					this.list_recipe()
+					this.get_device_info(deviceSn)
+					setTimeout(() => {
+						this.getStorageInfooy(aaa)
+					}, 1000)
+				})
+			},
+			//本地警报
+			StorageInfo(aaa) {
+				let that = this
+				uni.getStorageInfo({
+					success(res) {
+						// 检查是否开启了通知开关
+						if (res.keys.includes("swichs") && uni.getStorageSync(
+								"swichs") === true) {
+							const notify = {
+								triggered: false
+							}; // 初始化通知标志
+							// 检查舒张压
+							if (res.keys.includes("shuzhangyaId1") || res.keys
+								.includes(
+									"shuzhangyaId2")) {
+								that.checkAndNotify("shuzhangyaId1", "shuzhangyaId2",
+									aaa.lowPressure,
+									"舒张压",
+									notify);
+							}
+							// 检查收缩压
+							if (res.keys.includes("shousuoyaId1") || res.keys
+								.includes("shousuoyaId2")) {
+								that.checkAndNotify("shousuoyaId1", "shousuoyaId2", aaa
+									.highPressure,
+									"收缩压",
+									notify);
+							}
+							// 检查脉搏
+							if (res.keys.includes("maiboId1") || res.keys.includes(
+									"maiboId2")) {
+								that.checkAndNotify("maiboId1", "maiboId2", aaa
+									.heartrate, "脉搏",
+									notify);
+							}
+						}
+					},
+					fail(err) {}
+				})
+			},
+			getStorageInfooy(aaa) {
+				let that = this
+				uni.getStorageInfo({
+					success(res) {
+						if (res.keys.includes("swichs") && uni.getStorageSync(
+								"swichs") === true) {
+							const notify = {
+								triggered: false
+							};
+							if (res.keys.includes("xeuyang1") || res.keys.includes(
+									"xeuyang2")) {
+								that.checkAndNotify("xeuyang1", "xeuyang2", aaa.oxygen,
+									"血氧", notify);
+							}
+						}
+					},
+				})
+			},
+
+			// 封装检查和通知的逻辑
+			checkAndNotify(key1, key2, value, messageKey, notify) {
+				const storedValue1 = uni.getStorageSync(key1);
+				const storedValue2 = uni.getStorageSync(key2);
+				let nototy = false
+				if ((storedValue1 !== undefined && value < storedValue1) ||
+					(storedValue2 !== undefined && value > storedValue2)) {
+					// 如果已经触发了通知，则不再重复触发
+					if (!notify.triggered) {
+						this.Notificationss(this.$t("测量通知"));
+						notify.triggered = true; // 标记已触发通知
+					}
+				}
+			},
+
+			buildReportData(type, data) {
+				const reportData = {};
+				switch (type) {
+					case "血氧":
+						reportData.oxygen = data;
+						break;
+					case "步数":
+						reportData.steps = data;
+						break;
+					case "压力":
+						reportData.pressure = data;
+						break;
+					case "体温":
+						reportData.temperature = data;
+						break;
+					default:
+						console.warn("未知类型:", type);
+				}
+				return reportData;
+			},
+
+
+			dundatetime() {
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = (now.getMonth() + 1) < 10 ? "0" + (now.getMonth() + 1) : now
+					.getMonth() + 1;
+				const day = now.getDate() < 10 ? "0" + now.getDate() : now.getDate();
+				const hours = now.getHours() < 10 ? "0" + now.getHours() : now.getHours();
+				const minutes = now.getMinutes() < 10 ? "0" + now.getMinutes() : now
+					.getMinutes();
+				const seconds = now.getSeconds() < 10 ? "0" + now.getSeconds() : now
+					.getSeconds();
+				const timesssaa = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
+				return timesssaa
+			},
+
+			dundatetime1() {
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = (now.getMonth() + 1) < 10 ? "0" + (now.getMonth() + 1) : now
+					.getMonth() + 1;
+				const day = now.getDate();
+				const hours = now.getHours() < 10 ? "0" + now.getHours() : now.getHours();
+				const minutes = now.getMinutes() < 10 ? "0" + now.getMinutes() : now
+					.getMinutes();
+				const seconds = now.getSeconds() < 10 ? "0" + now.getSeconds() : now
+					.getSeconds();
+				const timesssaa = `${month}/${day} `
+				return timesssaa
+			},
+
+			datatime(dateStr) {
+				// 将日期字符串转换为Date对象
+				let date = new Date(dateStr);
+				// 获取时间戳（毫秒）
+				let timestamp = date.getTime();
+				// 如果需要秒级时间戳，可以除以1000
+				let timestampInSeconds = Math.floor(timestamp / 1000);
+				return timestampInSeconds
+			},
+
+
+			sendLargeData(deviceId, serviceId, uuid, year, month, day, hour, minute, second) {
+				let that = this
+				const timeSyncData = that.createTimeSyncData(year, month, day, hour, minute,
+					second); // 构造时间同步数据
+				const buffer = that.toArrayBuffer(timeSyncData); // 转换为 ArrayBuffer
+				uni.writeBLECharacteristicValue({
+					deviceId: deviceId,
+					serviceId: serviceId,
+					characteristicId: uuid,
+					value: buffer,
+					success: (res) => {},
+					fail: (err) => {}
+				});
+			},
+
+			//消息
+			Historical_record() {
+				uni.navigateTo({
+					url: "/pages/tabBar/my/message"
+				})
+			},
+
+			calculateChecksum(data) {
+				let sum = 0;
+				for (let i = 0; i < data.length; i += 2) {
+					sum += parseInt(data.substr(i, 2), 16);
+				}
+				return (sum & 0xFF).toString(16).padStart(2, '0');
+			},
+
+			toArrayBuffer(data) {
+				const buffer = new ArrayBuffer(data.length / 2);
+				const dataView = new DataView(buffer);
+				for (let i = 0; i < data.length; i += 2) {
+					dataView.setUint8(i / 2, parseInt(data.substr(i, 2), 16));
+				}
+				return buffer;
+			},
+
+			decimalToHex(decimal, length = 2) {
+				// 转换为十六进制字符串
+				const hex = decimal.toString(16).toUpperCase();
+				// 使用 padStart 补齐零，确保固定长度
+				return hex.padStart(length, '0');
+			},
+			//同步手表时间命令
+			createTimeSyncData(year, month, day, hour, minute, second) {
+				let that = this
+				const timeData =
+					`${year}${month.toString().padStart(2, '0')}${day.toString().padStart(2, '0')}${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}${second.toString().padStart(2, '0')}`;
+				const header = "4259"; // 协议头
+				const length = "01"; // 数据长度
+				const totalPackets = "0001"; // 总包数
+				const currentPacket = "0001"; // 当前分包序号
+				const flag = "09"; // 标志
+				const rawData =
+					`${header}${length}${totalPackets}${currentPacket}${flag}${timeData}`;
+				// const checksum = that.calculateChecksum(rawData); // 计算和校验
+				const checksum = "0f"; // 计算和校验
+				const finalData = `${rawData}${checksum}`; // 添加和校验
+				return finalData;
+			},
+			getUserInfo() {
+				this.$get(this.$url_getInfo, {}, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8'
+				}).then(UserInfo => {
+					if (UserInfo.code == 200) {
+						if (this.currentIndex === 1) {
+							this.chuhsikg = uni.getStorageSync("danwei2") === 1 ?
+								"lb" : "kg";
+							this.newweightKG = uni.getStorageSync("newweight") !==
+								"" ? uni.getStorageSync("newweight") : 'KG';
+							this.Initial_weight = UserInfo.data.weight;
+						}
+						this.handleUserInformation(UserInfo.data);
+					}
+				}).catch(err => {
+					uni.showToast({
+						title: this.$t("网络连接异常"),
+						icon: 'none'
+					})
+				})
+			},
+			handleUserInformation(userData) {
+				if (this.loact === "境内") {
+					this.handleUserInfoForChina(userData);
+				} else if (this.loact === "境外") {
+					this.handleUserInfoForOverseas(userData);
+				}
+			},
+			handleUserInfoForChina(userData) {
+				if (!userData.phonenumber && !userData.email) {
+					uni.navigateTo({
+						url: '../../login/Force_binding_phone'
+					});
+				} else {
+					this.processUserInfo(userData);
+				}
+			},
+			handleUserInfoForOverseas(userData) {
+				if (!userData.email && !userData.phonenumber) {
+					uni.navigateTo({
+						url: '../../login/bind_youxiang'
+					});
+				} else {
+					this.processUserInfo(userData);
+				}
+			},
+			processUserInfo(userData) {
+				this.getInfo(userData);
+				uni.setStorageSync("userid", userData.userId);
+				this.pending(userData.userId);
+				this.queryDevices();
+				this.timsdpad = setInterval(res => {
+					this.pending(userData.userId);
+				}, 8000)
+
+			},
 			//最新体重点击事件
 			new_latest() {
 				uni.navigateTo({
@@ -1100,7 +3053,7 @@
 				let that = this
 				if (that.mubiao === "") {
 					uni.showToast({
-						title: '请输入目标体重',
+						title: that.$t("请输入目标体重"),
 						icon: 'none'
 					})
 					return
@@ -1108,7 +3061,6 @@
 					that.fat_scale_tz1()
 				}
 			},
-
 
 			bindDateChange(e) {
 				this.birthday1111 = e.detail.value
@@ -1118,23 +3070,22 @@
 				this.birthday2 = e.detail.value
 			},
 
-
 			truesss() {
 				if (this.shuzhangya === "" || this.shuzhangya === undefined) {
 					uni.showToast({
-						title: this.$t('qushiitem.title_4'),
+						title: this.$t('请输入收缩压'),
 						icon: "none"
 					})
 					return
 				} else if (this.shousuoya === "" || this.shousuoya === undefined) {
 					uni.showToast({
-						title: this.$t('qushiitem.title_5'),
+						title: this.$t('请输入舒张压'),
 						icon: "none"
 					})
 					return
 				} else if (this.maibo === "" || this.maibo === undefined) {
 					uni.showToast({
-						title: this.$t('qushiitem.title_6'),
+						title: this.$t('请输入脉搏'),
 						icon: "none"
 					})
 					return
@@ -1143,17 +3094,19 @@
 				}
 			},
 
-
 			//用户在app手动上报血压数据
 			pressure_data() {
-
 				let that = this
-				let timestamp = Math.floor(new Date(that.birthday1111 == that.$t('shouye_item.title_21') ? new Date()
-						.toISOString().slice(0, 10) + " " + new Date().getHours() + ":" + new Date().getMinutes() :
-						that.birthday1111 + " " + new Date().getHours() + ":" + new Date().getMinutes()).getTime() /
+				let timestamp = Math.floor(new Date(that.birthday1111 == that.$t('今天') ?
+						new Date()
+						.toISOString().slice(0,
+							10) + " " + new Date().getHours() + ":" + new Date()
+						.getMinutes() : that
+						.birthday1111 +
+						" " + new Date().getHours() + ":" + new Date().getMinutes())
+					.getTime() /
 					1000); // 将时间转换成时间戳（以秒为单位）
 				// 将时间转换成时间戳（以秒为单位）
-				console.log("time", timestamp)
 				uni.request({
 					url: that.$url_pressure_data,
 					method: 'POST',
@@ -1166,7 +3119,6 @@
 							heartrate: that.maibo
 						},
 						time: timestamp
-
 					},
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
@@ -1176,7 +3128,7 @@
 					success(res) {
 						if (res.data.code == 200) {
 							that.$refs.qs_popup.close()
-							that.birthday = that.$t('shouye_item.title_21')
+							that.birthday = that.$t('今天')
 							that.shousuoya = ''
 							that.shuzhangya = ''
 							that.maibo = ''
@@ -1197,14 +3149,10 @@
 				})
 			},
 
-
-
 			delate_icon_cl(name, item) {
 				for (let i = 0; this.list.length > i; i++) {
 					if (this.list[i].title == name) {
-						console.log("dakhdas", i)
 						this.list.splice(i, 1)
-						console.log("jjshjaadha", this.list)
 						let kapianlist = []
 						kapianlist = this.list
 						uni.setStorageSync("kapianlist", kapianlist)
@@ -1215,16 +3163,13 @@
 			delate_icon_cl_2(name, item) {
 				for (let i = 0; this.list2.length > i; i++) {
 					if (this.list2[i].title == name) {
-						console.log("dakhdas", i)
 						this.list2.splice(i, 1)
-						console.log("jjshjaadha", this.list2)
 						let kapianlist2 = []
 						kapianlist2 = this.list2
 						uni.setStorageSync("kapianlist2", kapianlist2)
 					}
 				}
 			},
-
 
 			// 查询用户的绑定设备
 			queryDevices() {
@@ -1237,181 +3182,265 @@
 						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 					},
 					success(res) {
-						console.log("查询用户的绑定设备", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								if (res.data.rows == "") {
-									that.main_type = true
-								} else {
+						if (res.data.code == 200) {
+							if (res.data.rows == "") {
+								if (that.currentIndex === 0) {
 									uni.getStorageInfo({
-										success(ress) {
-											if (ress.keys.includes('deviceSn')) {
-												for (let i = 0; res.data.rows.length > i; i++) {
-													if (uni.getStorageSync("deviceSn") == res.data.rows[i]
-														.deviceSn) {
-														if (res.data.rows[i].deviceTypeId == "10") {
-															that.get_device_info(res.data.rows[i].deviceSn)
-															that.get_device_data(res.data.rows[i]
-																.deviceSn)
-															that.main_type = true
-														} else if (res.data.rows[i].deviceTypeId ==
-															"11") {
-															that.get_device_info(res.data.rows[i].deviceSn)
-															that.get_device_data1(res.data.rows[i]
-																.deviceSn)
-															that.main_type = false
-														} else {
-															that.main_type = true
-														}
-													} else {
-														if (res.data.rows[i].deviceTypeId == "10") {
-															that.get_device_data(res.data.rows[i]
-																.deviceSn)
-														} else if (res.data.rows[i].deviceTypeId ==
-															"11") {
-															that.get_device_data1(res.data.rows[i]
-																.deviceSn)
-														} else {
-															that.main_type = true
-														}
-													}
-												}
+										success: function(ress) {
+											// 判断缓存是否存在
+											if (ress.keys.includes(
+													'kapianlist')) {
+												that.list = uni
+													.getStorageSync(
+														'kapianlist')
 											} else {
-												for (let i = 0; res.data.rows.length > i; i++) {
-													if (res.data.rows[i].deviceTypeId == "10") {
-														that.get_device_info(res.data.rows[i]
-															.deviceSn)
-														that.get_device_data(res.data.rows[i]
-															.deviceSn)
-													} else if (res.data.rows[i].deviceTypeId ==
-														"11") {
-														that.get_device_info(res.data.rows[i]
-															.deviceSn)
-														that.get_device_data1(res.data.rows[i]
-															.deviceSn)
-													} else {
-														that.main_type = true
-													}
-												}
+												uni.setStorageSync(
+													"kapianlist", that
+													.list)
 											}
 										}
-									})
+									});
+								} else if (that.currentIndex === 1) {
+									uni.getStorageInfo({
+										success: function(ress) {
+											// 判断缓存是否存在
+											if (ress.keys.includes(
+													'kapianlist2')) {
+												that.list2 = uni
+													.getStorageSync(
+														'kapianlist2')
+											} else {
+												uni.setStorageSync(
+													"kapianlist2", that
+													.list2)
+											}
+										}
+									});
 								}
+								that.list_recipe()
 							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
+								if (that.currentIndex === 0) {
+									uni.getStorageInfo({
+										success: function(ress) {
+											// 判断缓存是否存在
+											if (ress.keys.includes(
+													'kapianlist')) {
+												that.list = uni
+													.getStorageSync(
+														'kapianlist')
+											} else {
+												uni.setStorageSync(
+													"kapianlist", that
+													.list)
+											}
+										}
+									});
+								} else if (that.currentIndex === 1) {
+									uni.getStorageInfo({
+										success: function(ress) {
+											// 判断缓存是否存在
+											if (ress.keys.includes(
+													'kapianlist2')) {
+												that.list2 = uni
+													.getStorageSync(
+														'kapianlist2')
+											} else {
+												uni.setStorageSync(
+													"kapianlist2", that
+													.list2)
+											}
+										}
+									});
+								}
+								that.list_recipe()
+								let deviceslist1 = []
+								for (let i = 0; res.data.rows.length > i; i++) {
+									if (res.data.rows[i].mac !== null) {
+										if (res.data.rows[i].deviceTypeId !== "11") {
+											deviceslist1.push(res.data.rows[i].mac)
+										}
+									}
+								}
+								that.deviceList = deviceslist1
+								that.aaaa(res.data.rows)
 							}
+						} else {
+							uni.showToast({
+								title: res.data.msg,
+								icon: 'none'
+							})
 						}
-
+					},
+					fail(err) {
+						uni.showToast({
+							title: that.$t("网络连接异常"),
+							icon: 'none'
+						})
 					}
 				})
+			},
+			aaaa(rows) {
+				let that = this
+				for (let i = 0; rows.length > i; i++) {
+					if (rows[i].deviceTypeId === "10") {
+						if (that.xueyehuilian === true) {
+							if (that.deviceList != null) {
+								that.initBluetooth()
+							}
+							if (that.currentIndex === 0) {
+								uni.setStorageSync("deviceSn", rows[i].deviceSn)
+							}
+						}
+						that.devicdsdmac.push(rows[i].mac)
+					} else if (rows[i].deviceTypeId === "13") {
+						if (that.deviceList != null) {
+							that.initBluetooth()
+						}
+						if (that.currentIndex === 0) {
+							uni.setStorageSync("deviceSn", rows[i].deviceSn)
+						}
+						that.devicdsdmac1.push(rows[i].mac)
+					} else if (rows[i].deviceTypeId === "11") {
+						if (systemInfo.platform === "android") {
+							const TestUniPlugin = uni.requireNativePlugin(
+								"DCTestUniPlugin-TestModule");
+							TestUniPlugin.startScan("", (callback) => {
+								if (rows[i].mac === callback.data.mac) {
+									if (callback.data.weightStatus === 1) {
+										if (callback.data.weight === "0.00") {} else {
+											that.jakoblife_fat_scale1(rows[i]
+												.deviceSn, rows[i]
+												.mac, callback.data, "")
+										}
+									}
+								}
+							});
+						} else if (systemInfo.platform === "ios") {
+							const TestUniPlugin = uni.requireNativePlugin(
+								"DCTestUniPlugin-TestModule");
+							TestUniPlugin.startScan("options", (callback) => {
+								const parsedData = JSON.parse(callback.data);
+								if (rows[i].mac === parsedData.mac) {
+									if (parsedData.testStatus === 255) {
+										that.arrrylist.push(parsedData)
+										if (parsedData.weight === "0.00") {} else {
+											that.jakoblife_fat_scale1(rows[i]
+												.deviceSn, rows[i].mac, parsedData,
+												that.arrrylist.length
+											)
+										}
+									}
+								}
+							});
+						}
+						if (that.currentIndex === 1) {
+							uni.setStorageSync("deviceSn", rows[i].deviceSn)
+							that.get_device_data(rows[i].deviceSn)
+						}
+					}
+				}
+				if (that.currentIndex === 3) {
+					that.list_recipe()
+				}
 			},
 
 			//获取设备基础信息
 			get_device_info(deviceSn) {
-				let that = this
-				console.log("token", uni.getStorageSync("token"))
-				console.log("deviceSn", deviceSn)
-				console.log("deviceSn11", uni.getStorageSync("deviceSn"))
-				uni.request({
-					url: that.$url_get_device_info,
-					method: 'POST',
-					data: {
-						deviceSn: deviceSn
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
-					},
-					success(res) {
-						console.log("获取设备基础信息", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								if (res.data.data.deviceTypeId === "10") {
-									uni.setStorageSync("deviceSn", deviceSn)
-									uni.getStorageInfo({
-										success: function(ress) {
-											// 判断缓存是否存在
-											if (ress.keys.includes('kapianlist')) {
-												console.log("dakhdas11111", "kapianlist存在")
-												//存在
-												that.list = uni.getStorageSync('kapianlist')
-											} else {
-												//不存在
-												console.log("dakhdas", "kapianlist不存在")
-												uni.setStorageSync("kapianlist", that.list)
-											}
-										}
-									});
-									that.list_recipe()
-								} else if (res.data.data.deviceTypeId === "11") {
-									uni.setStorageSync("deviceSn", deviceSn)
-									uni.getStorageInfo({
-										success: function(ress) {
-											// 判断缓存是否存在
-											if (ress.keys.includes('kapianlist2')) {
-												console.log("dakhdas11111", "kapianlist2存在")
-												//存在
-												that.list2 = uni.getStorageSync('kapianlist2')
-											} else {
-												//不存在
-												console.log("dakhdas", "kapianlist2不存在")
-												uni.setStorageSync("kapianlist2", that.list2)
-											}
-										}
-									});
-									that.list_recipe()
-								}
-							} else {
-
-
-								uni.getStorageInfo({
-									success: function(ress) {
-										// 判断缓存是否存在
-										if (ress.keys.includes('kapianlist')) {
-											console.log("dakhdas11111", "kapianlist存在")
-											//存在
-											that.list = uni.getStorageSync('kapianlist')
-										} else {
-											//不存在
-											console.log("dakhdas", "kapianlist不存在")
-											uni.setStorageSync("kapianlist", that.list)
-										}
-									}
-								});
-
-
-								uni.getStorageInfo({
-									success: function(ress) {
-										// 判断缓存是否存在
-										if (ress.keys.includes('kapianlist2')) {
-											console.log("dakhdas11111", "kapianlist2存在")
-											//存在
-											that.list2 = uni.getStorageSync('kapianlist2')
-										} else {
-											//不存在
-											console.log("dakhdas", "kapianlist2不存在")
-											uni.setStorageSync("kapianlist2", that.list2)
-										}
-									}
-								});
-
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
+				const data = {
+					deviceSn: deviceSn
+				}
+				this.$post(this.$url_get_device_info, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then(res => {
+					if (res.code == 200) {
+						if (this.currentIndex === 0) {
+							if (res.data.deviceTypeId === "10") {
+								uni.setStorageSync("deviceSn", deviceSn)
 							}
-						} else {
-							console.log("设备绑定失败", res)
+							uni.getStorageInfo({
+								success: function(ress) {
+									// 判断缓存是否存在
+									if (ress.keys.includes('kapianlist')) {
+										this.list = uni.getStorageSync(
+											'kapianlist')
+									} else {
+										uni.setStorageSync("kapianlist",
+											this.list)
+									}
+								}
+							});
+						} else if (this.currentIndex === 1) {
+							uni.getStorageInfo({
+								success: function(ress) {
+									// 判断缓存是否存在
+									if (ress.keys.includes(
+											'kapianlist2')) {
+										this.list2 = uni.getStorageSync(
+											'kapianlist2')
+									} else {
+										uni.setStorageSync("kapianlist2",
+											this.list2)
+									}
+								}
+							});
+							if (res.data.deviceTypeId === "11") {
+								uni.setStorageSync("deviceSn", deviceSn)
+							}
 						}
-
+						this.list_recipe()
+					} else {
+						if (this.currentIndex === 0) {
+							uni.getStorageInfo({
+								success: function(ress) {
+									// 判断缓存是否存在
+									if (ress.keys.includes('kapianlist')) {
+										this.list = uni.getStorageSync(
+											'kapianlist')
+									} else {
+										uni.setStorageSync("kapianlist",
+											this.list)
+									}
+								}
+							});
+						} else if (this.currentIndex === 1) {
+							uni.getStorageInfo({
+								success: function(ress) {
+									// 判断缓存是否存在
+									if (ress.keys.includes(
+											'kapianlist2')) {
+										this.list2 = uni.getStorageSync(
+											'kapianlist2')
+									} else {
+										uni.setStorageSync("kapianlist2",
+											this.list2)
+									}
+								}
+							});
+						}
 					}
 				})
 			},
 
-
+			pending(datainfo) {
+				const data = {
+					receiverId: datainfo
+				}
+				this.$post(this.$url_pending, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded;' //自定义请求头信息
+				}).then(pending => {
+					switch (pending.code) {
+						case 200:
+							if (pending.data.length === 0) {
+								this.msg = true;
+							} else {
+								this.msg = this.getpendinglenth >= pending.data.length;
+							}
+							break
+					}
+				})
+			},
 			//时间戳转时间
 			formatDate(value) {
 				const data = new Date(value);
@@ -1426,345 +3455,830 @@
 			},
 
 
-			//设备数据概览
-			list_recipe() {
+			getRegisterVal(data, type, key) {
+				const value = this.findValue(data, type, key);
+				return value.registerVal !== null ? value.registerVal : "-/-";
+			},
+
+			getUpdateTime(data, type, key) {
+				const value = this.findValue(data, type, key);
+				return value ? this.formatDate(value.updateTime) : "-/-";
+			},
+
+			// 封装获取存储信息的通用函数
+			getStorageInfo(keys, callback) {
+				uni.getStorageInfo({
+					success: (res) => {
+						const hasAllKeys = keys.every(key => res.keys.includes(
+							key));
+						callback(hasAllKeys, res);
+					}
+				});
+			},
+
+			// 处理步数卡片
+			async processSteps(item, name) {
 				let that = this
-				console.log("userId", that.info.userId)
-				uni.request({
-					url: that.$url_list_recipe,
-					method: 'POST',
-					data: {
-						userId: that.info.userId
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
-					},
-					success(res) {
-						console.log("设备数据概览", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
+				const stepKey = 'settept';
+				const stepCacheKey = 'settept1';
+				const now = new Date().getTime();
+				that.getStorageInfo([stepKey, stepCacheKey], (hasAllKeys, res) => {
+					const currentStep = uni.getStorageSync(stepKey);
+					const cachedStep = uni.getStorageSync(stepCacheKey);
+					const stepItem = that.findValue(that.list, 'title', name);
+					if (hasAllKeys) {
+						const stepDiff = currentStep - cachedStep;
+						if (stepDiff > 0) {
+							uni.setStorageSync(stepCacheKey, cachedStep +
+								stepDiff);
+						}
+					} else {
+						uni.setStorageSync(stepCacheKey, currentStep);
+					}
+					stepItem.Step_number = uni.getStorageSync(stepCacheKey);
+					stepItem.Step_count = that.formatDate(now);
+					stepItem.title = that.$t("步数");
+					stepItem.type_LX = that.$t("计步");
+					that.bushu = stepItem.Step_number;
+					that.bushu_time = stepItem.Step_count;
+					that.saveDailySteps(that.bushu, that.bushu_time);
+				});
+			},
+			// 封装处理步数的逻辑
+			async processSteps2(item, name) {
+				let that = this
+				const stepKey = 'settept';
+				const stepCacheKey = 'settept1';
+				const now = new Date().getTime();
+				this.getStorageInfo([stepKey, stepCacheKey], (hasAllKeys, res) => {
+					const currentStep = uni.getStorageSync(stepKey);
+					const cachedStep = uni.getStorageSync(stepCacheKey);
+					const stepItem = that.findValue(that.list2, 'title', name);
+					if (hasAllKeys) {
+						const stepDiff = currentStep - cachedStep;
+						if (stepDiff > 0) {
+							uni.setStorageSync(stepCacheKey, cachedStep +
+								stepDiff);
+						}
+					} else {
+						uni.setStorageSync(stepCacheKey, currentStep);
+					}
+					stepItem.Step_number = uni.getStorageSync(stepCacheKey);
+					stepItem.Step_count = that.formatDate(now);
+					stepItem.title = that.$t("步数");
+					stepItem.type_LX = that.$t("计步");
+					that.bushu = stepItem.Step_number;
+					that.bushu_time = stepItem.Step_count;
+					that.saveDailySteps(that.bushu, that.bushu_time);
+				});
+			},
 
-								that.Latest_weight = that.findValue(res.data.data, 'register', 'weight')
-									.registerVal
-								that.Latest_date = that.formatDate(that.findValue(res.data.data,
-										'register',
-										'weight')
-									.updateTime)
+			// 封装处理身高、体重等通用逻辑
+			async processCommonData(itemdata, titleKey, dataKey, typeKey, unitKey) {
+				let that = this
+				const item = that.findValue(that.list2, 'title', titleKey);
+				const data = that.findValue(itemdata, 'register', dataKey);
+				const unit = uni.getStorageSync(unitKey) === 0 ? "inch" : "cm";
+				item.type_LX = unit;
+				item.Step_number = data?.registerVal || '--';
+				item.Step_count = that.formatDate(data?.updateTime);
+				item.title = that.$t("身高")
+			},
 
-								that.Target_weight = that.findValue(res.data.data, 'register',
-										'goal_weight')
-									.registerVal
-								that.Chest_circumference = that.findValue(res.data.data, 'register',
-										'chest_circumference')
-									.registerVal
-								that.waistline = that.findValue(res.data.data, 'register', 'waistline')
-									.registerVal
-								that.Hip_circumference = that.findValue(res.data.data, 'register',
-										'hipline')
-									.registerVal
-								that.Upper_Chest_circumference = that.findValue(res.data.data, 'register',
-										'biceps_circumference')
-									.registerVal
-								that.Thigh_circumference = that.findValue(res.data.data, 'register',
-										'thigh_circumference')
-									.registerVal
-								that.Calf_circumference = that.findValue(res.data.data, 'register',
-										'calf_circumference')
-									.registerVal
-								that.lowPressure = that.findValue(res.data.data, 'register',
-										'lowPressure')
-									.registerVal
-								that.highPressure = that.findValue(res.data.data, 'register',
-										'highPressure')
-									.registerVal
-								that.pulse = that.findValue(res.data.data, 'register',
-										'heartrate')
-									.registerVal
-								if (that.lowPressure < 85 && that.highPressure < 130) {
-									that.xueya = 0
-									that.title_name = "正常血压"
-								} else if ((85 <= that.lowPressure && that.lowPressure <= 89) && (130 <= that
-										.highPressure && that.highPressure <= 139)) {
-									that.xueya = 1
-									that.title_name = "正常高血压值"
-								} else if ((90 <= that.lowPressure && that.lowPressure <= 99) && (140 <= that
-										.highPressure && that.highPressure <= 159)) {
-									that.xueya = 2
-									that.title_name = "一级高血压"
-								} else if (100 <= that.lowPressure && 160 <= that.highPressure) {
-									that.xueya = 3
-									that.title_name = "二级高血压"
-								} else {
-									that.xueya = 4
-									that.title_name = "未知"
-								}
-								if (that.main_type == true) {
-									for (let i = 0; uni.getStorageSync("kapianlist").length > i; i++) {
-										if (uni.getStorageSync("kapianlist")[i].title.includes("步数")) {
+			// 定义一个通用的处理函数
+			updateCard(data, titleKey, dataKey, name) {
+				let that = this
+				const item = that.findValue(that.list2, 'title', titleKey);
+				item.title = name
+				item.Step_number = data[dataKey] || '-/-';
+			},
 
-											uni.getStorageInfo({
-												success: function(ress) {
-													// 判断缓存是否存在
-													if (ress.keys.includes('settept1')) {
-														let aa = that.localData
-														if (aa != uni.getStorageSync("settept") && aa <
-															uni.getStorageSync("settept")) {
-															let bb = uni.getStorageSync("settept") - aa
-															let aaa = uni.getStorageSync(
-																"settept1") + bb
-															uni.setStorageSync("settept1", aaa)
-														}
-														that.localData = uni.getStorageSync("settept")
-														that.findValue(that.list, 'title',
-															"步数").Step_number = uni.getStorageSync(
-															"settept1")
-														that.findValue(that.list, 'title',
-															"步数").Step_count = that.formatDate(
-															new Date().getTime())
-
-
-													} else {
-														//不存在
-														that.findValue(that.list, 'title',
-															"步数").Step_number = uni.getStorageSync(
-															"settept")
-														uni.setStorageSync("settept1", that.findValue(
-															that.list, 'title',
-															"步数").Step_number)
-														that.findValue(that.list, 'title',
-															"步数").Step_count = that.formatDate(
-															new Date().getTime())
-													}
-												}
-											});
-
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("身高")) {
-											let height = that.findValue(res.data.data, 'register', 'height')
-												.registerVal
-											that.findValue(that.list, 'title', "身高").Step_number = height == null ?
-												'--' : height
-											that.findValue(that.list, 'title', "身高").Step_count = that.formatDate(
-												that.findValue(res.data.data, 'register', 'height').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("体重")) {
-											that.findValue(that.list, 'title',
-												"体重").Step_number = that.findValue(res.data.data, 'register',
-												'weight').registerVal
-											that.findValue(that.list, 'title',
-												that.$t('zhuceitem.title_6')).Step_count = that.formatDate(that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
+			// 定义BMI分类逻辑
+			async updateBMI(data) {
+				let that = this
+				const bmiItem = that.findValue(that.list2, 'title', "BMI");
+				const bmiValue = data.BMI || 0;
+				bmiItem.Step_number = bmiValue;
+				if (bmiValue < 18.5) {
+					bmiItem.BMI_TF = 0;
+					bmiItem.BMI_ys = that.$t("体重过轻");
+				} else if (bmiValue <= 24.9) {
+					bmiItem.BMI_TF = 1;
+					bmiItem.BMI_ys = that.$t("正常体重");
+				} else if (bmiValue <= 29.9) {
+					bmiItem.BMI_TF = 2;
+					bmiItem.BMI_ys = that.$t("超重");
+				} else if (bmiValue <= 34.9) {
+					bmiItem.BMI_TF = 3;
+					bmiItem.BMI_ys = that.$t("一级肥胖");
+				} else if (bmiValue <= 39.9) {
+					bmiItem.BMI_TF = 4;
+					bmiItem.BMI_ys = that.$t("二级肥胖");
+				} else {
+					bmiItem.BMI_TF = 5;
+					bmiItem.BMI_ys = that.$t("三级肥胖或病态肥胖");
+				}
+			},
 
 
-										if (uni.getStorageSync("kapianlist")[i].title.includes("BMI")) {
 
-											that.findValue(that.list, 'title', "BMI").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
+			// 封装处理BMI和其他通用逻辑
+			async processGenericData(itemdata, titleKey, dataKey) {
+				let that = this
+				const item = that.findValue(that.list2, 'title', that.$t(
+					titleKey));
+				const data = that.findValue(itemdata, 'register', dataKey);
+				item.Step_count = that.formatDate(data?.updateTime);
+			},
 
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("血氧")) {
+			// 处理身高卡片
+			async processHeight(item, name) {
+				let that = this
+				const heightItem = that.findValue(that.list, 'title',
+					name);
+				const height = that.findValue(item, 'register',
+						'height')
+					?.registerVal;
+				const unit = uni.getStorageSync("danwei1") === 0 ?
+					"inch" :
+					"cm";
+				heightItem.type_LX = unit;
+				heightItem.title = that.$t("身高")
+				heightItem.Step_number = height !== null ? height :
+					'-/-';
+				heightItem.Step_count = that.formatDate(that.findValue(
+					item,
+					'register', 'height')?.updateTime);
+			},
 
-											that.findValue(that.list, 'title', "血氧").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("骨含BM")) {
+			// 处理体温卡片
+			async processTemperature(item, name) {
+				let that = this
+				const temperatureItem = that.findValue(that.list,
+					'title', name);
+				temperatureItem.title = that.$t("体温")
+				temperatureItem.Step_number = uni.getStorageSync(
+					"tiwen") || "0";
+				temperatureItem.Step_count = uni.getStorageSync(
+					"tiwentimes") || "--/--";
+			},
 
-											that.findValue(that.list, 'title', "骨含BM").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("肌肉量")) {
-
-											that.findValue(that.list, 'title', "肌肉量").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("蛋白率")) {
-
-											that.findValue(that.list, 'title', "蛋白率").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("水分")) {
-
-											that.findValue(that.list, 'title', "水分").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("内脏脂肪指数")) {
-
-											that.findValue(that.list, 'title', "内脏脂肪指数").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("脂肪率")) {
-
-											that.findValue(that.list, 'title', "脂肪率").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("基础代谢率")) {
-
-											that.findValue(that.list, 'title', "基础代谢率").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("皮下脂肪率")) {
-
-											that.findValue(that.list, 'title', "皮下脂肪率").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("身体年龄")) {
-
-											that.findValue(that.list, 'title', "身体年龄").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-									}
-								} else {
-									for (let i = 0; uni.getStorageSync("kapianlist2").length > i; i++) {
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("步数")) {
-
-											uni.getStorageInfo({
-												success: function(ress) {
-
-													if (ress.keys.includes('settept1')) {
-														let aa = that.localData
-														if (aa != uni.getStorageSync("settept") && aa <
-															uni.getStorageSync("settept")) {
-															let bb = uni.getStorageSync("settept") - aa
-															let aaa = uni.getStorageSync(
-																"settept1") + bb
-															uni.setStorageSync("settept1", aaa)
-														}
-														that.localData = uni.getStorageSync("settept")
-														that.findValue(that.list2, 'title',
-															"步数").Step_number = uni.getStorageSync(
-															"settept1")
-														that.findValue(that.list2, 'title',
-															"步数").Step_count = that.formatDate(
-															new Date().getTime())
-													} else {
-
-														//不存在
-														that.findValue(that.list2, 'title',
-															"步数").Step_number = uni.getStorageSync(
-															"settept")
-														uni.setStorageSync("settept1", that.findValue(
-															that.list2, 'title',
-															"步数").Step_number)
-														that.findValue(that.list2, 'title',
-															"步数").Step_count = that.formatDate(
-															new Date().getTime())
-													}
-												}
-											});
-
-
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("身高")) {
-											let height = that.findValue(res.data.data, 'register', 'height')
-												.registerVal
-											that.findValue(that.list2, 'title', "身高").Step_number = height ==
-												null ?
-												'--' : height
-											that.findValue(that.list2, 'title', "身高").Step_count = that.formatDate(
-												that.findValue(res.data.data, 'register', 'height').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("体重")) {
-											that.findValue(that.list2, 'title',
-												"体重").Step_number = that.findValue(res.data.data, 'register',
-												'weight').registerVal
-											that.findValue(that.list2, 'title',
-												that.$t('zhuceitem.title_6')).Step_count = that.formatDate(that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("BMI")) {
-
-											that.findValue(that.list2, 'title', "BMI").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("血氧")) {
-
-											that.findValue(that.list2, 'title', "血氧").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("骨含BM")) {
-
-											that.findValue(that.list2, 'title', "骨含BM").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("肌肉量")) {
-
-											that.findValue(that.list2, 'title', "肌肉量").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("蛋白率")) {
-
-											that.findValue(that.list2, 'title', "蛋白率").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("水分")) {
-
-											that.findValue(that.list2, 'title', "水分").Step_count = that.formatDate(
-												that
-												.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("内脏脂肪指数")) {
-
-											that.findValue(that.list2, 'title', "内脏脂肪指数").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("脂肪率")) {
-
-											that.findValue(that.list2, 'title', "脂肪率").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("基础代谢率")) {
-
-											that.findValue(that.list2, 'title', "基础代谢率").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("皮下脂肪率")) {
-
-											that.findValue(that.list2, 'title', "皮下脂肪率").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("身体年龄")) {
-
-											that.findValue(that.list2, 'title', "身体年龄").Step_count = that
-												.formatDate(that
-													.findValue(res.data.data, 'register', 'weight').updateTime)
-										}
-									}
-								}
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
+			// 处理血氧卡片
+			async processBloodOxygen(item, name) {
+				let that = this
+				uni.getStorageInfo({
+					success: (xueyangres) => {
+						const bloodOxygenItem =
+							that.findValue(that
+								.list, 'title',
+								name);
+						if (xueyangres.keys
+							.includes(
+								"xueyang")) {
+							const xueyang = uni
+								.getStorageSync(
+									"xueyang");
+							bloodOxygenItem
+								.Step_number =
+								xueyang !== null ?
+								xueyang : "0"
+							if (xueyang <= 95) {
+								bloodOxygenItem
+									.BMI_ys =
+									that.$t('偏低');
+								bloodOxygenItem
+									.BMI_TF = 0;
+							} else if (xueyang <
+								98) {
+								bloodOxygenItem
+									.BMI_ys =
+									that.$t('正常');
+								bloodOxygenItem
+									.BMI_TF = 1;
+							} else if (parseInt(
+									xueyang) >=
+								98) {
+								bloodOxygenItem
+									.BMI_ys =
+									that.$t('偏高');
+								bloodOxygenItem
+									.BMI_TF =
+									10;
+							}
+						} else {
+							const xueyang = that
+								.findValue(
+									item,
+									'register',
+									'oxygen')
+								?.registerVal;
+							bloodOxygenItem
+								.Step_number =
+								xueyang
+							if (parseInt(
+									xueyang) <= 95) {
+								bloodOxygenItem
+									.BMI_ys =
+									that.$t('偏低');
+								bloodOxygenItem
+									.BMI_TF = 0;
+							} else if (parseInt(
+									xueyang) <
+								98) {
+								bloodOxygenItem
+									.BMI_ys =
+									that.$t('正常');
+								bloodOxygenItem
+									.BMI_TF = 1;
+							} else if (parseInt(
+									xueyang) >=
+								98) {
+								bloodOxygenItem
+									.BMI_ys =
+									that.$t('偏高');
+								bloodOxygenItem
+									.BMI_TF =
+									10;
 							}
 						}
+						if (xueyangres.keys
+							.includes(
+								"xueyangtimes")) {
+							bloodOxygenItem
+								.Step_count = !
+								uni.getStorageSync(
+									"xueyangtimes"
+								) ?
+								"-/-" : uni
+								.getStorageSync(
+									"xueyangtimes"
+								);
+						} else {
+							const xueyangtime =
+								that
+								.formatDate(that
+									.findValue(
+										item,
+										'register',
+										'oxygen')
+									?.updateTime);
+							bloodOxygenItem
+								.Step_count = !
+								xueyangtime ?
+								"-/-" :
+								xueyangtime;
+						}
+						bloodOxygenItem.title =
+							that.$t(
+								"血氧");
+					}
+				});
+			},
 
+			// 处理压力卡片
+			async processyali(item, name) {
+				let that = this
+				const temperatureItem = that.findValue(that
+					.list,
+					'title', name);
+				temperatureItem.title = that.$t("压力");
+				temperatureItem.Step_number = uni
+					.getStorageSync(
+						"yali") || "0";
+				temperatureItem.Step_count = uni
+					.getStorageSync(
+						"yalitimes") || "--/--";
+			},
+
+
+			//设备数据概览
+			list_recipe() {
+				const data = {
+					userId: this.info.userId
+				}
+				this.$post(this.$url_list_recipe, data, {
+					'Authorization': 'Bearer ' +
+						uni
+						.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then(res => {
+					if (res.code === 200) {
+						if (this.currentIndex ===
+							0) {
+							// 获取血压值
+							const slaveSn2Data =
+								res.data
+								.filter(item =>
+									item
+									.slaveSn ===
+									"2");
+							const slaveSn3Data =
+								res.data
+								.filter(item =>
+									item
+									.slaveSn ===
+									"3");
+							let lowPressuretime1 =
+								this
+								.findValue(
+									slaveSn2Data,
+									"register",
+									"lowPressure")
+								.updateTime
+							let highPressureyime1 =
+								this
+								.findValue(
+									slaveSn2Data,
+									"register",
+									"highPressure")
+								.updateTime;
+							let heartratetime1 =
+								this
+								.findValue(
+									slaveSn2Data,
+									"register",
+									"heartrate"
+								)
+								.updateTime;
+							let lowPressure1 = this
+								.getRegisterVal(
+									slaveSn2Data,
+									'register',
+									'lowPressure')
+							let highPressure1 =
+								this
+								.getRegisterVal(
+									slaveSn2Data,
+									'register',
+									'highPressure')
+							let pulse1 = this
+								.getRegisterVal(
+									slaveSn2Data,
+									'register',
+									'heartrate'
+								);
+							let lowPressuretime2 =
+								this
+								.findValue(
+									slaveSn3Data,
+									"register",
+									"lowPressure")
+								.updateTime
+							let highPressureyime2 =
+								this
+								.findValue(
+									slaveSn3Data,
+									"register",
+									"highPressure")
+								.updateTime;
+							let heartratetime2 =
+								this
+								.findValue(
+									slaveSn3Data,
+									"register",
+									"heartrate"
+								)
+								.updateTime;
+							let lowPressure2 = this
+								.getRegisterVal(
+									slaveSn3Data,
+									'register',
+									'lowPressure')
+							let highPressure2 =
+								this
+								.getRegisterVal(
+									slaveSn3Data,
+									'register',
+									'highPressure')
+							let pulse2 = this
+								.getRegisterVal(
+									slaveSn3Data,
+									'register',
+									'heartrate'
+								);
+							if (lowPressuretime1 <
+								lowPressuretime2) {
+								this.lowPressure =
+									lowPressure2;
+								this.highPressure =
+									highPressure2;
+							} else if (
+								lowPressuretime1 >
+								lowPressuretime2) {
+								this.lowPressure =
+									lowPressure1;
+								this.highPressure =
+									highPressure1;
+							}
+							if (heartratetime1 <
+								heartratetime2) {
+								this.pulse =
+									pulse2;
+							} else if (
+								heartratetime1 >
+								heartratetime2) {
+								this.pulse =
+									pulse1;
+							}
+							// 判断血压等级
+							this.xueya = -
+								1; // 初始化为未知状态
+							this.title_name = this
+								.$t(
+									"未知");
+
+							if ((this
+									.lowPressure >=
+									61 &&
+									this
+									.lowPressure <=
+									80
+								) && (this
+									.highPressure >=
+									91 && this
+									.highPressure <=
+									120
+								)) {
+								this.xueya = 0;
+								this.title_name =
+									this.$t(
+										"正常血压");
+							} else if ((this
+									.lowPressure >=
+									81 && this
+									.lowPressure <=
+									90) ||
+								(this
+									.highPressure >=
+									121 &&
+									this
+									.highPressure <=
+									140)) {
+								this.xueya = 1;
+								this.title_name =
+									this.$t(
+										"正常高血压值");
+							} else if ((this
+									.lowPressure >=
+									91 && this
+									.lowPressure <=
+									100) ||
+								(this
+									.highPressure >=
+									141 &&
+									this
+									.highPressure <=
+									160)) {
+								this.xueya = 2;
+								this.title_name =
+									this.$t(
+										"一级高血压");
+							} else if ((this
+									.lowPressure >=
+									101 && this
+									.lowPressure <=
+									110) ||
+								(this
+									.highPressure >=
+									161 &&
+									this
+									.highPressure <=
+									180)) {
+								this.xueya = 3;
+								this.title_name =
+									this.$t(
+										"二级高血压");
+							}
+							// 主逻辑：遍历卡片列表并处理
+							const kapianlist = uni
+								.getStorageSync(
+									"kapianlist"
+								) || [];
+							let itelistasd = []
+							for (let i = 0; i <
+								kapianlist
+								.length; i++) {
+								const item =
+									kapianlist[i];
+								if (item.title ===
+									"步数" || item
+									.title ===
+									"Steps") {
+									this.processSteps(
+										res
+										.data,
+										item
+										.title);
+								} else if (item
+									.title ===
+									"身高" || item
+									.title ===
+									"Height") {
+									this.processHeight(
+										res
+										.data,
+										item
+										.title);
+								} else if (item
+									.title ===
+									"体温" || item
+									.title ===
+									"Body Temperature"
+								) {
+									this.processTemperature(
+										res
+										.data,
+										item
+										.title);
+								} else if (item
+									.title ===
+									"血氧" || item
+									.title ===
+									"SpO₂") {
+									this.processBloodOxygen(
+										res
+										.data,
+										item
+										.title);
+								} else if (item
+									.title ===
+									"压力" || item
+									.title ===
+									"Stress") {
+									this.processyali(
+										res
+										.data,
+										item
+										.title);
+								}
+								itelistasd.push(
+									item)
+							}
+							uni.setStorageSync(
+								"kapianlist",
+								itelistasd)
+						} else if (this
+							.currentIndex ===
+							1) {
+							// 获取体重值
+							this.Latest_weight =
+								this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'weight');
+							this.Latest_date = this
+								.getUpdateTime(res
+									.data,
+									'register',
+									'weight')
+							this.Target_weight =
+								this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'goal_weight');
+							this.Chest_circumference =
+								this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'chest_circumference'
+								);
+							this.waistline = this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'waistline'
+								);
+							this.Hip_circumference =
+								this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'hipline');
+							this.Upper_Chest_circumference =
+								this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'biceps_circumference'
+								);
+							this.Thigh_circumference =
+								this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'thigh_circumference'
+								);
+							this.Calf_circumference =
+								this
+								.getRegisterVal(res
+									.data,
+									'register',
+									'calf_circumference'
+								);
+							// 主逻辑：遍历卡片列表并处理
+							const kapianlist2 = uni
+								.getStorageSync(
+									"kapianlist2"
+								) || [];
+							for (let i = 0; i <
+								kapianlist2
+								.length; i++) {
+								const item =
+									kapianlist2[
+										i];
+								if (item.title ===
+									"步数" ||
+									item.title ===
+									"Steps"
+								) {
+									this.processSteps2(
+										res
+										.data,
+										item
+										.title);
+								} else if (item
+									.title ===
+									"身高" || item
+									.title ===
+									"Height") {
+									this.processCommonData(
+										res
+										.data,
+										item
+										.title,
+										'height',
+										'danwei1',
+										"cm"
+									);
+								} else if (item
+									.title ===
+									"BMI") {
+									this.processGenericData(
+										res
+										.data,
+										"BMI",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t("骨含量")
+								) {
+									this.processGenericData(
+										res
+										.data,
+										"骨含量",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t("肌肉量")
+								) {
+									this.processGenericData(
+										res
+										.data,
+										"肌肉量",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t("蛋白率")
+								) {
+									this.processGenericData(
+										res
+										.data,
+										"蛋白率",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t("水分")
+								) {
+									this.processGenericData(
+										res
+										.data,
+										"水分",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t(
+										"内脏脂肪指数")
+								) {
+									this.processGenericData(
+										res
+										.data,
+										"内脏脂肪指数",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t("脂肪率")
+								) {
+									this.processGenericData(
+										res
+										.data,
+										"脂肪率",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t(
+										"基础代谢率")) {
+									this.processGenericData(
+										res
+										.data,
+										"基础代谢率",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t(
+										"皮下脂肪率")) {
+									this.processGenericData(
+										res
+										.data,
+										"皮下脂肪率",
+										"weight"
+									);
+								} else if (item
+									.title ===
+									this.$t("身体年龄")
+								) {
+									this.processGenericData(
+										res
+										.data,
+										"身体年龄",
+										"weight"
+									);
+								}
+							}
+						} else if (this
+							.currentIndex ===
+							3) {
+							uni.getStorageInfo({
+								success: (
+									ress
+								) => {
+									const
+										currentStep =
+										uni
+										.getStorageSync(
+											"settept"
+										);
+									const
+										cachedStep =
+										ress
+										.keys
+										.includes(
+											'settept1'
+										) ?
+										uni
+										.getStorageSync(
+											"settept1"
+										) :
+										0;
+									// 如果缓存存在且当前步数大于缓存步数，则更新缓存
+									if (cachedStep <
+										currentStep
+									) {
+										const
+											stepDiff =
+											currentStep -
+											cachedStep;
+										uni.setStorageSync(
+											"settept1",
+											cachedStep +
+											stepDiff
+										);
+									}
+									// 更新步数和时间
+									this.bushu =
+										uni
+										.getStorageSync(
+											"settept1"
+										);
+									this.bushu_time =
+										this
+										.formatDate(
+											new Date()
+											.getTime()
+										);
+									// 保存当天的步数
+									this.saveDailySteps(
+										this
+										.bushu,
+										this
+										.bushu_time
+									);
+								},
+							});
+						}
 					}
 				})
 			},
-
 			findValue(arr, key, value) {
 				for (let i = 0; i < arr.length; i++) {
 					if (arr[i][key] == value) {
@@ -1774,511 +4288,187 @@
 				return null
 			},
 
-
 			//获取体脂秤身体指数
 			get_device_data(deviceSn) {
-				let that = this
-				console.log("获取体脂秤身体指数1", deviceSn)
-				uni.request({
-					url: that.$url_get_device_data,
-					method: 'POST',
-					data: {
-						deviceSn: deviceSn
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
-					},
-					success(res) {
-						console.log("获取体脂秤身体指数", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								if (that.main_type == true) {
-									for (let i = 0; uni.getStorageSync("kapianlist").length > i; i++) {
-										if (uni.getStorageSync("kapianlist")[i].title.includes("BMI")) {
-											that.findValue(that.list, 'title', "BMI").Step_number = res.data.data
-												.BMI
-											that.findValue(that.list, 'title', "BMI").Step_count = "--/--"
-											if (that.findValue(that.list, 'title', 'BMI').Step_number < 18.5) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 0
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "体重过轻"
-											} else if (18.5 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number &&
-												that
-												.findValue(that.list, 'title', 'BMI').Step_number <= 24.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 1
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "正常体重"
-											} else if (20.5 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number &&
-												that
-												.findValue(that.list, 'title', 'BMI').Step_number <= 29.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 2
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "超重"
-											} else if (30 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number && that.findValue(that.list, 'title', 'BMI')
-												.Step_number <= 34.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 3
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "一级肥胖"
-											} else if (35.0 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number && that.findValue(that.list, 'title', 'BMI')
-												.Step_number <= 39.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 4
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "二级肥胖"
-											} else if (40 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 5
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "三级肥胖或病态肥胖"
-											}
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("血氧")) {
-											that.findValue(that.list, 'title', "血氧").BMI_ys = "--"
-											that.findValue(that.list, 'title', "血氧").Step_number = "--"
-											that.findValue(that.list, 'title', "血氧").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("骨含BM")) {
-											that.findValue(that.list, 'title', "骨含BM").Step_number = res.data.data
-												.BM == "" ? "--" : res.data.data
-												.BM
-											that.findValue(that.list, 'title', "骨含BM").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("肌肉量")) {
-											that.findValue(that.list, 'title', "肌肉量").Step_number = res.data.data
-												.ROM == "" ? "--" : res.data.data
-												.ROM
-											that.findValue(that.list, 'title', "肌肉量").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("蛋白率")) {
-											that.findValue(that.list, 'title', "蛋白率").Step_number = res.data.data
-												.PP == "" ? "--" : res.data.data
-												.PP
-											that.findValue(that.list, 'title', "蛋白率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("水分")) {
-											that.findValue(that.list, 'title', "水分").Step_number = res.data.data
-												.MOI == "" ? "--" : res.data.data
-												.MOI
-											that.findValue(that.list, 'title', "水分").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("内脏脂肪指数")) {
-											that.findValue(that.list, 'title', "内脏脂肪指数").Step_number = res.data
-												.data
-												.UVI == "" ? "--" : res.data.data
-												.UVI
-											that.findValue(that.list, 'title', "内脏脂肪指数").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("脂肪率")) {
-											that.findValue(that.list, 'title', "脂肪率").Step_number = res.data.data
-												.BFR == "" ? "--" : res.data.data
-												.BFR
-											that.findValue(that.list, 'title', "脂肪率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("基础代谢率")) {
-											that.findValue(that.list, 'title', "基础代谢率").Step_number = res.data
-												.data
-												.BMR == "" ? "--" : res.data.data
-												.BMR
-											that.findValue(that.list, 'title', "基础代谢率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("皮下脂肪率")) {
-											that.findValue(that.list, 'title', "皮下脂肪率").Step_number = res.data
-												.data
-												.SFR == "" ? "--" : res.data.data
-												.SFR
-											that.findValue(that.list, 'title', "皮下脂肪率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("身体年龄")) {
-											that.findValue(that.list, 'title', "身体年龄").Step_number = res.data.data
-												.PA == "" ? "--" : res.data.data
-												.PA
-											that.findValue(that.list, 'title', "身体年龄").Step_count = "--/--"
-										}
-									}
-								} else {
-									for (let i = 0; uni.getStorageSync("kapianlist2").length > i; i++) {
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("BMI")) {
-											that.findValue(that.list2, 'title', "BMI").Step_number = res
-												.data
-												.data
-												.BMI
-											that.findValue(that.list2, 'title', "BMI").Step_count = "--/--"
-											if (that.findValue(that.list2, 'title', 'BMI').Step_number <
-												18.5) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 0
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "体重过轻"
-											} else if (18.5 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number &&
-												that
-												.findValue(that.list2, 'title', 'BMI').Step_number <= 24.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 1
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "正常体重"
-											} else if (20.5 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number &&
-												that
-												.findValue(that.list2, 'title', 'BMI').Step_number <= 29.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 2
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "超重"
-											} else if (30 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number && that
-												.findValue(that.list2, 'title', 'BMI').Step_number <= 34.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 3
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "一级肥胖"
-											} else if (35.0 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number &&
-												that
-												.findValue(that.list2, 'title', 'BMI').Step_number <= 39.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 4
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "二级肥胖"
-											} else if (40 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 5
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys =
-													"三级肥胖或病态肥胖"
-											}
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("血氧")) {
-											that.findValue(that.list2, 'title', "血氧").BMI_ys = "--"
-											that.findValue(that.list2, 'title', "血氧").Step_number = "--"
-											that.findValue(that.list2, 'title', "血氧").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("骨含BM")) {
-											that.findValue(that.list2, 'title', "骨含BM").Step_number = res.data.data
-												.BM == "" ? "--" : res.data.data
-												.BM
-											that.findValue(that.list2, 'title', "骨含BM").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("肌肉量")) {
-											that.findValue(that.list2, 'title', "肌肉量").Step_number = res.data.data
-												.ROM == "" ? "--" : res.data.data
-												.ROM
-											that.findValue(that.list2, 'title', "肌肉量").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("蛋白率")) {
-											that.findValue(that.list2, 'title', "蛋白率").Step_number = res.data.data
-												.PP == "" ? "--" : res.data.data
-												.PP
-											that.findValue(that.list2, 'title', "蛋白率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("水分")) {
-											that.findValue(that.list2, 'title', "水分").Step_number = res.data.data
-												.MOI == "" ? "--" : res.data.data
-												.MOI
-											that.findValue(that.list2, 'title', "水分").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("内脏脂肪指数")) {
-											that.findValue(that.list2, 'title', "内脏脂肪指数").Step_number = res.data
-												.data
-												.UVI == "" ? "--" : res.data.data
-												.UVI
-											that.findValue(that.list2, 'title', "内脏脂肪指数").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("脂肪率")) {
-											that.findValue(that.list2, 'title', "脂肪率").Step_number = res.data.data
-												.BFR == "" ? "--" : res.data.data
-												.BFR
-											that.findValue(that.list2, 'title', "脂肪率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("基础代谢率")) {
-											that.findValue(that.list2, 'title', "基础代谢率").Step_number = res.data
-												.data
-												.BMR == "" ? "--" : res.data.data
-												.BMR
-											that.findValue(that.list2, 'title', "基础代谢率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("皮下脂肪率")) {
-											that.findValue(that.list2, 'title', "皮下脂肪率").Step_number = res.data
-												.data
-												.SFR == "" ? "--" : res.data.data
-												.SFR
-											that.findValue(that.list2, 'title', "皮下脂肪率").Step_count = "--/--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("身体年龄")) {
-											that.findValue(that.list2, 'title', "身体年龄").Step_number = res.data.data
-												.PA == "" ? "--" : res.data.data
-												.PA
-											that.findValue(that.list2, 'title', "身体年龄").Step_count = "--/--"
-										}
-									}
-								}
-
-
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
+				const data = {
+					deviceSn: deviceSn
+				}
+				this.$post(this.$url_get_device_data,
+					data, {
+						'Authorization': 'Bearer ' +
+							uni
+							.getStorageSync("token"),
+						'content-type': 'application/x-www-form-urlencoded'
+					}).then(res => {
+					if (res.code === 200) {
+						const kapianlist2 = uni
+							.getStorageSync(
+								"kapianlist2") || [];
+						let itelistasd2 = []
+						const data = res.data;
+						for (let i = 0; i <
+							kapianlist2
+							.length; i++) {
+							const item =
+								kapianlist2[i];
+							if (item.title ===
+								"BMI") {
+								this.updateBMI(
+									data);
+							} else if (item
+								.title ===
+								"骨含量" || item
+								.title ===
+								"Bone Mass") {
+								this.updateCard(
+									data, item
+									.title,
+									"BM", this
+									.$t("骨含量"));
+							} else if (item
+								.title ===
+								"肌肉量" || item
+								.title ===
+								"Muscle Mass") {
+								this.updateCard(
+									data, item
+									.title,
+									"ROM", this
+									.$t("肌肉量"));
+							} else if (item
+								.title ===
+								"蛋白率" || item
+								.title ===
+								"Protein%") {
+								this.updateCard(
+									data, item
+									.title,
+									"PP", this
+									.$t("蛋白率"));
+							} else if (item
+								.title ===
+								"水分" || item
+								.title ===
+								"Water%") {
+								this.updateCard(
+									data, item
+									.title,
+									"MOI", this
+									.$t("水分"));
+							} else if (item
+								.title ===
+								"内脏脂肪指数" || item
+								.title ===
+								"VFI") {
+								this.updateCard(
+									data, item
+									.title,
+									"UVI", this
+									.$t(
+										"内脏脂肪指数")
+								);
+							} else if (item
+								.title ===
+								"脂肪率" || item
+								.title ===
+								"Fat%") {
+								this.updateCard(
+									data, item
+									.title,
+									"BFR", this
+									.$t("脂肪率"));
+							} else if (item
+								.title ===
+								"基础代谢率" || item
+								.title ===
+								"BMR") {
+								this.updateCard(
+									data, item
+									.title,
+									"BMR", this
+									.$t(
+										"基础代谢率")
+								);
+							} else if (item
+								.title ===
+								"皮下脂肪率" || item
+								.title ===
+								"SubQ Fat%") {
+								this.updateCard(
+									data, item
+									.title,
+									"SFR", this
+									.$t(
+										"皮下脂肪率")
+								);
+							} else if (item
+								.title ===
+								"身体年龄" || item
+								.title ===
+								"Body Age") {
+								this.updateCard(
+									data, item
+									.title,
+									"PA", this
+									.$t("身体年龄")
+								);
 							}
+							itelistasd2.push(item)
 						}
-
+						uni.setStorageSync(
+							"kapianlist2",
+							itelistasd2)
 					}
 				})
 			},
-			//获取体脂秤身体指数
-			get_device_data1(deviceSn) {
-				let that = this
-				console.log("获取体脂秤身体指数1", deviceSn)
-				uni.request({
-					url: that.$url_get_device_data,
-					method: 'POST',
-					data: {
-						deviceSn: deviceSn
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
-					},
-					success(res) {
-						console.log("获取体脂秤身体指数", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								if (that.main_type == true) {
-									for (let i = 0; uni.getStorageSync("kapianlist").length > i; i++) {
-										if (uni.getStorageSync("kapianlist")[i].title.includes("BMI")) {
-											that.findValue(that.list, 'title', "BMI").Step_number = res.data.data
-												.BMI
-											if (that.findValue(that.list, 'title', 'BMI').Step_number < 18.5) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 0
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "体重过轻"
-											} else if (18.5 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number &&
-												that
-												.findValue(that.list, 'title', 'BMI').Step_number <= 24.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 1
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "正常体重"
-											} else if (20.5 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number &&
-												that
-												.findValue(that.list, 'title', 'BMI').Step_number <= 29.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 2
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "超重"
-											} else if (30 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number && that.findValue(that.list, 'title', 'BMI')
-												.Step_number <= 34.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 3
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "一级肥胖"
-											} else if (35.0 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number && that.findValue(that.list, 'title', 'BMI')
-												.Step_number <= 39.9) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 4
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "二级肥胖"
-											} else if (40 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number) {
-												that.findValue(that.list, 'title', 'BMI').BMI_TF = 5
-												that.findValue(that.list, 'title', 'BMI').BMI_ys = "三级肥胖或病态肥胖"
-											}
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("血氧")) {
-											that.findValue(that.list, 'title', "血氧").BMI_ys = "--"
-											that.findValue(that.list, 'title', "血氧").Step_number = "--"
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("骨含BM")) {
-											that.findValue(that.list, 'title', "骨含BM").Step_number = res.data.data
-												.BM == "" ? "--" : res.data.data.BM
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("肌肉量")) {
-											that.findValue(that.list, 'title', "肌肉量").Step_number = res.data.data
-												.ROM == "" ? "--" : res.data.data.ROM
-
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("蛋白率")) {
-											that.findValue(that.list, 'title', "蛋白率").Step_number = res.data.data
-												.PP == "" ? "--" : res.data.data.PP
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("水分")) {
-											that.findValue(that.list, 'title', "水分").Step_number = res.data.data
-												.MOI == "" ? "--" : res.data.data.MOI
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("内脏脂肪指数")) {
-											that.findValue(that.list, 'title', "内脏脂肪指数").Step_number = res.data
-												.data.UVI == "" ? "--" : res.data.data.UVI
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("脂肪率")) {
-											that.findValue(that.list, 'title', "脂肪率").Step_number = res.data.data
-												.BFR == "" ? "--" : res.data.data.BFR
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("基础代谢率")) {
-											that.findValue(that.list, 'title', "基础代谢率").Step_number = res.data
-												.data.BMR == "" ? "--" : res.data.data.BMR
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("皮下脂肪率")) {
-											that.findValue(that.list, 'title', "皮下脂肪率").Step_number = res.data
-												.data.SFR == "" ? "--" : res.data.data.SFR
-										}
-										if (uni.getStorageSync("kapianlist")[i].title.includes("身体年龄")) {
-											that.findValue(that.list, 'title', "身体年龄").Step_number = res.data.data
-												.PA == "" ? "--" : res.data.data.PA
-										}
-									}
-								} else {
-									for (let i = 0; uni.getStorageSync("kapianlist2").length > i; i++) {
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("BMI")) {
-											that.findValue(that.list2, 'title', "BMI").Step_number = res
-												.data.data.BMI
-											if (that.findValue(that.list2, 'title', 'BMI').Step_number <
-												18.5) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 0
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "体重过轻"
-											} else if (18.5 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number && that.findValue(that.list2, 'title', 'BMI')
-												.Step_number <= 24.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 1
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "正常体重"
-											} else if (20.5 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number && that.findValue(that.list2, 'title', 'BMI')
-												.Step_number <= 29.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 2
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "超重"
-											} else if (30 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number && that.findValue(that.list2, 'title', 'BMI')
-												.Step_number <= 34.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 3
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "一级肥胖"
-											} else if (35.0 <= that.findValue(that.list2, 'title', 'BMI')
-												.Step_number && that.findValue(that.list2, 'title', 'BMI')
-												.Step_number <= 39.9
-											) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 4
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys = "二级肥胖"
-											} else if (40 <= that.findValue(that.list, 'title', 'BMI')
-												.Step_number) {
-												that.findValue(that.list2, 'title', 'BMI').BMI_TF = 5
-												that.findValue(that.list2, 'title', 'BMI').BMI_ys =
-													"三级肥胖或病态肥胖"
-											}
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("血氧")) {
-											that.findValue(that.list2, 'title', "血氧").BMI_ys = "--"
-											that.findValue(that.list2, 'title', "血氧").Step_number = "--"
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("骨含BM")) {
-											that.findValue(that.list2, 'title', "骨含BM").Step_number = res.data.data
-												.BM == "" ? "--" : res.data.data.BM
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("肌肉量")) {
-											that.findValue(that.list2, 'title', "肌肉量").Step_number = res.data.data
-												.ROM == "" ? "--" : res.data.data.ROM
-
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("蛋白率")) {
-											that.findValue(that.list2, 'title', "蛋白率").Step_number = res.data.data
-												.PP == "" ? "--" : res.data.data.PP
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("水分")) {
-											that.findValue(that.list2, 'title', "水分").Step_number = res.data.data
-												.MOI == "" ? "--" : res.data.data.MOI
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("内脏脂肪指数")) {
-											that.findValue(that.list2, 'title', "内脏脂肪指数").Step_number = res.data
-												.data.UVI == "" ? "--" : res.data.data.UVI
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("脂肪率")) {
-											that.findValue(that.list2, 'title', "脂肪率").Step_number = res.data.data
-												.BFR == "" ? "--" : res.data.data.BFR
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("基础代谢率")) {
-											that.findValue(that.list2, 'title', "基础代谢率").Step_number = res.data
-												.data.BMR == "" ? "--" : res.data.data.BMR
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("皮下脂肪率")) {
-											that.findValue(that.list2, 'title', "皮下脂肪率").Step_number = res.data
-												.data.SFR == "" ? "--" : res.data.data.SFR
-										}
-										if (uni.getStorageSync("kapianlist2")[i].title.includes("身体年龄")) {
-											that.findValue(that.list2, 'title', "身体年龄").Step_number = res.data.data
-												.PA == "" ? "--" : res.data.data.PA
-										}
-									}
-								}
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
-							}
-						}
-
-					}
-				})
-			},
-
 
 			tiaozhen() {
 				this.binaji = false
 				this.animation = 'shake';
 				this.button_show = true
 				this.delate_icon = true
-				this.aaa = false
+				this.disabledsaaa = false
 			},
 			tiaozhen2() {
 				this.binaji2 = false
-				this.animation = 'shake';
+				this.animation2 = 'shake';
 				this.button_show2 = true
-				this.delate_icon = true
-				this.aaa2 = false
-			},
-
-			qiehuan() {
-				this.binaji = true
-				this.animation = '';
-				this.button_show = false
-				this.delate_icon = false
-				this.aaa = true
-				uni.setStorageSync("kapianlist", this.list)
-				this.binaji2 = true
-				this.animation = '';
-				this.button_show2 = false
-				this.delate_icon = false
-				this.aaa2 = true
-				uni.setStorageSync("kapianlist2", this.list2)
-				uni.navigateTo({
-					url: '../../../pages/Bind/cs_manage_1?typesss=main'
-				})
+				this.delate_icon2 = true
+				this.disabledsaaa2 = false
 			},
 
 			add_bt_xy() {
-				console.log("dsakhjdas", "sdasdsdsadsasda")
 				uni.navigateTo({
 					url: "../main/card1"
 				})
 			},
+
 			add_bt2() {
 				uni.navigateTo({
 					url: '../main/card'
 				})
 			},
 
-
 			ture_bt() {
-				console.log("dsakhdas", "kdsakldkadhashd")
 				this.binaji = true
 				this.animation = '';
 				this.button_show = false
 				this.delate_icon = false
-				this.aaa = true
+				this.disabledsaaa = true
 				uni.setStorageSync("kapianlist", this.list)
 			},
 
-
-
 			ture_bt2() {
-				console.log("dsakhdasaaaaaa", "kdsakldkadhashd")
 				this.binaji2 = true
-				this.animation = '';
+				this.animation2 = '';
 				this.button_show2 = false
-				this.delate_icon = false
-				this.aaa2 = true
-				uni.setStorageSync("kapianlist2", this.list2)
+				this.delate_icon2 = false
+				this.disabledsaaa2 = true
+				uni.setStorageSync("kapianlist2", this
+					.list2)
 			},
 
-
 			xw_handleChange(e) {
-				console.log("胸围：", e)
 				this.xw_value = e;
 			},
 			yw_handleChange(e) {
@@ -2300,8 +4490,7 @@
 				this.$refs.popup.open("center")
 			},
 			BMI_tap(id) {
-				console.log("dsahdahdas", id)
-				if (id == "血氧") {
+				if (id == this.$t("血氧")) {
 					this.$refs.popup2.open("center")
 				} else {
 					this.$refs.popup1.open("center")
@@ -2317,54 +4506,63 @@
 				this.$refs.popup2.close()
 			},
 			jitizhong_tc() {
-				if (this.tizhong === "" || this.tizhong === undefined) {
+				if (this.tizhong === "" || this.tizhong ===
+					undefined) {
 					uni.showToast({
-						title: this.$t('zhuceitem.toast_9'),
+						title: this.$t('请输入体重'),
 						icon: 'none'
 					})
 					return
 				} else {
 					this.fat_scale_tz()
-					// this.fat_scale_tz1()
 				}
 			},
 			select_ruler() {
 				this.fat_scale_1()
 			},
 			popup_sd() {
-				if (this.xiongwei === "" || this.xiongwei === undefined) {
+				if (this.xiongwei === "" || this
+					.xiongwei ===
+					undefined) {
 					uni.showToast({
-						title: this.$t('shouye_item.title_24'),
+						title: this.$t('请输入胸围'),
 						icon: 'none'
 					})
 					return
-				} else if (this.yaowei === "" || this.yaowei === undefined) {
+				} else if (this.yaowei === "" || this
+					.yaowei ===
+					undefined) {
 					uni.showToast({
-						title: this.$t('shouye_item.title_25'),
+						title: this.$t('请输入腰围'),
 						icon: 'none'
 					})
 					return
-				} else if (this.tunwei === "" || this.tunwei === undefined) {
+				} else if (this.tunwei === "" || this
+					.tunwei ===
+					undefined) {
 					uni.showToast({
-						title: this.$t('shouye_item.title_26'),
+						title: this.$t('请输入臀围'),
 						icon: 'none'
 					})
 					return
-				} else if (this.shangtunwei === "" || this.shangtunwei === undefined) {
+				} else if (this.shangtunwei === "" || this
+					.shangtunwei === undefined) {
 					uni.showToast({
-						title: this.$t('shouye_item.title_27'),
+						title: this.$t('请输入上臂围'),
 						icon: 'none'
 					})
 					return
-				} else if (this.datuiwei === "" || this.datuiwei === undefined) {
+				} else if (this.datuiwei === "" || this
+					.datuiwei === undefined) {
 					uni.showToast({
-						title: this.$t('shouye_item.title_28'),
+						title: this.$t('请输入大腿围'),
 						icon: 'none'
 					})
 					return
-				} else if (this.xiaotuiwei === "" || this.xiaotuiwei === undefined) {
+				} else if (this.xiaotuiwei === "" || this
+					.xiaotuiwei === undefined) {
 					uni.showToast({
-						title: this.$t('shouye_item.title_29'),
+						title: this.$t('请输入小腿围'),
 						icon: 'none'
 					})
 					return
@@ -2373,34 +4571,17 @@
 				}
 			},
 
-
 			knowe3() {
 				this.$refs.popup3.close()
 			},
 
-			trigger(e) {
-				this.content[e.index].active = !e.item.active
-				uni.showModal({
-					title: '提示',
-					content: `您${this.content[e.index].active ? '选中了' : '取消了'}${e.item.text}`,
-					success: function(res) {
-						if (res.confirm) {
-							console.log('用户点击确定')
-						} else if (res.cancel) {
-							console.log('用户点击取消')
-						}
-					}
-				})
-			},
-			fabClick(e) {
-				if (this.main_type == true) {
-					this.$refs.qs_popup.open("center")
-				} else {
-					this.fillOut = true
-				}
+			xueyaclick() {
+				this.$refs.qs_popup.open("center")
 			},
 
-
+			tizhiclick() {
+				this.fillOut = true
+			},
 			closess() {
 				this.fillOut = false
 			},
@@ -2428,20 +4609,16 @@
 				this.$refs.myPicker.show();
 			},
 			handleSubmit(e) {
-				this.birthday = `${e.year}-${e.month}-${e.day} ${e.hour}:${e.minute}`;
+				this.birthday =
+					`${e.year}-${e.month}-${e.day} ${e.hour}:${e.minute}`;
 			},
 			dataclick1() {
 				this.$refs.myPicker1.show();
 			},
 			handleSubmit1(e) {
-				this.birthday1 = `${e.year}-${e.month}-${e.day} ${e.hour}:${e.minute}`;
+				this.birthday1 =
+					`${e.year}-${e.month}-${e.day} ${e.hour}:${e.minute}`;
 			},
-			// dataclick2() {
-			// 	this.$refs.myPicker2.show();
-			// },
-			// handleSubmit2(e) {
-			// 	this.birthday2 = `${e.year}-${e.month}-${e.day} ${e.hour}:${e.minute}`;
-			// },
 			sdsr() {
 				this.$refs.tihzi_popup_hd.close()
 				this.$refs.tihzi_popup_sd.open("center")
@@ -2459,19 +4636,22 @@
 			//用户在app手动上报重量数据
 			fat_scale_tz() {
 				let that = this
-				let timestamp = Math.floor(new Date(that.birthday2 == that.$t('shouye_item.title_21') ?
-					new Date()
-					.toISOString().slice(0, 10) + " " + new Date().getHours() + ":" + new Date().getMinutes() :
-					that.birthday2).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
-				console.log("time", new Date()
-					.toISOString().slice(0, 10))
-				console.log("time", timestamp)
-				console.log("uni1111", uni.getStorageSync("deviceSn"))
+				let timestamp = Math.floor(new Date(that
+						.birthday2 == that.$t('今天') ?
+						new Date().toISOString().slice(
+							0, 10) +
+						" " + new Date().getHours() +
+						":" +
+						new Date().getMinutes() : that
+						.birthday2).getTime() /
+					1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
 					url: that.$url_fat_scale,
 					method: 'POST',
 					data: {
-						deviceSn: uni.getStorageSync("deviceSn"),
+						deviceSn: uni
+							.getStorageSync(
+								"deviceSn"),
 						slaveSn: "0",
 						slaveData: {
 							weight: that.tizhong
@@ -2479,23 +4659,34 @@
 						time: timestamp
 					},
 					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'Authorization': 'Bearer ' +
+							uni
+							.getStorageSync(
+								"token"),
 						'content-type': 'application/json' //自定义请求头信息
 					},
 					success: function(res) {
-						console.log("用户在app手动上报重量数据", res)
-						if (res.data.code == 200) {
+						if (res.data.code ==
+							200) {
 							that.tizhong = ''
-							that.birthday2 = that.$t('shouye_item.title_21')
+							that.birthday2 =
+								that.$t(
+									'今天')
 							uni.showToast({
-								title: res.data.msg,
+								title: res
+									.data
+									.msg,
 								icon: 'none'
 							})
 							that.list_recipe()
-							that.$refs.tizhong_popup.close()
+							that.$refs
+								.tizhong_popup
+								.close()
 						} else {
 							uni.showToast({
-								title: res.data.msg,
+								title: res
+									.data
+									.msg,
 								icon: 'none'
 							})
 						}
@@ -2504,42 +4695,42 @@
 			},
 			//用户在app手动上报重量数据
 			fat_scale_tz1() {
-				let that = this
-				let timestamp = new Date(new Date().toISOString().slice(0, 10) + " " + new Date().getHours() +
-					":" + new Date().getMinutes()).getTime() / 1000; // 将时间转换成时间戳（以秒为单位）
-				console.log("time", timestamp)
-				console.log("uni3333", uni.getStorageSync("deviceSn"))
-				uni.request({
-					url: that.$url_fat_scale,
-					method: 'POST',
-					data: {
-						deviceSn: uni.getStorageSync("deviceSn"),
-						slaveSn: "1",
-						slaveData: {
-							goal_weight: that.mubiao,
-						},
-						time: timestamp
+				let timestamp = new Date(new Date()
+					.toISOString()
+					.slice(0, 10) + " " + new Date()
+					.getHours() + ":" + new Date()
+					.getMinutes()
+				).getTime() / 1000; // 将时间转换成时间戳（以秒为单位）
+				const data = {
+					deviceSn: uni.getStorageSync(
+						"deviceSn"),
+					slaveSn: "1",
+					slaveData: {
+						goal_weight: this.mubiao,
 					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/json' //自定义请求头信息
-					},
-					success: function(res) {
-						console.log("用户在app手动上报重量数据2", res)
-						if (res.data.code == 200) {
-							that.mubiao = ""
-							uni.showToast({
-								title: res.data.msg,
-								icon: 'none'
-							})
-							that.$refs.mubiao_popup.close()
-							that.list_recipe()
-						} else {
-							uni.showToast({
-								title: res.data.msg,
-								icon: 'none'
-							})
-						}
+					time: timestamp
+				}
+				this.$post(this.$url_fat_scale, data, {
+					'Authorization': 'Bearer ' +
+						uni
+						.getStorageSync("token"),
+					'content-type': 'application/json'
+				}).then(res => {
+					if (res.code === 200) {
+						this.mubiao = ""
+						uni.showToast({
+							title: res.msg,
+							icon: 'none'
+						})
+						this.$refs.mubiao_popup
+							.close()
+						this.list_recipe()
+					} else {
+						uni.showToast({
+							title: this.$t(
+								"失败"),
+							icon: 'none'
+						})
 					}
 				})
 			},
@@ -2547,10 +4738,12 @@
 			//用户在app手动上报六围数据
 			fat_scale() {
 				let that = this
-				let timestamp = Math.floor(new Date(that.birthday == that.$t('shouye_item.title_21') ?
-					new Date()
-					.toISOString().slice(0, 10) : that.birthday).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
-				console.log("time", timestamp)
+				let timestamp = Math.floor(new Date(that
+						.birthday == that.$t('今天') ?
+						new Date().toISOString().slice(
+							0, 10) :
+						that.birthday).getTime() /
+					1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
 					url: that.$url_fat_scale,
 					method: 'POST',
@@ -2562,49 +4755,66 @@
 							//目标体重 
 							goal_weight: '',
 							//胸围    
-							chest_circumference: that.xiongwei,
+							chest_circumference: that
+								.xiongwei,
 							//腰围   
 							waistline: that.yaowei,
 							//臀围   
 							hipline: that.tunwei,
 							//上臂围   
-							biceps_circumference: that.shangtunwei,
+							biceps_circumference: that
+								.shangtunwei,
 							//大腿围  
-							thigh_circumference: that.datuiwei,
+							thigh_circumference: that
+								.datuiwei,
 							//小腿围   
-							calf_circumference: that.xiaotuiwei,
+							calf_circumference: that
+								.xiaotuiwei,
 						},
 						time: timestamp
 					},
 					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'Authorization': 'Bearer ' +
+							uni
+							.getStorageSync(
+								"token"),
 						'content-type': 'application/json' //自定义请求头信息
 					},
 					success: function(res) {
-						console.log("用户在app手动上报六围数据", res)
-						if (res.data.code == 200) {
-							that.birthday = that.$t('shouye_item.title_21')
+						if (res.data.code ==
+							200) {
+							that.birthday =
+								that.$t(
+									'今天')
 							that.xiongwei = ''
 							//腰围   
 							that.yaowei = ''
 							//臀围   
 							that.tunwei = ''
 							//上臂围   
-							that.shangtunwei = ''
+							that.shangtunwei =
+								''
 							//大腿围 
 							that.datuiwei = ''
 							//小腿围   
-							that.xiaotuiwei = ''
+							that.xiaotuiwei =
+								''
 
 							uni.showToast({
-								title: res.data.msg,
+								title: res
+									.data
+									.msg,
 								icon: 'none'
 							})
 							that.list_recipe()
-							that.$refs.tihzi_popup_sd.close()
+							that.$refs
+								.tihzi_popup_sd
+								.close()
 						} else {
 							uni.showToast({
-								title: res.data.msg,
+								title: res
+									.data
+									.msg,
 								icon: 'none'
 							})
 						}
@@ -2615,11 +4825,12 @@
 			//用户在app手动上报六围数据
 			fat_scale_1() {
 				let that = this
-				let timestamp = Math.floor(new Date(that.birthday1 == that.$t('shouye_item.title_21') ?
-					new Date()
-					.toISOString().slice(0, 10) : that.birthday1).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
-				console.log("time", timestamp)
-				console.log("time", that.xw_value)
+				let timestamp = Math.floor(new Date(that
+						.birthday1 == that.$t('今天') ?
+						new Date().toISOString().slice(
+							0, 10) :
+						that.birthday1).getTime() /
+					1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
 					url: that.$url_fat_scale,
 					method: 'POST',
@@ -2631,56 +4842,97 @@
 							//目标体重 
 							goal_weight: '',
 							//胸围    
-							chest_circumference: that.xw_value,
+							chest_circumference: that
+								.xw_value,
 							//腰围   
-							waistline: that.yw_value,
+							waistline: that
+								.yw_value,
 							//臀围   
 							hipline: that.tw_value,
 							//上臂围   
-							biceps_circumference: that.stw_value,
+							biceps_circumference: that
+								.stw_value,
 							//大腿围  
-							thigh_circumference: that.dtw_value,
+							thigh_circumference: that
+								.dtw_value,
 							//小腿围   
-							calf_circumference: that.xtw_value,
+							calf_circumference: that
+								.xtw_value,
 						},
 						time: timestamp
 					},
 					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'Authorization': 'Bearer ' +
+							uni
+							.getStorageSync(
+								"token"),
 						'content-type': 'application/json' //自定义请求头信息
 					},
 					success: function(res) {
-						console.log("用户在app手动上报六围数据", res)
-						if (res.data.code == 200) {
+						if (res.data.code ==
+							200) {
 							uni.showToast({
-								title: res.data.msg,
+								title: res
+									.data
+									.msg,
 								icon: 'none'
 							})
 							that.list_recipe()
-							that.$refs.tihzi_popup_hd.close()
+							that.$refs
+								.tihzi_popup_hd
+								.close()
 						} else {
 							uni.showToast({
-								title: res.data.msg,
+								title: res
+									.data
+									.msg,
 								icon: 'none'
 							})
 						}
 					}
 				})
 
-			}
+			},
+		},
 
-
-		}
 	}
 </script>
 
-<style lang="scss" scoped>
+<style scoped lang="scss">
 	.title_zs {
 		display: flex;
 		justify-content: flex-end;
-		margin-right: 25px;
+		margin-right: 20px;
+		margin-left: 20px;
 		text-align: right;
 		color: white;
+		padding-top: 70px;
+		padding-bottom: 5px;
+		font-weight: 400;
+		font-size: 12px;
+	}
+
+	.title_zs_is {
+		display: flex;
+		justify-content: flex-end;
+		margin-right: 20px;
+		margin-left: 20px;
+		text-align: right;
+		color: #3298F7;
+		padding-top: 70px;
+		padding-bottom: 5px;
+		font-weight: 400;
+		font-size: 12px;
+	}
+
+	.title_zs1 {
+		display: flex;
+		margin-right: 20px;
+		margin-left: 20px;
+		margin-bottom: 20px;
+		color: black;
+		font-weight: 600;
+		font-size: 12px;
 	}
 
 	.showTotal {
@@ -2712,54 +4964,84 @@
 
 	.title_all {
 		background: #3298F7;
-		width: 100vw;
-		height: 65px;
-		padding: 30px 10px 10px 15px;
+		border-bottom: 1px solid white;
+		width: 100%;
+		padding-top: 60px;
 		display: flex;
-		flex-direction: row;
+		flex-direction: column;
 		align-items: center;
+		justify-content: center;
 		position: fixed;
 		top: 0;
+		left: 0;
+		right: 0;
+	}
+
+	.title_all_1 {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		flex-direction: row;
+		align-items: center;
 	}
 
 	.title {
 		color: white;
 		text-align: center;
-		width: 80%;
 		font-weight: bold;
 		font-size: 16px;
 	}
 
+	.title1 {
+		color: white;
+		display: flex;
+		width: 100%;
+		justify-content: flex-start;
+		align-items: left;
+		text-align: left;
+		flex-direction: column;
+		font-weight: 400;
+		font-size: 13px;
+	}
+
 	.xueya_bg {
-		width: 12px;
-		height: 12px;
+		width: 14px;
+		height: 14px;
 		background: #58BF78;
 		border-radius: 15px;
 	}
 
 	.data_bg {
+		height: 116px;
 		display: flex;
-		justify-content: center;
-		margin: 10px 20px 0 20px;
-		padding: 10px;
+		flex-direction: row;
+		align-items: center;
+		margin: 5px 20px 0 20px;
 		background: white;
-		border-radius: 10px;
+		border-radius: 20px;
+		box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.data_bg_A {
 		border-top-left-radius: 20px;
 		border-top-right-radius: 20px;
-		background: #F7F7F7;
+		background: #EFEFF4;
 		margin-top: 20px;
 		padding: 20px 0 0 0;
 	}
 
+
 	.tzkpsx {
+		height: 38px;
+		width: auto;
 		display: flex;
 		justify-content: center;
 		background: white;
+		align-items: center;
 		margin: 10px 20px 20px 20px;
 		padding: 10px;
+		font-size: 13px;
+		font-weight: 400;
 		border-radius: 10px;
 		color: #3298F7;
 	}
@@ -2778,6 +5060,8 @@
 	}
 
 	.icon_bg {
+		flex: 1;
+		margin-left: 10px;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -2786,9 +5070,18 @@
 
 	.icon_text_bg {
 		margin-top: 10px;
-		width: 50px;
+		width: 26px;
+		height: 18px;
+		font-size: 13px;
 		text-align: center;
 		font-weight: bold;
+	}
+
+	.buttonstylesds {
+		margin: 20px 50px 20px 50px;
+		border-radius: 30px;
+		background: #3298F7;
+		color: white;
 	}
 
 	.uni_popup_bg {
@@ -2813,8 +5106,9 @@
 	}
 
 	.img_style {
-		width: 50px;
-		height: 50px;
+		width: 48px;
+		height: 48px;
+		object-fit: contain;
 	}
 
 	.tiwei_item_bg {
@@ -2863,7 +5157,7 @@
 		background: white;
 		justify-content: space-between;
 		align-items: center;
-		border-radius: 10px;
+		border-radius: 20px;
 		padding: 10px;
 	}
 
@@ -2871,8 +5165,9 @@
 		margin-top: 10px;
 		line-height: 15px;
 		width: 60px;
+		font-size: 13px;
 		text-align: center;
-		font-weight: bold;
+		font-weight: 600;
 	}
 
 	.icon_bgsss {
@@ -2889,12 +5184,13 @@
 	}
 
 	.all {
-		color: black;
-		width: 100vw;
-		height: 100vh;
-		background: #F7F7F7;
+		background: #EFEFF4;
 
 		.animation-shake {
+			animation: shake 1s infinite;
+		}
+
+		.animation2-shake {
 			animation: shake 1s infinite;
 		}
 	}
@@ -2911,5 +5207,158 @@
 		100% {
 			transform: translateX(0) rotate(-2deg)
 		}
+	}
+
+	.xueyastyle {
+		background: #FFFFFF;
+		width: 85vw;
+		margin-left: 8vw;
+		margin-right: 8vw;
+		border-radius: 24px;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+		padding-top: 20px;
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-bottom: 40px;
+	}
+
+	.cardstyle_1 {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: white;
+		color: #3298F7;
+		width: 120px;
+		height: 38px;
+		font-size: 13px;
+		border-radius: 10px;
+		padding: 10px;
+		text-align: center;
+		margin-right: 10px;
+		margin-left: 10vw;
+	}
+
+	.cardstyle_2 {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: white;
+		color: #3298F7;
+		width: 120px;
+		height: 38px;
+		font-size: 13px;
+		border-radius: 10px;
+		padding: 10px;
+		text-align: center;
+		margin-left: 10px;
+		margin-right: 10vw;
+	}
+
+
+	/* 横向滚动容器 */
+	.navscroll {
+		width: 100%;
+		white-space: nowrap;
+		padding: 10px 5px;
+		display: flex;
+		justify-content: center;
+		box-sizing: border-box;
+		text-align: center;
+
+		::-webkit-scrollbar {
+			width: 4px !important;
+			height: 1px !important;
+			overflow: auto !important;
+			background: transparent !important;
+			-webkit-appearance: auto !important;
+			display: block;
+		}
+	}
+
+	/* 导航项容器 - 用于水平排列 */
+	.nav-container {
+		display: inline-flex;
+
+	}
+
+	/* 每个导航项 */
+	.item {
+		width: 100%;
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 0 20px;
+		position: relative;
+	}
+
+	/* 导航文字 */
+	.tab-text {
+		color: white;
+		font-size: 16px;
+		padding: 5px 0;
+		font-weight: 400;
+		transition: color 0.3s;
+	}
+
+	/* 选中状态的文字 */
+	.tab-text.active {
+		color: greenyellow;
+		font-size: 16px;
+		font-weight: 400;
+	}
+
+	/* 下划线 */
+	.underline {
+		width: 100%;
+		height: 2px;
+		background-color: greenyellow;
+		border-radius: 10px;
+	}
+
+	/* 内容区域 */
+	.content {
+		padding: 20px;
+		text-align: center;
+		font-size: 18px;
+	}
+
+	.scroll-view-height {
+		// background: #3298F7;
+		padding-top: 80px;
+	}
+
+	.title_btn_bg {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		height: 56px;
+		padding-left: 20px;
+		padding-right: 20px;
+		align-items: center;
+	}
+
+	.textstyles {
+		font-size: 16px;
+		color: #1A1A1A;
+		font-weight: 400;
+	}
+
+	.scroll-view {
+		margin-top: 20px;
+	}
+
+	/* 请根据实际需求修改父元素尺寸，组件自动识别宽高 */
+	.charts-box-2 {
+		margin-top: 20px;
+		padding: 5px;
+		background: white;
+		border-radius: 20px;
+		margin-left: 20px;
+		margin-right: 20px;
+		height: auto;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 </style>
