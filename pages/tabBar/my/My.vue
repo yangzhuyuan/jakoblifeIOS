@@ -120,6 +120,11 @@
 						case 200:
 							this.handleUserInfo(res.data);
 							break
+						case 401:
+							uni.redirectTo({
+								url: "/pages/login/login_land"
+							});
+							break
 						case 500:
 							uni.showToast({
 								title: this.$t("获取数据失败"),

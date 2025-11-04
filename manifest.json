@@ -2,14 +2,14 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "2.0.0",
-    "versionCode" : 151,
+    "versionName" : "2.0.42",
+    "versionCode" : 204,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
             "appid" : "io.dcloud.jakob", //必填，字符串类型，iOS平台Bundle ID
-            "mobileprovision" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifeDistribution.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
-            "p12" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifes.p12", //必填，字符串类型，iOS打包使用的证书文件路径
+            "mobileprovision" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
+            "p12" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.p12", //必填，字符串类型，iOS打包使用的证书文件路径
             "password" : "CW0881ab@", //必填，字符串类型，iOS打包使用的证书密码
             "devices" : "iphone", //必填，字符串类型，iOS支持的设备类型，可取值iphone、ipad、universal
             "urltypes" : "", //可选，字符串类型，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemes
@@ -17,7 +17,10 @@
                 //可选，字符串数组类型，依赖的系统库，已废弃，推荐使用uni原生插件扩展使用系统依赖库
                 "CoreLocation.framework",
                 "CoreBluetooth.framework",
-                "Foundation.framework"
+                "Foundation.framework",
+                "AVFoundation.framework",
+                "AudioToolbox.framework",
+                "HealthKit.framework"
             ],
             "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
             "UIBackgroundModes" : [
@@ -34,6 +37,9 @@
             "optimize" : true,
             "subPackages" : true,
             "privacyDescription" : {
+                "NSMotionUsageDescription" : "需要写入健康数据以便记录您的运动成就和健康进度",
+                "NSHealthShareUsageDescription" : "需要访问您的步数、距离等健康数据用于应用内的健康分析和个人数据展示",
+                "NSHealthUpdateUsageDescription" : "需要写入健康数据以便记录您的运动成就和健康进度",
                 "NSContactsUsageDescription" : "允许访问通讯录权限拨打电话",
                 "NSMicrophoneUsageDescription" : "允许访问麦克风使用权限拨打电话",
                 "NSCameraUsageDescription" : "允许访问相机以拍摄健康记录照片。",
@@ -47,14 +53,26 @@
                 "NSRemindersUsageDescription" : "此应用需要访问您的提醒事项以管理任务。",
                 "BGTaskSchedulerPermittedIdentifiers" : "DCTestUniPlugin-TestModule"
             },
+            "capabilities" : {
+                "healthkit" : true
+            },
+            "UIRequiredDeviceCapabilities" : [ "healthkit" ],
+            "entitlements" : {
+                "com.apple.developer.healthkit" : true,
+                "com.apple.developer.healthkit.access" : [
+                    "HKQuantityTypeIdentifierStepCount",
+                    "HKQuantityTypeIdentifierHeartRate",
+                    "HKQuantityTypeIdentifierDistanceWalkingRunning"
+                ]
+            },
             "idfa" : false
         },
         "locales" : {
             "en" : {
                 "ios" : {
                     "appid" : "io.dcloud.jakob", //必填，字符串类型，iOS平台Bundle ID
-                    "mobileprovision" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifeDistribution.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
-                    "p12" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifes.p12", //必填，字符串类型，iOS打包使用的证书文件路径
+                    "mobileprovision" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
+                    "p12" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.p12", //必填，字符串类型，iOS打包使用的证书文件路径
                     "password" : "CW0881ab@", //必填，字符串类型，iOS打包使用的证书密码
                     "devices" : "iphone", //必填，字符串类型，iOS支持的设备类型，可取值iphone、ipad、universal
                     "urltypes" : "", //可选，字符串类型，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemes
@@ -62,7 +80,10 @@
                         //可选，字符串数组类型，依赖的系统库，已废弃，推荐使用uni原生插件扩展使用系统依赖库
                         "CoreLocation.framework",
                         "CoreBluetooth.framework",
-                        "Foundation.framework"
+                        "Foundation.framework",
+                        "AVFoundation.framework",
+                        "AudioToolbox.framework",
+                        "HealthKit.framework"
                     ],
                     "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
@@ -79,6 +100,9 @@
                     "optimize" : true,
                     "subPackages" : true,
                     "privacyDescription" : {
+                        "NSMotionUsageDescription" : "need to write health data to record your exercise achievements and health progress.",
+                        "NSHealthShareUsageDescription" : "need to access your health data such as steps and distance for health analysis and personal data display within the app.",
+                        "NSHealthUpdateUsageDescription" : "need to write health data to record your exercise achievements and health progress.",
                         "NSContactsUsageDescription" : "Allow access to the contacts list to make phone calls.",
                         "NSMicrophoneUsageDescription" : "Allow access to microphone usage permission to make phone calls.",
                         "NSCameraUsageDescription" : "Allow camera access to capture photos for your health records.",
@@ -92,14 +116,26 @@
                         "NSRemindersUsageDescription" : "This app needs access to your reminders to manage tasks.",
                         "BGTaskSchedulerPermittedIdentifiers" : "DCTestUniPlugin-TestModule"
                     },
-                    "idfa" : false
+                    "idfa" : false,
+                    "capabilities" : {
+                        "healthkit" : true
+                    },
+                    "UIRequiredDeviceCapabilities" : [ "healthkit" ],
+                    "entitlements" : {
+                        "com.apple.developer.healthkit" : true,
+                        "com.apple.developer.healthkit.access" : [
+                            "HKQuantityTypeIdentifierStepCount",
+                            "HKQuantityTypeIdentifierHeartRate",
+                            "HKQuantityTypeIdentifierDistanceWalkingRunning"
+                        ]
+                    }
                 }
             },
             "zh" : {
                 "ios" : {
                     "appid" : "io.dcloud.jakob", //必填，字符串类型，iOS平台Bundle ID
-                    "mobileprovision" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifeDistribution.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
-                    "p12" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifes.p12", //必填，字符串类型，iOS打包使用的证书文件路径
+                    "mobileprovision" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
+                    "p12" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.p12", //必填，字符串类型，iOS打包使用的证书文件路径
                     "password" : "CW0881ab@", //必填，字符串类型，iOS打包使用的证书密码
                     "devices" : "iphone", //必填，字符串类型，iOS支持的设备类型，可取值iphone、ipad、universal
                     "urltypes" : "", //可选，字符串类型，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemes
@@ -107,7 +143,10 @@
                         //可选，字符串数组类型，依赖的系统库，已废弃，推荐使用uni原生插件扩展使用系统依赖库
                         "CoreLocation.framework",
                         "CoreBluetooth.framework",
-                        "Foundation.framework"
+                        "Foundation.framework",
+                        "AVFoundation.framework",
+                        "AudioToolbox.framework",
+                        "HealthKit.framework"
                     ],
                     "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
@@ -124,6 +163,9 @@
                     "optimize" : true,
                     "subPackages" : true,
                     "privacyDescription" : {
+                        "NSMotionUsageDescription" : "需要写入健康数据以便记录您的运动成就和健康进度",
+                        "NSHealthShareUsageDescription" : "需要访问您的步数、距离等健康数据用于应用内的健康分析和个人数据展示",
+                        "NSHealthUpdateUsageDescription" : "需要写入健康数据以便记录您的运动成就和健康进度",
                         "NSContactsUsageDescription" : "允许访问通讯录权限拨打电话",
                         "NSMicrophoneUsageDescription" : "允许访问麦克风使用权限拨打电话",
                         "NSCameraUsageDescription" : "允许访问相机以拍摄健康记录照片。",
@@ -137,7 +179,19 @@
                         "NSRemindersUsageDescription" : "此应用需要访问您的提醒事项以管理任务。",
                         "BGTaskSchedulerPermittedIdentifiers" : "DCTestUniPlugin-TestModule"
                     },
-                    "idfa" : false
+                    "idfa" : false,
+                    "capabilities" : {
+                        "healthkit" : true
+                    },
+                    "UIRequiredDeviceCapabilities" : [ "healthkit" ],
+                    "entitlements" : {
+                        "com.apple.developer.healthkit" : true,
+                        "com.apple.developer.healthkit.access" : [
+                            "HKQuantityTypeIdentifierStepCount",
+                            "HKQuantityTypeIdentifierHeartRate",
+                            "HKQuantityTypeIdentifierDistanceWalkingRunning"
+                        ]
+                    }
                 }
             }
         },
@@ -148,8 +202,8 @@
             }
         },
         "compatible" : {
-            "runtimeVersion" : "4.75", //根据实际情况填写  
-            "compilerVersion" : "4.75", //根据实际情况填写  
+            "runtimeVersion" : "4.84", //根据实际情况填写  
+            "compilerVersion" : "4.84", //根据实际情况填写  
             "ignoreVersion" : true
         },
         "usingComponents" : true,
@@ -164,6 +218,7 @@
             "delay" : 0 // 启动屏延迟关闭时间（仅在 autoclose 为 true 时有效）
         },
         "modules" : {
+            "HealthKit" : {},
             "Speech" : {},
             "Barcode" : {},
             "OAuth" : {},
@@ -220,8 +275,8 @@
             },
             "ios" : {
                 "appid" : "io.dcloud.jakob", //必填，字符串类型，iOS平台Bundle ID
-                "mobileprovision" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifeDistribution.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
-                "p12" : "/Users/yangzhuyuan/Desktop/ios发布证书/JakobLifes.p12", //必填，字符串类型，iOS打包使用的证书文件路径
+                "mobileprovision" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.mobileprovision", //必填，字符串类型，iOS打包使用的profile文件路径
+                "p12" : "/Users/yangzhuyuan/Desktop/剑博/ios发布证书/jakoblife.p12", //必填，字符串类型，iOS打包使用的证书文件路径
                 "password" : "CW0881ab@", //必填，字符串类型，iOS打包使用的证书密码
                 "devices" : "iphone", //必填，字符串类型，iOS支持的设备类型，可取值iphone、ipad、universal
                 "urltypes" : "", //可选，字符串类型，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemes
@@ -229,7 +284,10 @@
                     //可选，字符串数组类型，依赖的系统库，已废弃，推荐使用uni原生插件扩展使用系统依赖库
                     "CoreLocation.framework",
                     "CoreBluetooth.framework",
-                    "Foundation.framework"
+                    "Foundation.framework",
+                    "AVFoundation.framework",
+                    "AudioToolbox.framework",
+                    "HealthKit.framework"
                 ],
                 "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                 "UIBackgroundModes" : [
@@ -246,6 +304,9 @@
                 "optimize" : true,
                 "subPackages" : true,
                 "privacyDescription" : {
+                    "NSMotionUsageDescription" : "需要写入健康数据以便记录您的运动成就和健康进度",
+                    "NSHealthShareUsageDescription" : "需要访问您的步数、距离等健康数据用于应用内的健康分析和个人数据展示",
+                    "NSHealthUpdateUsageDescription" : "需要写入健康数据以便记录您的运动成就和健康进度",
                     "NSContactsUsageDescription" : "允许访问通讯录权限拨打电话",
                     "NSMicrophoneUsageDescription" : "允许访问麦克风使用权限拨打电话",
                     "NSCameraUsageDescription" : "允许访问相机以拍摄健康记录照片。",
@@ -259,7 +320,19 @@
                     "NSRemindersUsageDescription" : "此应用需要访问您的提醒事项以管理任务。",
                     "BGTaskSchedulerPermittedIdentifiers" : "DCTestUniPlugin-TestModule"
                 },
-                "idfa" : false
+                "idfa" : false,
+                "capabilities" : {
+                    "healthkit" : true
+                },
+                "UIRequiredDeviceCapabilities" : [ "healthkit" ],
+                "entitlements" : {
+                    "com.apple.developer.healthkit" : true,
+                    "com.apple.developer.healthkit.access" : [
+                        "HKQuantityTypeIdentifierStepCount",
+                        "HKQuantityTypeIdentifierHeartRate",
+                        "HKQuantityTypeIdentifierDistanceWalkingRunning"
+                    ]
+                }
             },
             "sdkConfigs" : {
                 "oauth" : {

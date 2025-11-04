@@ -25,7 +25,7 @@
 		},
 		onShow() {
 			const lan = uni.getLocale()
-			if (lan == 'zh-Hans') {
+			if (lan == 'zh-Hans'||lan == 'zh-Hant') {
 				this.loginimg = "/static/icons/14.png"
 			} else {
 				this.loginimg = "/static/icons/loginssss.png"

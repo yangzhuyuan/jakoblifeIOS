@@ -2,7 +2,7 @@
 	<view style="padding-top: 10px; background: #F7F7F7; color: black;height: 100vh;">
 		<view class="linear">
 			<image class="img_bg" src="/static/emails.png" />
-			<input type="text" :placeholder="$t('请输入邮箱')" maxlength="32" style="width: 70vw;margin-left: 15px; "
+			<input type="text" :placeholder="$t('请输入邮箱')"  style="width: 70vw;margin-left: 15px; "
 				v-model="email" />
 		</view>
 		<view style="display: flex; flex-direction: row;">
@@ -253,29 +253,26 @@
 						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 					},
 					success(res) {
-						console.log("第三方登录后用户绑定手机号:", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								uni.showToast({
-									title: that.$t("成功"),
-									icon: 'none'
+						if (res.data.code == 200) {
+							uni.showToast({
+								title: that.$t("成功"),
+								icon: 'none'
+							})
+							setTimeout(function() {
+								uni.navigateTo({
+									url: '../../pages/login/Register_success'
 								})
-								setTimeout(function() {
-									uni.navigateTo({
-										url: '../../pages/login/Register_success'
-									})
-								}, 300)
-							} else if (res.data.code === 500) {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
-							} else {
-								uni.showToast({
-									title: that.$t("该邮箱已被绑定"),
-									icon: 'none'
-								})
-							}
+							}, 300)
+						} else if (res.data.code === 500) {
+							uni.showToast({
+								title: res.data.msg,
+								icon: 'none'
+							})
+						} else {
+							uni.showToast({
+								title: that.$t("该邮箱已被绑定"),
+								icon: 'none'
+							})
 						}
 					},
 					fail(res) {

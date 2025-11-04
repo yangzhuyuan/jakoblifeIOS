@@ -330,10 +330,43 @@
 				this.index = e.detail.value
 			},
 			// 定义验证函数
-			validateInput(value1, value2, messageKey) {
-				if ((value1 !== "" && value2 === "") || (value1 === "" && value2 !== "")) {
+			// 重新定义：同时完成
+			// 1. 成对互斥
+			// 2. value1 ≥ key1
+			// 3. value2 ≤ key2
+			// 4. value1 ≤ value2
+			validateInput(value1, value2, messageKey, key1, key2, eroomsg) {
+				// 空值互斥
+				const empty1 = value1 === '' || value1 == null;
+				const empty2 = value2 === '' || value2 == null;
+				if ((empty1 && !empty2) || (!empty1 && empty2)) {
 					uni.showToast({
-						title: this.$t(messageKey),
+						title: this.$t(messageKey) + '/' + this.$t(eroomsg),
+						icon: 'none'
+					});
+					return false;
+				}
+				// 都空——认为这组跳过，返回 true（后面可改）
+				if (empty1 && empty2) return true;
+
+				// 数值校验
+				const v1 = Number(value1);
+				const v2 = Number(value2);
+				if (v1 < key1) {
+					uni.showToast({
+						title: this.$t(eroomsg) + "：" + this.$t("最小") + "：" + key1,
+						icon: 'none'
+					});
+					return false;
+				} else if (v2 > key2) {
+					uni.showToast({
+						title: this.$t(eroomsg) + "：" + this.$t("最大") + "：" + key2,
+						icon: 'none'
+					});
+					return false;
+				} else if (v1 > v2) {
+					uni.showToast({
+						title: this.$t(eroomsg) + "：" + this.$t("需要小于"),
 						icon: 'none'
 					});
 					return false;
@@ -344,9 +377,9 @@
 			clickset() {
 				let that = this;
 				// 验证输入
-				if (!that.validateInput(that.shuzhangya1, that.shuzhangya2, "舒张压有未录入")) return;
-				if (!that.validateInput(that.shousuoya1, that.shousuoya2, "收缩压有未录入")) return;
-				if (!that.validateInput(that.maibo1, that.maibo2, "脉搏有未录入")) return;
+				if (!that.validateInput(that.shuzhangya1, that.shuzhangya2, "舒张压有未录入", 30, 195, "舒张压输入值超出范围")) return;
+				if (!that.validateInput(that.shousuoya1, that.shousuoya2, "收缩压有未录入", 60, 255, "收缩压输入值超出范围")) return;
+				if (!that.validateInput(that.maibo1, that.maibo2, "脉搏有未录入", 30, 200, "脉搏输入值超出范围")) return;
 				if (!that.validateInput(that.xeuyang1, that.xeuyang2, "血氧有未录入")) return;
 				// 验证血氧值是否超过100
 				if (that.xeuyang1 > 100 || that.xeuyang2 > 100) {

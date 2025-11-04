@@ -54,7 +54,7 @@
 	} from 'vuex';
 	import {
 		isInChinaByIP
-	} from 'pages/api/isInChinaByIP.js';
+	} from '../../api/isInChinaByIP.js';
 	export default {
 		computed: {
 			...mapState(['uuid'])

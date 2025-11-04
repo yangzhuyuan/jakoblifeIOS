@@ -167,8 +167,8 @@
 			},
 
 			handleMoving(e) {
+				if (this.disabled) return; // 防止误触发
 				if (e.detail.source !== 'touch' || this.disabled) return;
-
 				const {
 					x,
 					y
@@ -221,7 +221,6 @@
 
 			handleDragEnd() {
 				if (this.disabled) return;
-
 				const resultList = this.formattedList.map(item => {
 					const {
 						x,
@@ -238,7 +237,6 @@
 					newIndex: this.moveToIndex,
 					list: resultList
 				});
-
 				this.resetDragState();
 			},
 

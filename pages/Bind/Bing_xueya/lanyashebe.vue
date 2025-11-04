@@ -246,7 +246,10 @@
 				this.$refs.popup.open("bottom");
 				const TestUniPlugin = uni.requireNativePlugin("DCTestUniPlugin-TestModule");
 				let codetime = 10;
-				let timer = setInterval(() => {
+				let timer = null;
+				let done = false; // ① 只执行一次的锁
+				// 倒计时
+				timer = setInterval(() => {
 					codetime--;
 					if (codetime < 1) {
 						uni.showToast({
@@ -255,32 +258,37 @@
 						});
 						this.$refs.popup.close();
 						clearInterval(timer);
-					} else {
-						TestUniPlugin.startScan("", (callback) => {
-							if (isConnected ? item.deviceId === callback.data.mac : item.name === "EL2") {
-								this.MACdeviceID = callback.data.mac;
-								clearInterval(timer);
-								this.$nextTick(() => {
-									if (this.$refs.popup && this.$refs.popup.close) {
-										this.$refs.popup.close();
-										this.$refs.popup1.open("bottom");
-									}
-								});
-								this.updateBluetoothList(item);
-								if (callback.data.weightStatus === 1) {
-									this.handleWeightData(callback.data);
-								}
-							}
-						});
-						this.bind_devicetz(this.sn, this.MACdeviceID)
 					}
 				}, 1000);
+				// 单次扫描
+				TestUniPlugin.startScan("", (callback) => {
+					if (done) return; // ② 已处理过就直接返回
+					const hit = isConnected ?
+						item.deviceId === callback.data.mac :
+						item.name === "EL2";
+					if (hit) {
+						done = true; // ③ 置位，确保后续回调不再进入
+						this.MACdeviceID = callback.data.mac;
+						clearInterval(timer);
+						this.$refs.popup.close();
+						this.$refs.popup1.open("bottom");
+						this.updateBluetoothList(item);
+						if (callback.data.weightStatus === 1) {
+							this.handleWeightData(callback.data);
+						}
+						// 只调用一次绑定
+						this.bind_devicetz(this.sn, this.MACdeviceID);
+					}
+				});
 			},
 			handleIOSBluetoothConnection(item, isConnected) {
 				this.$refs.popup.open("bottom");
 				const TestUniPlugin = uni.requireNativePlugin("DCTestUniPlugin-TestModule");
 				let codetime = 10;
-				let timer = setInterval(() => {
+				let timer = null;
+				let done = false; // 只执行一次的锁
+				/* ---------- 倒计时 ---------- */
+				timer = setInterval(() => {
 					codetime--;
 					if (codetime < 1) {
 						uni.showToast({
@@ -289,27 +297,32 @@
 						});
 						this.$refs.popup.close();
 						clearInterval(timer);
-					} else {
-						TestUniPlugin.startScan("options", (callback) => {
-							if (isConnected ? item.deviceId === callback.data.mac : item.name === "EL2") {
-								this.$nextTick(() => {
-									if (this.$refs.popup && this.$refs.popup.close) {
-										this.$refs.popup.close();
-										this.$refs.popup1.open("bottom");
-									}
-								})
-								const parsedData = JSON.parse(callback.data);
-								this.MACdeviceID = parsedData.mac;
-								clearInterval(timer);
-								this.updateBluetoothList(item);
-								if (parsedData.testStatus === 255) {
-									this.handleIOSWeightData(parsedData);
-								}
-							}
-						});
-						this.bind_devicetz(this.sn, this.MACdeviceID)
 					}
 				}, 1000);
+
+				/* ---------- 单次扫描 ---------- */
+				TestUniPlugin.startScan("options", (callback) => {
+					if (done) return; // 已处理过直接忽略
+					const hit = isConnected ?
+						item.deviceId === callback.data.mac :
+						item.name === "EL2";
+					if (hit) {
+						done = true; // 上锁
+						clearInterval(timer);
+						this.$nextTick(() => {
+							this.$refs.popup?.close?.();
+							this.$refs.popup1?.open?.("bottom");
+						});
+						const parsedData = JSON.parse(callback.data);
+						this.MACdeviceID = parsedData.mac;
+						this.updateBluetoothList(item);
+						if (parsedData.testStatus === 255) {
+							this.handleIOSWeightData(parsedData);
+						}
+						// 设备绑定只调一次
+						this.bind_devicetz(this.sn, this.MACdeviceID);
+					}
+				});
 			},
 			updateBluetoothList(item) {
 				this.bluetoothList1.push(item);

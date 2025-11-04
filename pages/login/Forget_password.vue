@@ -2,8 +2,8 @@
 	<view style=" background: #F7F7F7; height: 100vh; padding-top: 49px;">
 		<view class="linear">
 			<image class="img_bg" src="../../static/icons/17.png" />
-			<input type="number" :placeholder="loact==='境内'?$t('请输入手机号') :$t('请输入邮箱')"
-				style="width: 70vw;margin-left: 10px; " maxlength="11" v-model="unername_phone" />
+			<input type="text" :placeholder="loact==='境内'?$t('请输入手机号') :$t('请输入邮箱')"
+				style="width: 70vw;margin-left: 10px; " v-model="unername_phone" />
 		</view>
 		<view style="display: flex; flex-direction: row;">
 			<view class="linear_1">
@@ -50,7 +50,7 @@
 	} from 'vuex';
 	import {
 		isInChinaByIP
-	} from 'pages/api/isInChinaByIP.js';
+	} from '../api/isInChinaByIP.js';
 	export default {
 		computed: {
 			...mapState(['uuid'])

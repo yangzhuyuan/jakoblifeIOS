@@ -6,7 +6,7 @@
 					<image :src="avatar"
 						style="width: 85px; height: 85px;border-radius: 100px;border: 1px solid gainsboro;"></image>
 					<view style="margin-top: 10px;font-weight: 600; font-size: 16px;">{{name}}</view>
-					<view style="font-weight: 400; font-size: 16px;color: #999999;margin-top: 10px;">{{phone}}</view>
+					<!-- <view style="font-weight: 400; font-size: 16px;color: #999999;margin-top: 10px;">{{phone}}</view> -->
 				</view>
 				<view
 					style="display: flex; align-items: left; flex-direction: column; padding-left: 15px;margin-top: 20px;">
@@ -475,31 +475,34 @@
 					})
 					return
 				}
-
 				console.log("dsajhsadha", this.action.join().replace('0,', ''))
 				this.req(this.action.join().replace('0,', ''))
 			},
 			//发起数据分享请求
 			req(dataPointIds) {
-				console.log("sajhda", dataPointIds)
-				let that = this
-				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/share/data/req",
-					method: "POST",
-					data: {
-						sharerId: that.info.userId,
-						receiverId: that.receiverId,
-						dataPointIds: [dataPointIds]
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded;' //自定义请求头信息
-					},
-					success(req) {
-						console.log("req", req)
-						uni.navigateTo({
-							url: "../share/Shared_success?NAME=" + that.name
-						})
+				let data = {
+					sharerId: uni.getStorageSync("userid"),
+					receiverId: this.receiverId,
+					dataPointIds: [dataPointIds]
+				}
+				this.$post("https://jakoblife.jakob-techs.com/prod-api/share/data/req", data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded;'
+				}).then((req) => {
+					console.log("req", req)
+					switch (req.code) {
+						case 200:
+							uni.navigateTo({
+								url: "../share/Shared_success?NAME=" + this.name
+							})
+							break
+						default:
+							uni.showToast({
+								title: this.$t("被共享的账户有误"),
+								icon: 'none',
+								duration: 1500
+							})
+							break
 					}
 				})
 			}

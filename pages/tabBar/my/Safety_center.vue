@@ -101,7 +101,7 @@
 <script>
 	import {
 		isInChinaByIP
-	} from 'pages/api/isInChinaByIP.js';
+	} from '../../api/isInChinaByIP.js';
 	export default {
 		data() {
 			return {
@@ -113,7 +113,7 @@
 				qq_bind: false,
 				qq_ID: this.$t('未绑定'),
 				apple_ID: this.$t('未绑定'),
-				otherloginssd: false,
+				otherloginssd: true,
 				loact: "",
 				nameoremail: '',
 			}
@@ -247,6 +247,7 @@
 				uni.removeStorageSync("kapianlist")
 				uni.removeStorageSync("kapianlist2")
 				uni.removeStorageSync("listdadsa")
+				uni.clearStorageSync()
 				uni.reLaunch({
 					url: '/pages/login/login_land'
 				})

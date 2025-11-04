@@ -8,7 +8,7 @@
 					</image>
 				</view>
 				<view style="margin-top: 20px;font-weight: 600; font-size: 16px;">{{name}}</view>
-				<view style="font-weight: 400; font-size: 16px;color: #999999;">{{phone}}</view>
+				<!-- <view style="font-weight: 400; font-size: 16px;color: #999999;">{{phone}}</view> -->
 			</view>
 			<view style="display: flex;flex-direction: column; margin-top: 20px;">
 				<view style="margin-top: 10px;font-size: 16px; font-weight: 600; text-align: center;">
@@ -444,7 +444,6 @@
 
 			zanbugongxiang() {
 				let that = this
-				console.log("dasjkhadhjak", that.id)
 				uni.request({
 					url: `https://jakoblife.jakob-techs.com/prod-api/share/data/${that.id}`, // 替换为你的删除接口，其中 {id} 是资源的唯一标识
 					method: 'DELETE', // 指定请求方法为 DELETE

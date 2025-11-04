@@ -61,7 +61,7 @@
 	} from 'vuex';
 	import {
 		isInChinaByIP
-	} from 'pages/api/isInChinaByIP.js';
+	} from '../../api/isInChinaByIP.js';
 	export default {
 		computed: {
 			...mapState(['tokens', 'uuid'])
@@ -180,7 +180,7 @@
 							}
 						} else {
 							uni.showToast({
-								title: res.data.msg,
+								title: _that.$t("失败"),
 								icon: 'none'
 							})
 						}
@@ -223,14 +223,12 @@
 						success(res) {
 							if (res.statusCode == 200) {
 								if (res.data.code == 200) {
-									console.log("校验验证码", res.data)
 									that.tanchuang = false
 									if (that.loact === "境内") {
 										that.send_phone_unbind_code()
 									} else if (that.loact === "境外") {
 										that.send_email_unbind_code()
 									}
-
 								} else {
 									uni.showToast({
 										title: res.data.msg,
@@ -239,7 +237,6 @@
 									that.captchaImage();
 								}
 							}
-							console.log("校验验证码", res)
 						}
 					})
 				}
@@ -302,6 +299,12 @@
 										}
 									}, 1000)
 								}
+							} else if (res.data.code == 500) {
+								uni.showToast({
+									title: that.$t("失败"),
+									icon: 'none'
+								})
+
 							} else {
 								uni.showToast({
 									title: res.data.msg,
@@ -350,6 +353,11 @@
 										}
 									}, 1000)
 								}
+							} else if (res.data.code == 500) {
+								uni.showToast({
+									title: that.$t("失败"),
+									icon: 'none'
+								})
 							} else {
 								uni.showToast({
 									title: res.data.msg,
@@ -391,6 +399,12 @@
 									url: '../../login/Bind_phone_1?loact=' + that.loact
 								})
 							}, 300)
+						} else if (res.data.code == 500) {
+							uni.showToast({
+								title: that.$t("失败"),
+								icon: 'none'
+							})
+
 						} else {
 							uni.showToast({
 								title: res.data.msg,
@@ -430,9 +444,9 @@
 									url: '../../login/Bind_phone_1?loact=' + that.loact
 								})
 							}, 300)
-						} else if (res.data.code === 500) {
+						} else if (res.data.code == 500) {
 							uni.showToast({
-								title: res.data.msg,
+								title: that.$t("失败"),
 								icon: 'none'
 							})
 						} else {

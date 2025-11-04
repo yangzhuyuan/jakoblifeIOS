@@ -31,7 +31,7 @@
             "certificateFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife.p12",
             "certificateProfileFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife.mobileprovision",
             "playground" : "custom",
-            "runSignStatus" : 0,
+            "runSignStatus" : 1,
             "type" : "uni-app:app-ios"
         }
     ]

@@ -11,7 +11,7 @@
 				<view class="item-content">
 					<image lazy-load class="imagesd" mode="aspectFit" :src="getDeviceImage(item.deviceModelId)"></image>
 					<view class="xinghao">{{$t('型号') + item.name}}</view>
-					<view style="font-size: 10px; padding-bottom: 5px; text-align: center;">sn:{{item.deviceSn}}</view>
+					<view style="font-size: 10px; padding-bottom: 5px; text-align: center;">SN:{{item.deviceSn}}</view>
 				</view>
 			</view>
 		</view>
@@ -93,7 +93,7 @@
 			},
 			getLocaleImage(defaultName, zhImage, enImage) {
 				const lan = uni.getLocale();
-				return lan === 'zh-Hans' ? zhImage : enImage;
+				return lan === 'zh-Hans' || lan == 'zh-Hant' ? zhImage : enImage;
 			},
 			deleteDevice() {
 				if (this.act === -1) {
@@ -116,7 +116,23 @@
 			handleDeleteConfirm(showModalRes) {
 				if (showModalRes.confirm) {
 					this.clearHeartbeatInterval();
-					this.showSecondDeleteConfirm();
+					if (this.deviceModelId === '10005') {
+						uni.showModal({
+							title: this.$t('确认移除此设备'),
+							content: this.deviceModelId === '10005' ?
+								`${this.$t('确认移除此设备1')};\n${this.$t('确认移除此设备2')}` : this.$t('确认移除此设备1'),
+							confirmText: this.$t('删除'),
+							cancelText: this.$t('取消'),
+							success: this.handleSecondDeleteConfirm1
+						});
+					} else {
+						this.showSecondDeleteConfirm();
+					}
+				}
+			},
+			handleSecondDeleteConfirm1(showModalRes) {
+				if (showModalRes.confirm) {
+					this.unbindDevice();
 				}
 			},
 			showSecondDeleteConfirm() {

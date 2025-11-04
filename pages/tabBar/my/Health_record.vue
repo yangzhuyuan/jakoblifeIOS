@@ -85,6 +85,7 @@
 </template>
 
 <script>
+	import WeightConverter from '../../api/unitls/weightConverter.js';
 	export default {
 		data() {
 			return {
@@ -143,8 +144,10 @@
 								.data.nickName
 							that.select = res.data.data.sex === '0' ? that.$t('男') : that.$t('女')
 							that.date = res.data.data.birthTime
-							that.height = res.data.data.height
-							that.width = res.data.data.weight
+							that.height = that.Height_index === 0 ? WeightConverter.cmToInch(res.data
+								.data.height) : res.data.data.height
+							that.width = that.Width_index === 0 ? res.data.data.weight : WeightConverter
+								.kgToLb(res.data.data.weight)
 							that.phone = res.data.data.phonenumber
 						} else {
 							uni.showToast({
@@ -167,11 +170,92 @@
 
 			bindPickerChange_Height: function(e) {
 				console.log('picker发送选择改变，携带值为', e.detail.value)
-				this.Height_index = e.detail.value
+				let that = this
+				that.Height_index = e.detail.value
+				uni.request({
+					url: that.$url_getInfo,
+					method: 'GET',
+					header: {
+						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+					},
+					success: function(res) {
+						if (res.statusCode == 200) {
+							if (res.data.code == 200) {
+								if (res.data.data.avatar === "" || res.data.data.avatar === undefined) {
+									that.avatar = "../../../static/icons/40x40.png"
+								} else {
+									that.avatar = res.data.data.avatar
+								}
+								that.username = res.data.data.nickName === null ? res.data.data.userName :
+									res.data
+									.data.nickName
+								that.select = res.data.data.sex === '0' ? that.$t('男') : that.$t('女')
+								that.date = res.data.data.birthTime
+								that.height = that.Height_index === 0 ? WeightConverter.cmToInch(res.data
+									.data.height) : res.data.data.height
+								that.width = that.Width_index === 0 ? res.data.data.weight :
+									WeightConverter.kgToLb(res.data.data.weight)
+								that.phone = res.data.data.phonenumber
+							} else {
+								uni.showToast({
+									title: res.data.msg,
+									icon: 'none'
+								})
+							}
+						} else {
+							console.log("获取数据错误")
+						}
+					},
+					fail(err) {
+						console.log(err)
+					}
+				})
 			},
 			bindPickerChange_Width: function(e) {
 				console.log('picker发送选择改变，携带值为', e.detail.value)
-				this.Width_index = e.detail.value
+				let that = this
+				that.Width_index = e.detail.value
+				uni.request({
+					url: that.$url_getInfo,
+					method: 'GET',
+					header: {
+						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+					},
+					success: function(res) {
+						if (res.statusCode == 200) {
+							if (res.data.code == 200) {
+								if (res.data.data.avatar === "" || res.data.data.avatar === undefined) {
+									that.avatar = "../../../static/icons/40x40.png"
+								} else {
+									that.avatar = res.data.data.avatar
+								}
+								that.username = res.data.data.nickName === null ? res.data.data.userName :
+									res.data
+									.data.nickName
+								that.select = res.data.data.sex === '0' ? that.$t('男') : that.$t('女')
+								that.date = res.data.data.birthTime
+								that.height = that.Height_index === 0 ? WeightConverter.cmToInch(res.data
+									.data.height) : res.data.data.height
+								that.width = that.Width_index === 0 ? res.data.data.weight :
+									WeightConverter
+									.kgToLb(res.data.data.weight)
+								that.phone = res.data.data.phonenumber
+							} else {
+								uni.showToast({
+									title: res.data.msg,
+									icon: 'none'
+								})
+							}
+						} else {
+							console.log("获取数据错误")
+						}
+					},
+					fail(err) {
+						console.log(err)
+					}
+				})
 			},
 
 			//更新个人信息
@@ -184,8 +268,8 @@
 						nickName: that.username,
 						sex: that.select === that.$t('男') ? "0" : "1",
 						birthTime: that.date,
-						height: that.height,
-						weight: that.width
+						height: that.Height_index === 0 ? WeightConverter.inchToCm(that.height) : that.height,
+						weight: that.Width_index === 0 ? that.width : WeightConverter.lbToKg(that.width)
 					},
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),

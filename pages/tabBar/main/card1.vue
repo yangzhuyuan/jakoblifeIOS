@@ -128,16 +128,19 @@
 	export default {
 		data() {
 			return {
-				list: [{
-						bmi_show: false,
-						image: "../../../static/icons/1.png",
-						Step_number: "-",
-						title: this.$t('步数'),
-						type_LX: this.$t('计步'),
-						Step_count: "-",
-						checkbox: false,
-
-					}, {
+				pulse: "-",
+				pulsetime: '-/-',
+				list: [
+					// {
+					// 	bmi_show: false,
+					// 	image: "../../../static/icons/1.png",
+					// 	Step_number: "-",
+					// 	title: this.$t('步数'),
+					// 	type_LX: this.$t('计步'),
+					// 	Step_count: "-",
+					// 	checkbox: false,
+					// },
+					{
 						bmi_show: false,
 						image: "../../../static/icons/2.png",
 						Step_number: "-",
@@ -159,22 +162,31 @@
 					},
 					{
 						bmi_show: false,
-						image: "../../../static/page_icon/9.png",
+						image: "../../../static/icons/5.png",
 						Step_number: "-",
-						title: this.$t("体温"),
-						type_LX: "℃",
+						title: this.$t('心率'),
+						type_LX: "BMP",
 						Step_count: "-",
 						checkbox: false,
 					},
-					{
-						bmi_show: false,
-						image: "../../../static/page_icon/9.png",
-						Step_number: "-",
-						title: this.$t("压力"),
-						type_LX: "--",
-						Step_count: "-",
-						checkbox: false,
-					}
+					// {
+					// 	bmi_show: false,
+					// 	image: "../../../static/page_icon/9.png",
+					// 	Step_number: "-",
+					// 	title: this.$t("体温"),
+					// 	type_LX: "℃",
+					// 	Step_count: "-",
+					// 	checkbox: false,
+					// },
+					// {
+					// 	bmi_show: false,
+					// 	image: "../../../static/page_icon/9.png",
+					// 	Step_number: "-",
+					// 	title: this.$t("压力"),
+					// 	type_LX: "--",
+					// 	Step_count: "-",
+					// 	checkbox: false,
+					// }
 				],
 			}
 		},
@@ -229,39 +241,63 @@
 			knowe2() {
 				this.$refs.popup2.close()
 			},
-			//设备数据概览
 			list_recipe() {
-				let that = this
-				uni.request({
-					url: that.$url_list_recipe,
-					method: 'POST',
-					data: {
-						userId: uni.getStorageSync("userid")
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
-					},
-					success(res) {
-						console.log("设备数据概览", res)
-						if (res.data.code == 200) {
-							for (let i = 0; i < that.list.length; i++) {
-								const item = that.list[i];
-								if (item.title === that.$t('步数')) {
-									that.processSteps(res.data.data);
-								} else if (item.title === that.$t('身高')) {
-									that.processHeight(res.data.data);
-								} else if (item.title === that.$t('体温')) {
-									that.processTemperature(res.data.data);
-								} else if (item.title === that.$t('血氧')) {
-									that.processBloodOxygen(res.data.data);
-								} else if (item.title === that.$t('压力')) {
-									that.processyali(res.data.data);
-								}
+				const data = {
+					userId: uni.getStorageSync("userid")
+				}
+				this.$post(this.$url_list_recipe, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
+				}).then(res => {
+					if (res.code == 200) {
+						const slaveSn2Data = res.data.filter(item => item.slaveSn === "2");
+						const slaveSn3Data = res.data.filter(item => item.slaveSn === "3");
+						// 获取各项数据
+						const getLatestData = (data1, data2, type) => {
+							const time1 = this.findValue(data1, "register", type)?.updateTime || 0;
+							const time2 = this.findValue(data2, "register", type)?.updateTime || 0;
+							const val1 = this.getRegisterVal(data1, 'register', type);
+							const val2 = this.getRegisterVal(data2, 'register', type);
+							return time1 > time2 ? {
+								value: val1,
+								time: time1
+							} : {
+								value: val2,
+								time: time2
+							};
+						}
+						const pulseData = getLatestData(slaveSn2Data, slaveSn3Data, "heartrate");
+						this.$set(this, 'pulse', pulseData.value);
+						this.$set(this, 'pulsetime', this.formatDate(pulseData.time));
+						for (let i = 0; i < this.list.length; i++) {
+							const item = this.list[i];
+							if (item.title === this.$t('步数')) {
+								this.processSteps(res.data);
+							} else if (item.title === this.$t('身高')) {
+								this.processHeight(res.data);
+							} else if (item.title === this.$t('体温')) {
+								this.processTemperature(res.data);
+							} else if (item.title === this.$t('血氧')) {
+								this.processBloodOxygen(res.data);
+							} else if (item.title === this.$t('压力')) {
+								this.processyali(res.data);
+							} else if (item.title === this.$t('心率')) {
+								this.processxiblv(res.data);
 							}
 						}
 					}
 				})
+			},
+			getRegisterVal(data, type, key) {
+				const value = this.findValue(data, type, key);
+				return value.registerVal !== null ? value.registerVal : "-/-";
+			},
+			// 处理心率卡片
+			processxiblv(item) {
+				let that = this
+				const temperatureItem = that.findValue(that.list, 'title', that.$t('心率'));
+				temperatureItem.Step_number = that.pulse;
+				temperatureItem.Step_count = that.pulsetime
 			},
 			// 处理步数卡片
 			processSteps(item) {

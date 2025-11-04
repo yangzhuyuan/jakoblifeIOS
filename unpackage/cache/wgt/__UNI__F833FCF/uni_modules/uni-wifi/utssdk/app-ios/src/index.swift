@@ -319,7 +319,7 @@ public class LocationPromiseService : NSObject, CLLocationManagerDelegate {
             })
         }
     }
-    public func requestPromise(_ completion:@escaping (_ res: Bool) -> Void) {
+    public func requestPromise(_ completion: @escaping (_ res: Bool) -> Void) {
         var status: CLAuthorizationStatus = CLLocationManager.authorizationStatus()
         if (status == CLAuthorizationStatus.notDetermined) {
             if (self.initlizeManager() == true) {
@@ -337,7 +337,7 @@ public class LocationPromiseService : NSObject, CLLocationManagerDelegate {
     }
 }
 public var locationPromiseService: LocationPromiseService = LocationPromiseService(nil)
-public func requestLocationPromise(_ completion:@escaping (_ res: Bool) -> Void) {
+public func requestLocationPromise(_ completion: @escaping (_ res: Bool) -> Void) {
     locationPromiseService.requestPromise(completion)
 }
 public func fetchConnectedWifiWithLocationPromise(_ option: GetConnectedWifiOptions) {
@@ -430,10 +430,10 @@ option.fail?(err)
 option.complete?(err)
 }
 public var onGetWifiList: OnGetWifiList = {
-(_ callback:@escaping UniGetWifiListCallback) -> Void in
+(_ callback: @escaping UniGetWifiListCallback) -> Void in
 }
 public var offGetWifiList: OffGetWifiList = {
-(_ callback:@escaping UniWifiCallback) -> Void in
+(_ callback: @escaping UniWifiCallback) -> Void in
 }
 public var getConnectedWifi: GetConnectedWifi = {
 (_ option: GetConnectedWifiOptions) -> Void in
@@ -465,10 +465,10 @@ option.fail?(err)
 option.complete?(err)
 }
 public var onWifiConnected: OnWifiConnected = {
-(_ callback:@escaping UniWifiResultCallback) -> Void in
+(_ callback: @escaping UniWifiResultCallback) -> Void in
 }
 public var onWifiConnectedWithPartialInfo: OnWifiConnectedWithPartialInfo = {
-(_ callback:@escaping UniWifiResultCallbackWithPartialInfo) -> Void in
+(_ callback: @escaping UniWifiResultCallbackWithPartialInfo) -> Void in
 }
 public var offWifiConnected: OffWifiConnected = {
 (_ callback: UniWifiCallback?) -> Void in

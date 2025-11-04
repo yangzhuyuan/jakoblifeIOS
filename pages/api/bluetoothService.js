@@ -35,7 +35,6 @@ export default class BluetoothService {
 					resolve(res);
 				},
 				fail: (err) => {
-					console.log("连接失败", err);
 					if (err.errCode === -1) {
 						this.connected = true; // 已连接
 						resolve("设备已连接");

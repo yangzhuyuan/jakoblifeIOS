@@ -122,7 +122,7 @@
 
 			NOclick() {
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans') {
+				if (lan == 'zh-Hans'||lan == 'zh-Hant') {
 					uni.navigateTo({
 						url: "../../Bind/Bing_page/helpcenterss?id=1153"
 					})
@@ -161,7 +161,7 @@
 									if (res.data.rows[i] && res.data.rows[i].modelPicturePath && res.data.rows[i]
 										.modelPicturePath.includes(that.$url_APP_IP)) {
 										const lan = uni.getLocale();
-										if (lan == 'zh-Hans') {
+										if (lan == 'zh-Hans'||lan == 'zh-Hant') {
 											res.data.rows[i].modelPicturePath = res.data.rows[i].modelPicturePath
 										} else {
 											if (res.data.rows[i].modelId === 30000) { //手表
@@ -188,7 +188,7 @@
 										}
 									} else {
 										const lan = uni.getLocale();
-										if (lan == 'zh-Hans') {
+										if (lan == 'zh-Hans'||lan == 'zh-Hant') {
 											res.data.rows[i].modelPicturePath = that.$url_APP_IP + res.data.rows[i]
 												.modelPicturePath
 										} else {
@@ -223,7 +223,7 @@
 								const index = that.list.findIndex(item => item.name === "BPW6");
 								if (index !== -1) that.list.splice(index, 1);
 								// const lan = uni.getLocale();
-								// if (lan == 'zh-Hans') {
+								// if (lan == 'zh-Hans'||lan == 'zh-Hant') {
 								// that.list.push(res.data.rows[i])
 								// const index = that.list.findIndex(item => item.name === "ZK-B872B");
 								// if (index !== -1) that.list.splice(index, 1);

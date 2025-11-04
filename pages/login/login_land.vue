@@ -68,10 +68,10 @@
 					<view class="otherstyle_3"></view>
 				</view>
 				<view style="display:flex;justify-content: center;margin-top: 40px;">
+					<!-- 	<image v-show="xinghao == false" @click="other_sbuitm('apple')" class="img_dsf"
+							src="../../static/pingguodenglu.png" /> -->
 					<image @click="other_sbuitm('weixin')" class="img_dsf1" src="../../static/weixin.png" />
 					<image @click="other_sbuitm('qq')" class="img_dsf" src="../../static/qq.png" />
-					<!-- <image v-show="xinghao == false" @click="other_sbuitm('apple')" class="img_dsf"
-						src="../../static/pingguodenglu.png" /> -->
 				</view>
 			</view>
 		</view>
@@ -109,9 +109,13 @@
 	import {
 		isInChinaByIP
 	} from '../api/isInChinaByIP.js';
+	import SortPickerList from "@/components/International-sortPickerList/index.vue";
 	export default {
 		computed: {
 			...mapState(['uuid'])
+		},
+		components: {
+			SortPickerList
 		},
 		data() {
 			return {
@@ -131,7 +135,7 @@
 				msg: this.$t('s后可重发'),
 				yzm: "", //验证码
 				xinghao: true,
-				otherloginssd: true
+				otherloginssd: false
 			}
 		},
 		//禁止手机物理按键返回上一层
@@ -709,15 +713,91 @@
 					console.log("res", res)
 					if (res.code == 200) {
 						uni.setStorageSync("token", res.data)
+						// uni.setStorageSync("othersss_types", othersss_types)
 						uni.switchTab({
 							url: '/pages/tabBar/main/Main'
 						})
 					} else {
+						// uni.setStorageSync("othersss_types", othersss_types)
 						this.other_sign_access_token(access_token)
 						this.other_sign_openid(openid)
 						this.other_sign_other_types(othersss_types)
+						// switch (othersss_types) {
+						// 	case "weixin":
+						// 		this.getweixincode(access_token, openid);
+						// 		break
+						// 	case "qq":
+						// 		this.getqqcode(access_token, openid)
+						// 		break
+						// 	case "apple":
+						// 		break
+						// }
 						uni.reLaunch({
 							url: "/pages/login/Force_binding_phone_frist"
+						})
+						// uni.reLaunch({
+						// 	url: "/pages/login/Force_binding_email_frist"
+						// })
+					}
+				})
+			},
+			//微信使用accessToken和openId登录
+			getweixincode(access_token, openid) {
+				const data = {
+					accessToken: access_token,
+					openId: openid,
+					// code: this.yanzhengma,
+					// phoneNum: this.unername_phone
+				}
+				this.$post(this.$url_wechat_login, data, {
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then(res => {
+					console.log(res)
+					if (res.code == 200) {
+						uni.setStorageSync("token", res.data)
+						uni.showToast({
+							title: this.$t("成功"),
+							icon: 'none'
+						})
+						setTimeout(function() {
+							uni.navigateTo({
+								url: '../../pages/login/Register_success'
+							})
+						}, 300)
+					} else {
+						uni.showToast({
+							title: this.$t("失败"),
+							icon: "none"
+						})
+					}
+				})
+			},
+			//qq使用accessToken和openId登录
+			getqqcode(access_token, openid) {
+				const data = {
+					accessToken: access_token,
+					openId: openid,
+					// code: this.yanzhengma,
+					// phoneNum: this.unername_phone
+				}
+				this.$post(this.$url_qq_login, data, {
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then(res => {
+					if (res.code == 200) {
+						uni.setStorageSync("token", res.data)
+						uni.showToast({
+							title: this.$t("成功"),
+							icon: 'none'
+						})
+						setTimeout(function() {
+							uni.navigateTo({
+								url: '../../pages/login/Register_success'
+							})
+						}, 300)
+					} else {
+						uni.showToast({
+							title: this.$t("失败"),
+							icon: 'none'
 						})
 					}
 				})

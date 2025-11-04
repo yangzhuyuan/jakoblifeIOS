@@ -49,6 +49,9 @@
 							<view style="margin-top: 20px;">
 								<UserInfo :item="item" />
 								<SharedData :item="item" :dataPoints="swiperlist[index].dataPoints" />
+								<button class="buttonstylesss_1" @click="CANEDITOR(item.id)">
+									{{$t('停止共享')}}
+								</button>
 							</view>
 						</swiper-item>
 					</swiper>
@@ -149,6 +152,7 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {
+					// console.log("hhhah", pending)
 					if (pending.code === 200) {
 						this.shareShow = !pending.data || pending.data.length === 0;
 						if (pending.data && pending.data.length > 0) {
@@ -181,6 +185,38 @@
 			EDITOR(id, avatar, name, phone) {
 				uni.navigateTo({
 					url: `./Share_with_2?AVATAR=${avatar}&NAME=${name}&PHONE=${phone}&ID=${id}`
+				});
+			},
+			CANEDITOR(id) {
+				console.log("cancelSharing", id)
+				uni.showModal({
+					content: this.$t("是否取消此数据的共享"),
+					confirmText: this.$t("是"),
+					cancelText: this.$t("否"),
+					success: (modalres) => {
+						if (modalres.confirm) {
+							uni.request({
+								url: `https://jakoblife.jakob-techs.com/prod-api/share/data/${id}`,
+								method: 'DELETE',
+								header: {
+									'Authorization': `Bearer ${uni.getStorageSync("token")}`,
+									'content-type': 'application/json'
+								},
+								success: (res) => {
+									console.log("res", res)
+									if (res.data.code === 200) {
+										uni.showToast({
+											title: this.$t("成功"),
+											icon: "none",
+											duration: 1500,
+										})
+									}
+								},
+							});
+						} else {
+							uni.hideLoading();
+						}
+					}
 				});
 			},
 		}
@@ -287,6 +323,20 @@
 		background: #3298F7;
 		color: white;
 		width: 120px;
+		border-radius: 100px;
+		margin-top: 50px;
+		height: 48px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+	}
+	.buttonstylesss_1 {
+		font-size: 16px;
+		font-weight: 600;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: #3298F7;
+		color: white;
+		width: 180px;
 		border-radius: 100px;
 		margin-top: 50px;
 		height: 48px;

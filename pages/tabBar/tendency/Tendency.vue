@@ -609,6 +609,7 @@
 	import {
 		isInChinaByIP
 	} from '../../api/isInChinaByIP.js';
+	import WeightConverter from '../../api/unitls/weightConverter.js';
 	const getheader = {
 		'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 		'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
@@ -812,6 +813,8 @@
 				writeuuid: '',
 				tendtimer: null,
 				slaveSn: '3',
+				lastWeight: '',
+				lastcreateTime: '',
 			};
 		},
 
@@ -845,9 +848,8 @@
 			}
 			isInChinaByIP().then(isInChina => {
 				const location = isInChina ? "境内" : "境外";
-				const newweightKG = uni.getStorageSync("newweight") || 'KG';
+				this.newweightKG = uni.getStorageSync("danwei2") === 1 ? "lb" : "KG";
 				this.loact = location;
-				this.newweightKG = newweightKG;
 				this.messs()
 				this.tendtimer = setInterval(res => {
 					if (this.bianhuadata !== 0) {
@@ -878,8 +880,11 @@
 					if (res.code !== 200) return;
 					if (this.loact === "境内") {
 						if (!res.data.phonenumber && !res.data.email) {
-							uni.navigateTo({
-								url: '../../login/Force_binding_phone'
+							// uni.navigateTo({
+							// 	url: '../../login/Force_binding_phone'
+							// });
+							uni.reLaunch({
+								url: "/pages/login/true_register_email"
 							});
 							return;
 						}
@@ -1319,19 +1324,30 @@
 							if (rows[i].deviceTypeId == "11") {
 								this.get_device_info(rows[i].deviceSn)
 								const TestUniPlugin = uni.requireNativePlugin("DCTestUniPlugin-TestModule");
-								TestUniPlugin.startScan("", (callback) => {
+								TestUniPlugin.startScan("options", (callback) => {
 									clearInterval(this.heartbeatInterval1)
+									const parsedData = JSON.parse(callback.data);
 									this.heartbeatInterval1 = null
-									if (rows[i].mac === callback.data.mac) {
-										if (callback.data.weightStatus === 1) {
-											if (callback.data.weightUnit === 0) {
-												uni.setStorageSync("newweight", "KG")
-											} else {
-												uni.setStorageSync("newweight", "lb")
-											}
-											if (callback.data.weight !== "0.00") {
-												this.jakoblife_fat_scale1(rows[i].deviceSn, rows[i].mac, callback
-													.data, "")
+									if (rows[i].mac === parsedData.mac) {
+										if (parsedData.testStatus === 255) {
+											console.log("parsedData", parsedData)
+											if (parsedData.weight !== "0.00") {
+												// 检查 weight 是否存在且发生变化
+												if (parsedData.adc !== "" && parsedData.weight !== undefined && parsedData.weight !== this
+													.lastWeight || (parsedData.createTime !== this
+														.lastcreateTime && this.isTimeDifferenceLessThan(parsedData
+															.createTime, this
+															.lastcreateTime, 8))) {
+													console.log('weight 发生变化，上传数据', parsedData.weight + "时间" + this
+														.isTimeDifferenceLessThan(parsedData.createTime, this
+															.lastcreateTime, 8));
+													// 执行上传操作
+													this.jakoblife_fat_scale1(rows[i].deviceSn,
+														rows[i].mac, parsedData)
+													// 更新上一次的值
+													this.lastWeight = parsedData.weight;
+													this.lastcreateTime = parsedData.createTime;
+												}
 											}
 										}
 									}
@@ -1341,13 +1357,20 @@
 					}
 				}
 			},
-			jakoblife_fat_scale1(deviceSn, deviceId, parsedData, listleng) {
+			// 判断两个秒级时间戳差值是否小于指定秒数
+			isTimeDifferenceLessThan(time1, time2, seconds) {
+				const diff = Math.abs(time2 - time1); // 直接相减就是秒数差
+				return diff > seconds;
+			},
+			jakoblife_fat_scale1(deviceSn, deviceId, parsedData) {
 				const data = {
 					deviceSn: deviceSn,
 					mac: deviceId,
 					deviceTypeId: "0",
 					slaveData: {
-						weight: parsedData.weight,
+						weight: parsedData.weightUnit === 2 || parsedData.weightUnit === 4 ? WeightConverter
+							.parseStoneString(parsedData.weight).toFixed(2) : (parsedData.weightUnit === 6 ?
+								WeightConverter.lbToKg(parsedData.weight) : parsedData.weight),
 						adc: parsedData.adc
 					},
 					time: parsedData.createTime
@@ -1665,8 +1688,12 @@
 				}
 				this.$post(this.$url_query_month_avg, data, getheader).then(res => {
 					if (res.code == 200) {
-						this.Systolic_blood_pressure = res.data.high.min + "-" + res.data.high.max
-						this.Diastolic_blood_pressure = res.data.low.min + "-" + res.data.low.max
+						this.Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.high.min + "-" + res.data
+							.high.max : (Number(res.data.high.min) * 0.133).toFixed(1) + "-" + (Number(res.data
+								.high.max) * 0.133).toFixed(1)
+						this.Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.low.min + "-" + res.data
+							.low.max : (Number(res.data.low.min) * 0.133).toFixed(1) + "-" + (Number(res.data.low
+								.max) * 0.133).toFixed(1)
 					} else if (res.code == 500) {
 						this.Systolic_blood_pressure = "--"
 						this.Diastolic_blood_pressure = "--"
@@ -1696,30 +1723,40 @@
 						//最近
 						this.lately_Blood_pressure = this.bgaaa(res.data.last.lowPressure, res.data.last
 							.highPressure)
-						this.lately_Systolic_blood_pressure = res.data.last.highPressure === null ? "-" : res.data
-							.last.highPressure
-						this.lately_Diastolic_blood_pressure = res.data.last.lowPressure === null ? "-" : res.data
-							.last.lowPressure
+						this.lately_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.last
+							.highPressure === null ? "-" : res.data.last.highPressure : (Number(res.data.last
+								.highPressure) * 0.133).toFixed(1)
+						this.lately_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.last
+							.lowPressure === null ? "-" : res.data
+							.last.lowPressure : (Number(res.data.last.lowPressure) * 0.133).toFixed(1)
 						this.lately_pulse = res.data.last.heartrate === null ? "-" : res.data.last.heartrate
 						//平均
 						this.average_Blood_pressure = this.bgaaa(res.data.avg.lowPressure, res.data.avg
 							.highPressure)
-						this.average_Systolic_blood_pressure = res.data.avg.highPressure
-						this.average_Diastolic_blood_pressure = res.data.avg.lowPressure
+						this.average_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.avg.highPressure :
+							(Number(res.data.avg.highPressure) * 0.133).toFixed(1)
+						this.average_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.avg.lowPressure :
+							(Number(res.data.avg.lowPressure) * 0.133).toFixed(1)
 						this.average_pulse = res.data.avg.heartrate
 						//最高
 						this.Maximum_Blood_pressure = this.bgaaa(res.data.max.lowPressure, res.data.max
 							.highPressure)
-						this.Maximum_Systolic_blood_pressure = res.data.max.highPressure
-						this.Maximum_Diastolic_blood_pressure = res.data.max.lowPressure
-						this.Maximum_pulse = res.data.max.heartrate
+						this.Maximum_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.max.highPressure :
+							(Number(res.data.max.highPressure) * 0.133).toFixed(1)
+						this.Maximum_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.max.lowPressure :
+							(Number(res.data.max.lowPressure) * 0.133).toFixed(1)
+						this.Maximum_pulse = res.data.max.heartrate === null ? '-' : res.data.max.heartrate
 						//最低
 						this.Minimum_Blood_pressure = this.bgaaa(res.data.min.lowPressure, res.data.min
 							.highPressure)
-						this.Minimum_Systolic_blood_pressure = res.data.min.highPressure == null ? "-" : res.data
-							.min.highPressure
-						this.Minimum_Diastolic_blood_pressure = res.data.min.lowPressure == null ? "-" : res.data
-							.min.lowPressure
+						this.Minimum_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.min.highPressure ==
+							null ? "-" : res.data
+							.min.highPressure :
+							(Number(res.data.min.highPressure) * 0.133).toFixed(1)
+						this.Minimum_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.min.lowPressure ==
+							null ? "-" : res.data
+							.min.lowPressure :
+							(Number(res.data.min.lowPressure) * 0.133).toFixed(1)
 						this.Minimum_pulse = res.data.min.heartrate == null ? "-" : res.data.min.heartrate
 					} else if (res.code == 500) {
 						//最近
@@ -1749,8 +1786,7 @@
 						})
 					}
 				})
-			},
-			//体脂秤统计最近1周/月平均体重、bmi、变化速度
+			}, //体脂秤统计最近1周/月平均体重、bmi、变化速度
 			query_weight_avg(startTime, endTime) {
 				const data = {
 					deviceSn: this.TenddeviceSn,
@@ -1782,11 +1818,15 @@
 					endTime: endTime,
 				}
 				this.$post(this.$url_query_weight_day, data, getheader).then(res => {
+					console.log("query_weight_day", res)
 					if (res.code == 200) {
 						this.level_weight = res.data.level
-						this.max_weight = res.data.max
-						this.min_weight = res.data.min
-						this.avg_weight = res.data.avg
+						this.max_weight = this.newweightKG === "KG" ? res.data.max : WeightConverter.kgToLb(res
+							.data.max)
+						this.min_weight = this.newweightKG === "KG" ? res.data.min : WeightConverter.kgToLb(res
+							.data.min)
+						this.avg_weight = this.newweightKG === "KG" ? res.data.avg : WeightConverter.kgToLb(res
+							.data.avg)
 					} else if (res.code == 500) {
 						this.level_weight = "--"
 						this.max_weight = "--"

@@ -45,7 +45,7 @@
 	} from 'vuex'
 	import {
 		isInChinaByIP
-	} from 'pages/api/isInChinaByIP.js';
+	} from '../api/isInChinaByIP.js';
 	export default {
 		computed: {
 			...mapState(['tokens', 'unername'])
@@ -73,14 +73,12 @@
 			let that = this;
 			isInChinaByIP().then(isInChina => {
 				if (isInChina) {
-					console.log('用户在中国境内');
 					that.loact = "境内"
 					//使用协议返回过来的数据
 					uni.$once('checked', function(data) {
 						that.cb = data
 					})
 				} else {
-					console.log('用户在境外');
 					that.loact = "境外"
 					//使用协议返回过来的数据
 					uni.$once('checked', function(data) {

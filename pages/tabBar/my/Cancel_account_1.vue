@@ -33,8 +33,7 @@
 			return {
 				cb: false,
 				loginimg: '',
-				binddevice: false,
-				share: false,
+				connectedDevices: [],
 			}
 		},
 
@@ -43,48 +42,48 @@
 				title: this.$t('注销账号')
 			})
 			const lan = uni.getLocale();
-			if (lan == 'zh-Hans') {
+			if (lan == 'zh-Hans' || lan === 'zh-Hant') {
 				this.loginimg = "../../../static/icons/14.png"
 			} else {
 				this.loginimg = "../../../static/icons/loginssss.png"
 			}
 			this.queryDevices()
-			this.shareList()
+			if (Vue.prototype.$globalTimers.heartbeatInterval) {
+				clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+				Vue.prototype.$globalTimers.heartbeatInterval = null;
+			}
 		},
 		methods: {
 			queryDevices() {
 				this.$post(this.$url_queryDevices, {}, {
 					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json;charset=UTF-8'
-				}).then(res => {
-					if (res.code === 200) {
-						if (res.rows.length === 0) {
-							this.binddevice = false
-						} else {
-							this.binddevice = true
+				}).then(queryDevices => {
+					console.log("hhhh ", queryDevices)
+					if (queryDevices.code === 200) {
+						for (let i = 0; queryDevices.rows.length > i; i++) {
+							if (queryDevices.rows[i].mac !== "" || queryDevices.rows[i].mac !== null) {
+								this.connectedDevices.push(queryDevices.rows[i].mac)
+							}
 						}
 					}
 				})
 			},
 
-			shareList() {
-				const data = {
-					shareId: uni.getStorageSync("userid")
-				}
-				this.$post(this.$url_share_list, data, {
-					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-					'content-type': 'application/x-www-form-urlencoded;'
-				}).then(pending => {
-					if (pending.code === 200) {
-						if (pending.data.length === 0) {
-							this.share = false
-						} else {
-							this.share = true
+			//删除所有设备
+			disconnectAllBluetoothDevices() {
+				this.connectedDevices.forEach(deviceId => {
+					uni.closeBLEConnection({
+						deviceId: deviceId,
+						success: () => {
+							console.log(`已断开设备: ${deviceId}`);
+						},
+						fail: (err) => {
+							console.error(`断开设备失败: ${deviceId}`, err);
 						}
-					}
-				})
+					});
+				});
 			},
-
 			getback(id) {
 				return {
 					background: id === false ? "#DBDBDB" : "#3298F7"
@@ -112,28 +111,18 @@
 						icon: "none"
 					})
 					return
-				} else if (that.binddevice === true || that.share === true) {
-					uni.showModal({
-						title: that.$t('注销提示'),
-						content: that.$t('您的帐户有绑定'),
-						showCancel: false,
-						success: function(res) {
-							if (res.confirm) {
-
-							}
-						}
-					});
-					return
 				} else {
 					uni.showModal({
 						title: that.$t('注销提示'),
 						content: that.$t('请确认是否注销JakobLife账号'),
 						success: function(res) {
 							if (res.confirm) {
+								if (Vue.prototype.$globalTimers.heartbeatInterval) {
+									clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+									Vue.prototype.$globalTimers.heartbeatInterval = null;
+								}
 								that.delete_self()
-							} else if (res.cancel) {
-
-							}
+							} else if (res.cancel) {}
 						}
 					});
 				}
@@ -145,11 +134,20 @@
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
 					if (res.code == 200) {
+						if (Vue.prototype.$globalTimers.heartbeatInterval) {
+							clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+							Vue.prototype.$globalTimers.heartbeatInterval = null;
+						}
+						uni.clearStorageSync()
+						this.disconnectAllBluetoothDevices()
+						uni.closeBluetoothAdapter()
+						// 清空列表
+						this.connectedDevices = [];
 						uni.showToast({
 							title: this.$t("注销成功"),
 							icon: "none"
 						})
-						uni.clearStorageSync()
+
 						setTimeout(function() {
 							uni.reLaunch({
 								url: "/pages/login/login_land"

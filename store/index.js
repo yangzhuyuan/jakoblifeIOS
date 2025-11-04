@@ -26,6 +26,7 @@ const store = new Vuex.Store({
 		TenddeviceSn: '',
 		xueyehuilian: true,
 		xueyjitypesd: 0,
+		BloodPressureLevel: 0,
 
 	},
 	mutations: {
@@ -86,16 +87,15 @@ const store = new Vuex.Store({
 		setTenddeviceSn(state, TenddeviceSn) {
 			state.TenddeviceSn = TenddeviceSn
 		},
-
 		sethuilian(state, huilian) {
-			console.log("huilian", huilian)
 			state.xueyehuilian = huilian
 		},
-
 		setxueyjitypesd(state, xueyjitypesd) {
 			state.xueyjitypesd = xueyjitypesd
 		},
-
+		setBloodPressureLevel(state, BloodPressureLevel) {
+			state.BloodPressureLevel = BloodPressureLevel
+		}
 
 	},
 

@@ -308,54 +308,6 @@
 			}
 		},
 		{
-			"path": "pages/tabBar/my/Sphygmomanometer_binding_problem",
-			"style": {
-				"navigationBarTitleText": "血压计绑定问题",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
-			"path": "pages/tabBar/my/Sphygmomanometer_binding_problem_1",
-			"style": {
-				"navigationBarTitleText": "血压计绑定问题",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
-			"path": "pages/tabBar/my/Data_synchronization",
-			"style": {
-				"navigationBarTitleText": "数据同步",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
-			"path": "pages/tabBar/my/Data_synchronization_1",
-			"style": {
-				"navigationBarTitleText": "数据同步失败",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
-			"path": "pages/tabBar/my/Body_fat_scale_binding_problem",
-			"style": {
-				"navigationBarTitleText": "体脂秤绑定问题",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
-			"path": "pages/tabBar/my/Body_fat_scale_binding_problem_1",
-			"style": {
-				"navigationBarTitleText": "体脂秤绑定问题",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
 			"path": "pages/tabBar/my/Safety_center",
 			"style": {
 				"navigationBarTitleText": "安全中心",
@@ -496,15 +448,6 @@
 			}
 		},
 		{
-			"path": "pages/tabBar/share/Share_with_1",
-			"style": {
-				"navigationBarTitleText": "共享",
-				"navigationStyle": "custom",
-				"navigationBarBackgroundColor": "#F5F5F5",
-				"navigationBarTextStyle": "black"
-			}
-		},
-		{
 			"path": "pages/tabBar/share/Shared_success",
 			"style": {
 				"navigationBarTitleText": "共享给",
@@ -599,7 +542,14 @@
 				"navigationBarTextStyle": "black"
 			}
 		},
-
+		{
+			"path": "pages/login/Force_binding_email_frist",
+			"style": {
+				"navigationBarTitleText": "绑定邮箱",
+				"navigationBarBackgroundColor": "#F7F7F7",
+				"navigationBarTextStyle": "black"
+			}
+		},
 		{
 			"path": "pages/service/Usage_agreement",
 			"style": {
@@ -749,7 +699,23 @@
 			}
 		},
 		{
+			"path": "pages/tabBar/my/vidohelp/vidohelp3",
+			"style": {
+				"navigationBarTitleText": "帮助",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/tabBar/my/vidohelp/Webview2",
+			"style": {
+				"navigationBarTitleText": "帮助",
+				"navigationBarBackgroundColor": "#F7F7F7",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/tabBar/my/vidohelp/Webview4",
 			"style": {
 				"navigationBarTitleText": "帮助",
 				"navigationBarBackgroundColor": "#F7F7F7",
@@ -768,6 +734,22 @@
 			"path": "pages/Bind/Bing_page/Bind_Type",
 			"style": {
 				"navigationBarTitleText": "绑定类型"
+			}
+		},
+		{
+			"path": "pages/tabBar/main/Reports_Alerts",
+			"style": {
+				"navigationBarTitleText": "AI健康报告及警报",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/tabBar/main/iphone_health",
+			"style": {
+				"navigationBarTitleText": "健康",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTextStyle": "black"
 			}
 		}
 	],

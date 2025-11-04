@@ -41,7 +41,7 @@
 				title: this.$t('使用协议')
 			})
 			const lan = uni.getLocale();
-			if (lan == 'zh-Hans') {
+			if (lan == 'zh-Hans'||lan == 'zh-Hant') {
 				this.article(1149)
 			} else {
 				this.article(1)

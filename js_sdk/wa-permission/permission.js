@@ -45,18 +45,18 @@ function judgeIosPermissionLocation() {
 	var cllocationManger = plus.ios.import("CLLocationManager");
 	var status = cllocationManger.authorizationStatus();
 	result = (status != 2)
-	console.log("定位权限开启：" + result);
+	// console.log("定位权限开启：" + result);
 	// 以下代码判断了手机设备的定位是否关闭，推荐另行使用方法 checkSystemEnableLocation
-	/* var enable = cllocationManger.locationServicesEnabled();
+	var enable = cllocationManger.locationServicesEnabled();
 	var status = cllocationManger.authorizationStatus();
-	console.log("enable:" + enable);
-	console.log("status:" + status);
+	// console.log("enable:" + enable);
+	// console.log("status:" + status);
 	if (enable && status != 2) {
 		result = true;
-		console.log("手机定位服务已开启且已授予定位权限");
+		// console.log("手机定位服务已开启且已授予定位权限");
 	} else {
-		console.log("手机系统的定位没有打开或未给予定位权限");
-	} */
+		// console.log("手机系统的定位没有打开或未给予定位权限");
+	}
 	plus.ios.deleteObject(cllocationManger);
 	return result;
 }
@@ -86,9 +86,9 @@ function judgeIosPermissionCamera() {
 	// console.log("authStatus:" + authStatus);
 	if (authStatus == 3) {
 		result = true;
-		// console.log("相机权限已经开启");
+		console.log("相机权限已经开启");
 	} else {
-		// console.log("相机权限没有开启");
+		console.log("相机权限没有开启");
 	}
 	plus.ios.deleteObject(AVCaptureDevice);
 	return result;

@@ -28,7 +28,7 @@
 				title: this.$t('血压手表绑定问题')
 			})
 			const lan = uni.getLocale();
-			if (lan == 'zh-Hans') {
+			if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
 				this.article(1151)
 			} else {
 				this.article(1152)

@@ -61,22 +61,6 @@
 				this.createBarcode(currentWebview);
 				this.createFlashBarView(currentWebview);
 			},
-
-			// 添加权限检查方法
-			checkPermission() {
-				return new Promise((resolve) => {
-					plus.android.requestPermissions(
-						['android.permission.CAMERA'],
-						(result) => {
-							resolve(result.denied.length === 0);
-						},
-						(error) => {
-							console.error('权限检查错误:', error);
-							resolve(false);
-						}
-					);
-				});
-			},
 			createBarcode(currentWebview) {
 				const platform = uni.getSystemInfoSync().osName;
 				if (!this.barcode) {

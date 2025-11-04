@@ -29,7 +29,7 @@
 			} else if (res.id == "1130") {
 				this.titles = this.$t('JakobLife隐私政策1')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans') {
+				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
 					this.article(1150)
 				} else {
 					this.article(1130)
@@ -37,7 +37,7 @@
 			} else if (res.id == "1") {
 				this.titles = this.$t('JakobLife软件移动客户端用户使用规范1')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans') {
+				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
 					this.article(1149)
 				} else {
 					this.article(1)
@@ -60,7 +60,7 @@
 			} else if (res.id == "1151") {
 				this.titles = this.$t('血压手表使用指南')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans') {
+				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
 					this.article(1151)
 				} else {
 					this.article(1155)
@@ -68,7 +68,7 @@
 			} else if (res.id == "1156") {
 				this.titles = this.$t('血压手表问题解答')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans') {
+				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
 					this.article(1156)
 				} else {
 					this.article(1157)
@@ -76,7 +76,7 @@
 			} else if (res.id == "1158") {
 				this.titles = this.$t('血压手表问题解答')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans') {
+				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
 					this.article(1158)
 				} else {
 					this.article(1159)
@@ -84,7 +84,7 @@
 			} else if (res.id == "1160") {
 				this.titles = this.$t('体脂秤问题解答')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans') {
+				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
 					this.article(1160)
 				} else {
 					this.article(1161)
