@@ -1299,11 +1299,6 @@
 				animation2: '', // 动画样式
 				button_show: false,
 				button_show2: false,
-				stepCount: 0, //步数
-				lastTime: 0, //上次更新时间
-				lastx: 0, //上次X轴细速度
-				lasty: 0, // 上杀r轴加速更
-				lastl: 0, // 上称Z釉加速度
 				delate_icon: false,
 				delate_icon2: false,
 				shousuoya: "",
