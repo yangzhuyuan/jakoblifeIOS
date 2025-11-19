@@ -430,21 +430,49 @@
 				this.$post(this.$url_user_login, data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
-					if (res.code == 200) {
+					console.log(res)
+					switch (res.code) {
+						case 200:
+							uni.showToast({
+								title: this.$t("成功"),
+								icon: 'none'
+							})
+							uni.setStorageSync("token", res.token)
+							uni.setStorageSync("unername", this.unername)
+							setTimeout(function() {
+								uni.switchTab({
+									url: "../tabBar/main/Main"
+								})
+							}, 500)
+							break
+						case 500:
+							uni.showToast({
+								title: this.$t("密码错误"),
+								icon: 'none'
+							})
+							break
+						case 501:
+							uni.showToast({
+								title: this.$t("账户不存在"),
+								icon: 'none'
+							})
+							break
+						default:
+							uni.showToast({
+								title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
+								icon: 'none'
+							})
+							break
+					}
+				}).catch(erro => {
+					if (erro.errMsg.includes("fail abort statusCode:-1")) {
 						uni.showToast({
-							title: this.$t("成功"),
+							title: this.$t("网络连接异常"),
 							icon: 'none'
 						})
-						uni.setStorageSync("token", res.token)
-						uni.setStorageSync("unername", this.unername)
-						setTimeout(function() {
-							uni.switchTab({
-								url: "../tabBar/main/Main"
-							})
-						}, 300)
 					} else {
 						uni.showToast({
-							title: this.$t("账户不存在或密码错误"),
+							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
 							icon: 'none'
 						})
 					}
@@ -477,6 +505,18 @@
 							icon: 'none'
 						})
 					}
+				}).catch(erro => {
+					if (erro.errMsg.includes("fail abort statusCode:-1")) {
+						uni.showToast({
+							title: this.$t("网络连接异常"),
+							icon: 'none'
+						})
+					} else {
+						uni.showToast({
+							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
+							icon: 'none'
+						})
+					}
 				})
 			},
 
@@ -504,6 +544,18 @@
 					} else {
 						uni.showToast({
 							title: this.$t("失败"),
+							icon: 'none'
+						})
+					}
+				}).catch(erro => {
+					if (erro.errMsg.includes("fail abort statusCode:-1")) {
+						uni.showToast({
+							title: this.$t("网络连接异常"),
+							icon: 'none'
+						})
+					} else {
+						uni.showToast({
+							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
 							icon: 'none'
 						})
 					}
@@ -739,6 +791,18 @@
 						// 	url: "/pages/login/Force_binding_email_frist"
 						// })
 					}
+				}).catch(erro => {
+					if (erro.errMsg.includes("fail abort statusCode:-1")) {
+						uni.showToast({
+							title: this.$t("网络连接异常"),
+							icon: 'none'
+						})
+					} else {
+						uni.showToast({
+							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
+							icon: 'none'
+						})
+					}
 				})
 			},
 			//微信使用accessToken和openId登录
@@ -770,6 +834,18 @@
 							icon: "none"
 						})
 					}
+				}).catch(erro => {
+					if (erro.errMsg.includes("fail abort statusCode:-1")) {
+						uni.showToast({
+							title: this.$t("网络连接异常"),
+							icon: 'none'
+						})
+					} else {
+						uni.showToast({
+							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
+							icon: 'none'
+						})
+					}
 				})
 			},
 			//qq使用accessToken和openId登录
@@ -797,6 +873,18 @@
 					} else {
 						uni.showToast({
 							title: this.$t("失败"),
+							icon: 'none'
+						})
+					}
+				}).catch(erro => {
+					if (erro.errMsg.includes("fail abort statusCode:-1")) {
+						uni.showToast({
+							title: this.$t("网络连接异常"),
+							icon: 'none'
+						})
+					} else {
+						uni.showToast({
+							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
 							icon: 'none'
 						})
 					}

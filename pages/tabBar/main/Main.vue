@@ -1035,14 +1035,21 @@
 				const med = this.medication === true ? 1 : 2; // 1=用药 2=未用药
 				const idsd = [1, 2, 3, 4, 5, 6, 7, 8][idx * 2 + (med - 1)]; // 0-7 → 1-8
 				// 2. 返回固定顺序的 key 数组
-				return [
-					'睡眠质量',
-					`用药情况${med}`,
-					`健康建议${idsd}`, // 0-3 → 1-8
-					`原因${idsd}`,
-					`药物与睡眠解释${idsd}`,
-					`生活方式建议${idsd}`
-				];
+				if (idsd === undefined) {
+					return [
+						'睡眠质量',
+						`用药情况${med}`
+					];
+				} else {
+					return [
+						'睡眠质量',
+						`用药情况${med}`,
+						`健康建议${idsd}`, // 0-3 → 1-8
+						`原因${idsd}`,
+						`药物与睡眠解释${idsd}`,
+						`生活方式建议${idsd}`
+					];
+				}
 			}
 		},
 		data() {
@@ -1400,9 +1407,10 @@
 		onShow() {
 			let that = this
 			that.sethuilian(true)
-			that.Blood = uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa"
+			that.Unitlist()
 			that.chuhsikg = uni.getStorageSync("danwei2") === 1 ? "lb" : "kg";
 			that.newweightKG = uni.getStorageSync("danwei2") === 1 ? "lb" : "KG";
+			that.Blood = uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa"
 			isInChinaByIP().then(isInChina => {
 				that.loact = isInChina ? "境内" : "境外";
 				const token = uni.getStorageSync("token");
@@ -1739,6 +1747,78 @@
 				this.button_show2 = false;
 				this.delate_icon2 = false;
 				this.disabledsaaa2 = true;
+			},
+
+			Unitlist() {
+				const data = {
+					dataType: 'Unitdata'
+				};
+				this.$get('https://jakoblife.jakob-techs.com/prod-api/device/data/list', data, {
+					Authorization: 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/json'
+				}).then(res => {
+					if (res.code === 200 && res.rows.length > 0 && res.rows[0].data) {
+						const parsed = this.robustParseData(res.rows[0].data);
+						if (!parsed.length) return;
+						const unitData = parsed[0];
+						const keyMap = {
+							Blood: 'bloodUnit',
+							danwei1: 'heightUnit',
+							danwei2: 'weightUnit'
+						};
+						Object.keys(keyMap).forEach(key => {
+							const value = unitData[keyMap[key]];
+							const row = this.rows.find(r => r.key === key);
+							if (!row) return;
+							const idx = row.array.indexOf(value);
+							const safe = idx !== -1 ? idx : 0;
+							this.$set(this.unitMap, key, value);
+							this.$set(this.indexMap, key, safe);
+							uni.setStorageSync(key, safe); // 直接存索引
+						});
+					}
+				});
+			},
+			robustParseData(dataStr) {
+				try {
+					// 分割每个对象
+					const objects = dataStr.split('},{');
+					const result = [];
+					for (let i = 0; i < objects.length; i++) {
+						let objStr = objects[i];
+						// 修复首尾对象的花括号
+						if (i === 0) objStr = objStr + '}';
+						else if (i === objects.length - 1) objStr = '{' + objStr;
+						else objStr = '{' + objStr + '}';
+						// 移除可能的多余花括号
+						objStr = objStr.replace(/^{{/, '{').replace(/}}$/, '}');
+						// 修复键值对
+						const fixedObjStr = objStr.replace(/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (match, key, value) => {
+							value = value.trim();
+
+							// 处理布尔值
+							if (value === 'true' || value === 'false') {
+								return `"${key}":${value}`;
+							}
+							// 处理数字
+							if (!isNaN(value) && value !== '' && !value.includes('/')) {
+								return `"${key}":${value}`;
+							}
+							// 处理字符串
+							return `"${key}":"${value}"`;
+						});
+						try {
+							const obj = JSON.parse(fixedObjStr);
+							result.push(obj);
+						} catch (e) {
+							console.warn('解析单个对象失败:', fixedObjStr, e);
+						}
+					}
+					return result;
+				} catch (error) {
+					console.error('解析失败:', error);
+					return [];
+				}
 			},
 
 			//帮助
@@ -3672,12 +3752,6 @@
 							this.get_device_info(deviceSn)
 							this.getStorageInfooy(aaa)
 						}, 1000)
-						// uni.showToast({
-						// 	title: "上报成功：" + JSON.stringify(data) + "睡眠数据：" + JSON.stringify(this
-						// 		.sleeepalldata),
-						// 	icon: 'none',
-						// 	duration: 5000
-						// })
 					}
 				})
 			},
@@ -4111,11 +4185,8 @@
 									uni.getStorageInfo({
 										success: function(ress) {
 											// 判断缓存是否存在
-											if (ress.keys.includes(
-													'kapianlist')) {
-												that.list = uni
-													.getStorageSync(
-														'kapianlist')
+											if (ress.keys.includes('kapianlist')) {
+												that.list = uni.getStorageSync('kapianlist')
 											} else {
 												uni.setStorageSync(
 													"kapianlist",
@@ -4365,14 +4436,10 @@
 							uni.getStorageInfo({
 								success: function(ress) {
 									// 判断缓存是否存在
-									if (ress.keys.includes(
-											'kapianlist')) {
-										this.list = uni.getStorageSync(
-											'kapianlist')
+									if (ress.keys.includes('kapianlist')) {
+										this.list = uni.getStorageSync('kapianlist')
 									} else {
-										uni.setStorageSync(
-											"kapianlist",
-											this.list)
+										uni.setStorageSync("kapianlist",this.list)
 									}
 								}
 							});
@@ -4607,32 +4674,23 @@
 			// 处理身高卡片
 			async processHeight(item, name) {
 				let that = this
-				const heightItem = that.findValue(that.list, 'title',
-					name);
-				const height = that.findValue(item, 'register',
-						'height')
-					?.registerVal;
-				const unit = uni.getStorageSync("danwei1") === 0 ?
-					"inch" :
-					"cm";
+				const heightItem = that.findValue(that.list, 'title', name);
+				const height = that.findValue(item, 'register', 'height')?.registerVal;
+				const unit = uni.getStorageSync("danwei1") === 0 ? "inch" : "cm";
 				heightItem.type_LX = unit;
 				heightItem.title = that.$t("身高")
 				heightItem.Step_number = height !== null ? (unit === "inch" ? WeightConverter.cmToInch(height) :
 					height) : '-/-';
-				heightItem.Step_count = that.formatDate(that.findValue(
-					item, 'register', 'height')?.updateTime);
+				heightItem.Step_count = that.formatDate(that.findValue(item, 'register', 'height')?.updateTime);
 			},
 
 			// 处理体温卡片
 			async processTemperature(item, name) {
 				let that = this
-				const temperatureItem = that.findValue(that.list,
-					'title', name);
+				const temperatureItem = that.findValue(that.list, 'title', name);
 				temperatureItem.title = that.$t("体温")
-				temperatureItem.Step_number = uni.getStorageSync(
-					"tiwen") || "0";
-				temperatureItem.Step_count = uni.getStorageSync(
-					"tiwentimes") || "--/--";
+				temperatureItem.Step_number = uni.getStorageSync("tiwen") || "0";
+				temperatureItem.Step_count = uni.getStorageSync("tiwentimes") || "--/--";
 			},
 			processxiblv(item, name) {
 				let that = this
@@ -4647,109 +4705,43 @@
 				let that = this
 				uni.getStorageInfo({
 					success: (xueyangres) => {
-						const bloodOxygenItem =
-							that.findValue(that
-								.list, 'title',
-								name);
-						if (xueyangres.keys
-							.includes(
-								"xueyang")) {
-							const xueyang = uni
-								.getStorageSync(
-									"xueyang");
-							bloodOxygenItem
-								.Step_number =
-								xueyang !== null ?
-								xueyang : "0"
+						const bloodOxygenItem = that.findValue(that.list, 'title', name);
+						if (xueyangres.keys.includes("xueyang")) {
+							const xueyang = uni.getStorageSync("xueyang");
+							bloodOxygenItem.Step_number = xueyang !== null ? xueyang : "0"
 							if (xueyang <= 95) {
-								bloodOxygenItem
-									.BMI_ys =
-									that.$t('偏低');
-								bloodOxygenItem
-									.BMI_TF = 0;
-							} else if (xueyang <
-								98) {
-								bloodOxygenItem
-									.BMI_ys =
-									that.$t('正常');
-								bloodOxygenItem
-									.BMI_TF = 1;
-							} else if (parseInt(
-									xueyang) >=
-								98) {
-								bloodOxygenItem
-									.BMI_ys =
-									that.$t('偏高');
-								bloodOxygenItem
-									.BMI_TF =
-									10;
+								bloodOxygenItem.BMI_ys = that.$t('偏低');
+								bloodOxygenItem.BMI_TF = 0;
+							} else if (xueyang < 98) {
+								bloodOxygenItem.BMI_ys = that.$t('正常');
+								bloodOxygenItem.BMI_TF = 1;
+							} else if (parseInt(xueyang) >= 98) {
+								bloodOxygenItem.BMI_ys = that.$t('偏高');
+								bloodOxygenItem.BMI_TF = 10;
 							}
 						} else {
-							const xueyang = that
-								.findValue(
-									item,
-									'register',
-									'oxygen')
-								?.registerVal;
-							bloodOxygenItem
-								.Step_number =
-								xueyang
-							if (parseInt(
-									xueyang) <= 95) {
-								bloodOxygenItem
-									.BMI_ys =
-									that.$t('偏低');
-								bloodOxygenItem
-									.BMI_TF = 0;
-							} else if (parseInt(
-									xueyang) <
-								98) {
-								bloodOxygenItem
-									.BMI_ys =
-									that.$t('正常');
-								bloodOxygenItem
-									.BMI_TF = 1;
-							} else if (parseInt(
-									xueyang) >=
-								98) {
-								bloodOxygenItem
-									.BMI_ys =
-									that.$t('偏高');
-								bloodOxygenItem
-									.BMI_TF =
-									10;
+							const xueyang = that.findValue(item, 'register', 'oxygen')?.registerVal;
+							bloodOxygenItem.Step_number = xueyang
+							if (parseInt(xueyang) <= 95) {
+								bloodOxygenItem.BMI_ys = that.$t('偏低');
+								bloodOxygenItem.BMI_TF = 0;
+							} else if (parseInt(xueyang) < 98) {
+								bloodOxygenItem.BMI_ys = that.$t('正常');
+								bloodOxygenItem.BMI_TF = 1;
+							} else if (parseInt(xueyang) >= 98) {
+								bloodOxygenItem.BMI_ys = that.$t('偏高');
+								bloodOxygenItem.BMI_TF = 10;
 							}
 						}
-						if (xueyangres.keys
-							.includes(
-								"xueyangtimes")) {
-							bloodOxygenItem
-								.Step_count = !
-								uni.getStorageSync(
-									"xueyangtimes"
-								) ?
-								"-/-" : uni
-								.getStorageSync(
-									"xueyangtimes"
-								);
+						if (xueyangres.keys.includes("xueyangtimes")) {
+							bloodOxygenItem.Step_count = !uni.getStorageSync("xueyangtimes") ? "-/-" : uni
+								.getStorageSync("xueyangtimes");
 						} else {
-							const xueyangtime =
-								that
-								.formatDate(that
-									.findValue(
-										item,
-										'register',
-										'oxygen')
-									?.updateTime);
-							bloodOxygenItem
-								.Step_count = !
-								xueyangtime ?
-								"-/-" :
-								xueyangtime;
+							const xueyangtime = that.formatDate(that.findValue(item, 'register', 'oxygen')
+								?.updateTime);
+							bloodOxygenItem.Step_count = !xueyangtime ? "-/-" : xueyangtime;
 						}
-						bloodOxygenItem.title =
-							that.$t(
-								"血氧");
+						bloodOxygenItem.title = that.$t("血氧");
 					}
 				});
 			},
@@ -4822,7 +4814,8 @@
 									highPressureData
 									.value);
 							}
-
+							const pulseData = getLatestData(slaveSn2Data, slaveSn3Data, "heartrate");
+							this.$set(this, 'pulsetime', this.formatDate(pulseData.time));
 							// 主逻辑：遍历卡片列表并处理
 							const kapianlist = uni.getStorageSync("kapianlist") || [];
 							let itelistasd = []

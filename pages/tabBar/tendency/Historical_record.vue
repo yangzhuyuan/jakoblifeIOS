@@ -169,6 +169,7 @@
 
 		onShow() {
 			this.initPage();
+			this.Unitlist()
 		},
 
 		methods: {
@@ -230,8 +231,80 @@
 					this.swipeList = [];
 					return;
 				}
-
 				await this.fetchData();
+			},
+			Unitlist() {
+				const data = {
+					dataType: 'Unitdata'
+				};
+				this.$get('https://jakoblife.jakob-techs.com/prod-api/device/data/list', data, {
+					Authorization: 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/json'
+				}).then(res => {
+					if (res.code === 200 && res.rows.length > 0 && res.rows[0].data) {
+						const parsed = this.robustParseData(res.rows[0].data);
+						if (!parsed.length) return;
+						const unitData = parsed[0];
+						/* ① 字段映射：key ↔ 接口返回字段 */
+						const keyMap = {
+							Blood: 'bloodUnit',
+							danwei1: 'heightUnit',
+							danwei2: 'weightUnit'
+						};
+						/* ② 统一循环：值 → 索引 → 缓存 */
+						Object.keys(keyMap).forEach(key => {
+							const value = unitData[keyMap[key]];
+							const row = this.rows.find(r => r.key === key);
+							if (!row) return;
+							const idx = row.array.indexOf(value);
+							const safe = idx !== -1 ? idx : 0;
+							this.$set(this.unitMap, key, value);
+							this.$set(this.indexMap, key, safe);
+							uni.setStorageSync(key, safe); // 直接存索引
+						});
+					}
+				});
+			},
+			robustParseData(dataStr) {
+				try {
+					// 分割每个对象
+					const objects = dataStr.split('},{');
+					const result = [];
+					for (let i = 0; i < objects.length; i++) {
+						let objStr = objects[i];
+						// 修复首尾对象的花括号
+						if (i === 0) objStr = objStr + '}';
+						else if (i === objects.length - 1) objStr = '{' + objStr;
+						else objStr = '{' + objStr + '}';
+						// 移除可能的多余花括号
+						objStr = objStr.replace(/^{{/, '{').replace(/}}$/, '}');
+						// 修复键值对
+						const fixedObjStr = objStr.replace(/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (match, key, value) => {
+							value = value.trim();
+
+							// 处理布尔值
+							if (value === 'true' || value === 'false') {
+								return `"${key}":${value}`;
+							}
+							// 处理数字
+							if (!isNaN(value) && value !== '' && !value.includes('/')) {
+								return `"${key}":${value}`;
+							}
+							// 处理字符串
+							return `"${key}":"${value}"`;
+						});
+						try {
+							const obj = JSON.parse(fixedObjStr);
+							result.push(obj);
+						} catch (e) {
+							console.warn('解析单个对象失败:', fixedObjStr, e);
+						}
+					}
+					return result;
+				} catch (error) {
+					console.error('解析失败:', error);
+					return [];
+				}
 			},
 
 			// 视图切换

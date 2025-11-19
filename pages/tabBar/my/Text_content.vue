@@ -4,7 +4,6 @@
 		<view style="padding: 10px 10px 60px 10px">
 			<rich-text :nodes="content"></rich-text>
 		</view>
-
 	</view>
 </template>
 
@@ -29,7 +28,7 @@
 			} else if (res.id == "1130") {
 				this.titles = this.$t('JakobLife隐私政策1')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1150)
 				} else {
 					this.article(1130)
@@ -37,7 +36,7 @@
 			} else if (res.id == "1") {
 				this.titles = this.$t('JakobLife软件移动客户端用户使用规范1')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1149)
 				} else {
 					this.article(1)
@@ -60,7 +59,7 @@
 			} else if (res.id == "1151") {
 				this.titles = this.$t('血压手表使用指南')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1151)
 				} else {
 					this.article(1155)
@@ -68,7 +67,7 @@
 			} else if (res.id == "1156") {
 				this.titles = this.$t('血压手表问题解答')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1156)
 				} else {
 					this.article(1157)
@@ -76,7 +75,7 @@
 			} else if (res.id == "1158") {
 				this.titles = this.$t('血压手表问题解答')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1158)
 				} else {
 					this.article(1159)
@@ -84,7 +83,7 @@
 			} else if (res.id == "1160") {
 				this.titles = this.$t('体脂秤问题解答')
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1160)
 				} else {
 					this.article(1161)
@@ -113,11 +112,35 @@
 						'content-type': 'application/json' //自定义请求头信息
 					},
 					success(res) {
+						console.log("血压手表", res)
 						that.title = res.data.data.title
-						that.content = res.data.data.content
+						// that.content = res.data.data.content
+						// 在赋值前处理内容
+						that.content = that.formatContent(res.data.data.content)
 					}
 				})
 			},
+			// 完整的图片处理方法
+			formatContent(html) {
+				if (!html) return '';
+				// 修复图片路径并添加样式
+				const processedHtml = html.replace(/<img[^>]*src=['"]([^'"]+)['"][^>]*>/gi, (match, src) => {
+					let newSrc = src;
+					// 处理各种情况
+					if (src.startsWith('//')) {
+						// 双斜杠开头，添加 https:
+						newSrc = 'https:' + src;
+					} else if (src.startsWith('/')) {
+						// 绝对路径，添加完整域名
+						newSrc = 'https://jakoblife.jakob-techs.com' + src;
+					} else if (!src.startsWith('http')) {
+						// 相对路径，添加基础URL
+						newSrc = 'https://jakoblife.jakob-techs.com/' + src;
+					}
+					return `<img src="${newSrc}" style="max-width: 100%; height: auto; display: block;" />`;
+				});
+				return processedHtml;
+			}
 		}
 	}
 </script>

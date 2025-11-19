@@ -10,8 +10,20 @@
 			<view class="Model_number">{{ xinghao }}</view>
 			<view v-if="img_scan===false" class="Message1">{{ context_msg }}</view>
 		</view>
-		<view v-if="img_scan" class="Message">{{ context_msg }}</view>
+		<view v-if="img_scan" class="Message">{{modelname ==="BPW1"?$t("扫描手表里边的二维码"):$t("扫描设备背面的二维码")}}</view>
 		<button class="button_style1" @click="ButtonTap()">{{$t("输入设备码")}}</button>
+		<view v-if="modelname==='BPW1'"
+			style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+			<image class="imgss_sc" mode="aspectFit" src="/static/image/sc_shoubiao_1.jpg" />
+			<image class="imgss_sc" mode="aspectFit" src="/static/image/sc_shoubiao_2.jpg" />
+		</view>
+		<view v-else-if="modelname==='JL-S260'||modelname==='JL-S100'"
+			style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+			<image class="imgss_sc" mode="aspectFit" src="/static/image/sc_tz.jpg" />
+		</view>
+		<view v-else style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
+			<image class="imgss_sc" mode="aspectFit" src="/static/image/sc_xy.jpg" />
+		</view>
 		<view class="Messageback">
 			<button class="button_style" @click="True_Bind()">{{$t("确认绑定")}}</button>
 			<button class="button_style1" @click="unbind()">{{$t("暂不绑定")}}</button>
@@ -30,20 +42,6 @@
 					@click="shoudongbtncancle()">{{$t("取消")}}</button>
 			</view>
 		</uni-popup>
-		<!-- <view> -->
-		<!-- 普通弹窗 -->
-		<!-- 		<uni-popup ref="popupquanxian" :mask-click="false">
-				<view class="popup-content111">
-					<view style="font-size: 18px; margin-top: 20px;">{{$t("扫码需要相机权限")}}</view>
-					<view style="margin-top: 30px; ">
-						<button style="border-radius: 50px;background: red; color: white;"
-							@click="xingjiclickcan()">{{$t("取消")}}</button>
-						<button style="border-radius: 50px;background: #3298F7;margin-top: 10px;color: white;"
-							@click=" xingjiclick()">{{$t("去设置")}}</button>
-					</view>
-				</view>
-			</uni-popup>
-		</view> -->
 	</view>
 </template>
 
@@ -351,7 +349,7 @@
 			},
 			updateScanImagePath(picturePath) {
 				if (picturePath) {
-					if (lan === 'zh-Hans'||lan == 'zh-Hant') {
+					if (lan === 'zh-Hans' || lan == 'zh-Hant') {
 						this.scan_img = this.$url_APP_IP + picturePath;
 					} else {
 						this.scan_img = modelIdToImagePath[this.modelId];
@@ -476,6 +474,16 @@
 		object-fit: contain;
 	}
 
+	.imgss_sc {
+		padding-top: 20px;
+		width: 120px;
+		height: 120px;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		object-fit: contain;
+	}
+
 	.Model_number {
 		text-align: center;
 		margin: 20px 0;
@@ -489,7 +497,7 @@
 		text-align: center;
 		font-size: 16px;
 		font-weight: 400;
-		color: black;
+		color: red;
 	}
 
 	.Message1 {
@@ -524,7 +532,7 @@
 	.button_style1 {
 		width: auto;
 		height: 48px;
-		margin: 20px 20px 46px 20px;
+		margin: 20px 20px 0 20px;
 		display: flex;
 		justify-content: center;
 		align-items: center;

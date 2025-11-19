@@ -29998,7 +29998,7 @@ var render = function () {
             "v-uni-button",
             {
               staticClass: _vm._$g(34, "sc"),
-              attrs: { plain: "true", _i: 34 },
+              attrs: { _i: 34 },
               on: {
                 click: function ($event) {
                   return _vm.$handleViewEvent($event)
@@ -30108,7 +30108,7 @@ if(false) {}
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../../../../../../Applications/HBuilderX.app/Contents/HBuilderX/plugins/uniapp-cli/node_modules/css-loader/dist/runtime/api.js */ 10);
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "\n.titless {\n\twidth: auto;\n\tfont-size: 32px;\n\tmargin-left: 40px;\n\tmargin-right: 40px;\n\tpadding-top: 33px;\n\tline-height: 45px;\n\tfont-weight: bold;\n}\n.title_ct {\n\tmargin-top: 20px;\n\twidth: auto;\n\theight: 20px;\n\tmargin-left: 40px;\n\tmargin-right: 40px;\n\tfont-size: 12px;\n\tcolor: gray;\n}\n.bt_BG {\n\twidth: auto;\n\theight: 54px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tflex-direction: row;\n\tmargin-left: 20px;\n\tmargin-right: 20px;\n\tmargin-top: 20px;\n\tbackground: white;\n\tborder-radius: 50px;\n}\n.text {\n\twidth: 30vw;\n\tfont-size: 16px;\n\tmargin-left: 15px;\n\tfont-weight: bold;\n}\n.popup_bg {\n\tbackground: white;\n\tborder-radius: 20px;\n\tmargin-left: 20px;\n\tmargin-right: 20px;\n\tmargin-bottom: 10px;\n}\n.select_text {\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\ttext-align: center;\n\tpadding: 10px;\n\theight: 48px;\n\tfont-size: 16px;\n\tfont-weight: bold;\n}\n.btn_BG {\n\twidth: auto;\n\tmargin: 0 20px 24px 20px;\n\tbackground: #DBDBDB;\n\tcolor: white;\n\theight: 48px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tborder-radius: 100px;\n\tfont-size: 16px;\n\tfont-weight: 600;\n\tbackground: #3298F7;\n}\n.btn_BG_1 {\n\twidth: auto;\n\tmargin: 20px 20px 68px 20px;\n\tbackground: #DBDBDB !important;\n\theight: 48px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tborder-radius: 100px;\n\tfont-size: 16px;\n\tfont-weight: 600;\n\tcolor: #FFFFFF !important;\n\tborder: none !important;\n}\n.select_bg {\n\twidth: 100vw;\n\ttext-align: right;\n\tmargin-right: 5px;\n\tfont-size: 16px;\n}\n.date_bg {\n\ttext-align: center;\n\tfont-size: 16px;\n}\n", ""]);
+exports.push([module.i, "\n.titless {\n\twidth: auto;\n\tfont-size: 32px;\n\tmargin-left: 40px;\n\tmargin-right: 40px;\n\tpadding-top: 33px;\n\tline-height: 45px;\n\tfont-weight: bold;\n}\n.title_ct {\n\tmargin-top: 20px;\n\twidth: auto;\n\theight: 20px;\n\tmargin-left: 40px;\n\tmargin-right: 40px;\n\tfont-size: 12px;\n\tcolor: gray;\n}\n.bt_BG {\n\twidth: auto;\n\theight: 54px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tflex-direction: row;\n\tmargin-left: 20px;\n\tmargin-right: 20px;\n\tmargin-top: 20px;\n\tbackground: white;\n\tborder-radius: 50px;\n}\n.text {\n\twidth: 30vw;\n\tfont-size: 16px;\n\tmargin-left: 15px;\n\tfont-weight: bold;\n}\n.popup_bg {\n\tbackground: white;\n\tborder-radius: 20px;\n\tmargin-left: 20px;\n\tmargin-right: 20px;\n\tmargin-bottom: 10px;\n}\n.select_text {\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\ttext-align: center;\n\tpadding: 10px;\n\theight: 48px;\n\tfont-size: 16px;\n\tfont-weight: bold;\n}\n.btn_BG {\n\twidth: auto;\n\tmargin: 0 20px 24px 20px;\n\tcolor: white;\n\theight: 48px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tborder-radius: 100px;\n\tfont-size: 16px;\n\tfont-weight: 600;\n\tbackground: #3298F7;\n}\n.btn_BG_1 {\n\twidth: auto;\n\tmargin: 20px 20px 68px 20px;\n\tbackground: #3298F7;\n\theight: 48px;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\tborder-radius: 100px;\n\tfont-size: 16px;\n\tfont-weight: 600;\n\tcolor: white;\n}\n.select_bg {\n\twidth: 100vw;\n\ttext-align: right;\n\tmargin-right: 5px;\n\tfont-size: 16px;\n}\n.date_bg {\n\ttext-align: center;\n\tfont-size: 16px;\n}\n", ""]);
 // Exports
 module.exports = exports;
 
@@ -31654,7 +31654,7 @@ if(false) {}
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../../../../../../../Applications/HBuilderX.app/Contents/HBuilderX/plugins/uniapp-cli/node_modules/css-loader/dist/runtime/api.js */ 10);
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "\n.list-container {\n\tdisplay: grid;\n\tgrid-template-columns: repeat(2, 1fr);\n\tpadding: 0 10px 160px 10px;\n\tjustify-content: space-between;\n}\n.list-item {\n\tbackground-color: #f3f3f3;\n\tbackground: white;\n\tborder-radius: 20px;\n\tmargin: 5px 5px 10px 5px;\n\tpadding: 5px;\n\tbox-sizing: border-box;\n\tbox-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);\n}\n.list_item_bg {\n\tdisplay: flex;\n\tflex-direction: column;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\theight: 180px;\n}\n.active {\n\tborder: 2px solid #3298F7;\n\tcolor: #3298F7;\n}\n.button_bg_view {\n\tbackground: #EFEFF4;\n\twidth: 100vw;\n\tdisplay: flex;\n\tposition: fixed;\n\tbottom: 0;\n\tflex-direction: column;\n\tpadding-top: 20px;\n}\n.button_bg {\n\twidth: auto;\n\theight: 48px;\n\tfont-size: 16px;\n\tmargin-left: 20px;\n\tmargin-bottom: 10px;\n\tmargin-right: 20px;\n\tdisplay: flex;\n\tfont-weight: 600;\n\tjustify-content: center;\n\talign-items: center;\n\tcolor: white !important;\n\tborder: none !important;\n\tbackground: #DBDBDB;\n\tborder-radius: 30px;\n}\n.button_bg_1 {\n\tborder: none !important;\n\twidth: auto;\n\theight: 48px;\n\tfont-size: 16px;\n\tmargin: 20px 20px 48px 20px;\n\tdisplay: flex;\n\tfont-weight: 600;\n\tjustify-content: center;\n\talign-items: center;\n\tcolor: white !important;\n\tbackground: #DBDBDB !important;\n\tborder-radius: 30px;\n}\n.viewstylesss {\n\ttext-align: center;\n\tmargin-bottom: 20px;\n\tcolor: #3298F7;\n\tmargin-top: 10px;\n\tfont-size: 12px;\n\tfont-weight: 400;\n}\n", ""]);
+exports.push([module.i, "\n.list-container {\n\tdisplay: grid;\n\tgrid-template-columns: repeat(2, 1fr);\n\tpadding: 0 10px 200px 10px;\n\tjustify-content: space-between;\n}\n.list-item {\n\tbackground-color: #f3f3f3;\n\tbackground: white;\n\tborder-radius: 20px;\n\tmargin: 5px 5px 10px 5px;\n\tpadding: 5px;\n\tbox-sizing: border-box;\n\tbox-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);\n}\n.list_item_bg {\n\tdisplay: flex;\n\tflex-direction: column;\n\tdisplay: flex;\n\tjustify-content: center;\n\talign-items: center;\n\theight: 180px;\n}\n.active {\n\tborder: 2px solid #3298F7;\n\tcolor: #3298F7;\n}\n.button_bg_view {\n\tbackground: #EFEFF4;\n\twidth: 100vw;\n\tdisplay: flex;\n\tposition: fixed;\n\tbottom: 0;\n\tflex-direction: column;\n\tpadding-top: 20px;\n}\n.button_bg {\n\twidth: auto;\n\theight: 48px;\n\tfont-size: 16px;\n\tmargin-left: 20px;\n\tmargin-bottom: 10px;\n\tmargin-right: 20px;\n\tdisplay: flex;\n\tfont-weight: 600;\n\tjustify-content: center;\n\talign-items: center;\n\tcolor: white !important;\n\tborder: none !important;\n\tbackground: #DBDBDB;\n\tborder-radius: 30px;\n}\n.button_bg_1 {\n\tborder: none !important;\n\twidth: auto;\n\theight: 48px;\n\tfont-size: 16px;\n\tmargin: 20px 20px 48px 20px;\n\tdisplay: flex;\n\tfont-weight: 600;\n\tjustify-content: center;\n\talign-items: center;\n\tcolor: white !important;\n\tbackground: #DBDBDB !important;\n\tborder-radius: 30px;\n}\n.viewstylesss {\n\ttext-align: center;\n\tmargin-bottom: 20px;\n\tcolor: #3298F7;\n\tmargin-top: 10px;\n\tfont-size: 12px;\n\tfont-weight: 400;\n}\n", ""]);
 // Exports
 module.exports = exports;
 
@@ -32646,46 +32646,125 @@ var render = function () {
         },
         [_vm._v(_vm._$g(9, "t0-0"))]
       ),
+      _vm._$g(10, "i")
+        ? _c(
+            "uni-view",
+            {
+              staticStyle: {
+                display: "flex",
+                "flex-direction": "row",
+                "justify-content": "center",
+                "align-items": "center",
+              },
+              attrs: { _i: 10 },
+            },
+            [
+              _c("v-uni-image", {
+                staticClass: _vm._$g(11, "sc"),
+                attrs: {
+                  mode: "aspectFit",
+                  src: "/static/image/sc_shoubiao_1.jpg",
+                  _i: 11,
+                },
+              }),
+              _c("v-uni-image", {
+                staticClass: _vm._$g(12, "sc"),
+                attrs: {
+                  mode: "aspectFit",
+                  src: "/static/image/sc_shoubiao_2.jpg",
+                  _i: 12,
+                },
+              }),
+            ],
+            1
+          )
+        : _vm._$g(13, "e")
+        ? _c(
+            "uni-view",
+            {
+              staticStyle: {
+                display: "flex",
+                "flex-direction": "row",
+                "justify-content": "center",
+                "align-items": "center",
+              },
+              attrs: { _i: 13 },
+            },
+            [
+              _c("v-uni-image", {
+                staticClass: _vm._$g(14, "sc"),
+                attrs: {
+                  mode: "aspectFit",
+                  src: "/static/image/sc_tz.jpg",
+                  _i: 14,
+                },
+              }),
+            ],
+            1
+          )
+        : _c(
+            "uni-view",
+            {
+              staticStyle: {
+                display: "flex",
+                "flex-direction": "row",
+                "justify-content": "center",
+                "align-items": "center",
+              },
+              attrs: { _i: 15 },
+            },
+            [
+              _c("v-uni-image", {
+                staticClass: _vm._$g(16, "sc"),
+                attrs: {
+                  mode: "aspectFit",
+                  src: "/static/image/sc_xy.jpg",
+                  _i: 16,
+                },
+              }),
+            ],
+            1
+          ),
       _c(
         "uni-view",
-        { staticClass: _vm._$g(10, "sc"), attrs: { _i: 10 } },
+        { staticClass: _vm._$g(17, "sc"), attrs: { _i: 17 } },
         [
           _c(
             "v-uni-button",
             {
-              staticClass: _vm._$g(11, "sc"),
-              attrs: { _i: 11 },
+              staticClass: _vm._$g(18, "sc"),
+              attrs: { _i: 18 },
               on: {
                 click: function ($event) {
                   return _vm.$handleViewEvent($event)
                 },
               },
             },
-            [_vm._v(_vm._$g(11, "t0-0"))]
+            [_vm._v(_vm._$g(18, "t0-0"))]
           ),
           _c(
             "v-uni-button",
             {
-              staticClass: _vm._$g(12, "sc"),
-              attrs: { _i: 12 },
+              staticClass: _vm._$g(19, "sc"),
+              attrs: { _i: 19 },
               on: {
                 click: function ($event) {
                   return _vm.$handleViewEvent($event)
                 },
               },
             },
-            [_vm._v(_vm._$g(12, "t0-0"))]
+            [_vm._v(_vm._$g(19, "t0-0"))]
           ),
         ],
         1
       ),
       _c(
         "uni-popup",
-        { ref: "qiehuanpopup", attrs: { _i: 13 } },
+        { ref: "qiehuanpopup", attrs: { _i: 20 } },
         [
           _c(
             "uni-view",
-            { staticClass: _vm._$g(14, "sc"), attrs: { _i: 14 } },
+            { staticClass: _vm._$g(21, "sc"), attrs: { _i: 21 } },
             [
               _c(
                 "uni-view",
@@ -32696,9 +32775,9 @@ var render = function () {
                     "text-align": "center",
                     "font-weight": "600",
                   },
-                  attrs: { _i: 15 },
+                  attrs: { _i: 22 },
                 },
-                [_vm._v(" " + _vm._$g(15, "t0-0") + " ")]
+                [_vm._v(" " + _vm._$g(22, "t0-0") + " ")]
               ),
               _c("v-uni-input", {
                 staticStyle: {
@@ -32707,11 +32786,11 @@ var render = function () {
                   height: "48px",
                   "text-align": "center",
                 },
-                attrs: { placeholder: _vm._$g(16, "a-placeholder"), _i: 16 },
+                attrs: { placeholder: _vm._$g(23, "a-placeholder"), _i: 23 },
                 model: {
-                  value: _vm._$g(16, "v-model"),
+                  value: _vm._$g(23, "v-model"),
                   callback: function ($$v) {
-                    _vm.$handleVModelEvent(16, $$v)
+                    _vm.$handleVModelEvent(23, $$v)
                   },
                   expression: "inputcontext",
                 },
@@ -32724,14 +32803,14 @@ var render = function () {
                     margin: "20px",
                     color: "white",
                   },
-                  attrs: { _i: 17 },
+                  attrs: { _i: 24 },
                   on: {
                     click: function ($event) {
                       return _vm.$handleViewEvent($event)
                     },
                   },
                 },
-                [_vm._v(_vm._$g(17, "t0-0"))]
+                [_vm._v(_vm._$g(24, "t0-0"))]
               ),
               _c(
                 "v-uni-button",
@@ -32741,14 +32820,14 @@ var render = function () {
                     margin: "20px",
                     color: "white",
                   },
-                  attrs: { _i: 18 },
+                  attrs: { _i: 25 },
                   on: {
                     click: function ($event) {
                       return _vm.$handleViewEvent($event)
                     },
                   },
                 },
-                [_vm._v(_vm._$g(18, "t0-0"))]
+                [_vm._v(_vm._$g(25, "t0-0"))]
               ),
             ],
             1
@@ -33051,7 +33130,7 @@ if(false) {}
 var ___CSS_LOADER_API_IMPORT___ = __webpack_require__(/*! ../../../../../../../Applications/HBuilderX.app/Contents/HBuilderX/plugins/uniapp-cli/node_modules/css-loader/dist/runtime/api.js */ 10);
 exports = ___CSS_LOADER_API_IMPORT___(false);
 // Module
-exports.push([module.i, "@charset \"UTF-8\";\n/**\n * 这里是uni-app内置的常用样式变量\n *\n * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量\n * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App\n *\n */\n/**\n * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能\n *\n * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件\n */\n/* 颜色变量 */\n/* 行为相关颜色 */\n/* 文字基本颜色 */\n/* 背景颜色 */\n/* 边框颜色 */\n/* 尺寸变量 */\n/* 文字尺寸 */\n/* 图片尺寸 */\n/* Border Radius */\n/* 水平间距 */\n/* 垂直间距 */\n/* 透明度 */\n/* 文章场景相关 */\n.backpage[data-v-496d680c] {\n  color: black;\n  background: #F7F7F7;\n  height: 100vh;\n  width: 100vw;\n}\n.img_scansty[data-v-496d680c] {\n  width: 100%;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  height: 300px;\n  z-index: 500;\n  /* 确保低于弹窗的 z-index */\n}\n.img_scansty_1[data-v-496d680c] {\n  padding: 20px 20px 0 20px;\n}\n.imgss[data-v-496d680c] {\n  padding-top: 10px;\n  padding-bottom: 30px;\n  width: 90vw;\n  height: 260px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  border-radius: 10px;\n  background: white;\n}\n.imgss1[data-v-496d680c] {\n  padding-top: 20px;\n  width: 80vw;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  object-fit: contain;\n}\n.Model_number[data-v-496d680c] {\n  text-align: center;\n  margin: 20px 0;\n  font-size: 16px;\n  font-weight: bold;\n}\n.Message[data-v-496d680c] {\n  height: 22px;\n  margin-top: 60px;\n  text-align: center;\n  font-size: 16px;\n  font-weight: 400;\n  color: black;\n}\n.Message1[data-v-496d680c] {\n  height: 22px;\n  text-align: center;\n  font-size: 16px;\n  font-weight: 400;\n  color: black;\n}\n.Messageback[data-v-496d680c] {\n  position: fixed;\n  bottom: 0;\n  width: 100vw;\n  background: #F7F7F7;\n}\n.button_style[data-v-496d680c] {\n  width: auto;\n  height: 48px;\n  margin-left: 20px;\n  margin-right: 20px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  font-size: 16px;\n  border-radius: 30px;\n  background: #3298F7;\n  color: white;\n}\n.button_style1[data-v-496d680c] {\n  width: auto;\n  height: 48px;\n  margin: 20px 20px 46px 20px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  font-size: 16px;\n  border-radius: 30px;\n  color: #FFFFFF;\n  background: #3298F7;\n}\n/* 弹窗内容样式 */\n.popup-content[data-v-496d680c] {\n  width: 80vw;\n  background: #fff;\n  border-radius: 20px;\n  padding: 20px;\n  box-sizing: border-box;\n}\n/* 弹窗内容样式 */\n.popup-content111[data-v-496d680c] {\n  background: #fff;\n  border-radius: 20px;\n  padding: 20px;\n  margin: 20px 20px 80px 20px;\n  text-align: center;\n  box-sizing: border-box;\n}", ""]);
+exports.push([module.i, "@charset \"UTF-8\";\n/**\n * 这里是uni-app内置的常用样式变量\n *\n * uni-app 官方扩展插件及插件市场（https://ext.dcloud.net.cn）上很多三方插件均使用了这些样式变量\n * 如果你是插件开发者，建议你使用scss预处理，并在插件代码中直接使用这些变量（无需 import 这个文件），方便用户通过搭积木的方式开发整体风格一致的App\n *\n */\n/**\n * 如果你是App开发者（插件使用者），你可以通过修改这些变量来定制自己的插件主题，实现自定义主题功能\n *\n * 如果你的项目同样使用了scss预处理，你也可以直接在你的 scss 代码中使用如下变量，同时无需 import 这个文件\n */\n/* 颜色变量 */\n/* 行为相关颜色 */\n/* 文字基本颜色 */\n/* 背景颜色 */\n/* 边框颜色 */\n/* 尺寸变量 */\n/* 文字尺寸 */\n/* 图片尺寸 */\n/* Border Radius */\n/* 水平间距 */\n/* 垂直间距 */\n/* 透明度 */\n/* 文章场景相关 */\n.backpage[data-v-496d680c] {\n  color: black;\n  background: #F7F7F7;\n  height: 100vh;\n  width: 100vw;\n}\n.img_scansty[data-v-496d680c] {\n  width: 100%;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  height: 300px;\n  z-index: 500;\n  /* 确保低于弹窗的 z-index */\n}\n.img_scansty_1[data-v-496d680c] {\n  padding: 20px 20px 0 20px;\n}\n.imgss[data-v-496d680c] {\n  padding-top: 10px;\n  padding-bottom: 30px;\n  width: 90vw;\n  height: 260px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  border-radius: 10px;\n  background: white;\n}\n.imgss1[data-v-496d680c] {\n  padding-top: 20px;\n  width: 80vw;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  object-fit: contain;\n}\n.imgss_sc[data-v-496d680c] {\n  padding-top: 20px;\n  width: 120px;\n  height: 120px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  object-fit: contain;\n}\n.Model_number[data-v-496d680c] {\n  text-align: center;\n  margin: 20px 0;\n  font-size: 16px;\n  font-weight: bold;\n}\n.Message[data-v-496d680c] {\n  height: 22px;\n  margin-top: 60px;\n  text-align: center;\n  font-size: 16px;\n  font-weight: 400;\n  color: black;\n}\n.Message1[data-v-496d680c] {\n  height: 22px;\n  text-align: center;\n  font-size: 16px;\n  font-weight: 400;\n  color: black;\n}\n.Messageback[data-v-496d680c] {\n  position: fixed;\n  bottom: 0;\n  width: 100vw;\n  background: #F7F7F7;\n}\n.button_style[data-v-496d680c] {\n  width: auto;\n  height: 48px;\n  margin-left: 20px;\n  margin-right: 20px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  font-size: 16px;\n  border-radius: 30px;\n  background: #3298F7;\n  color: white;\n}\n.button_style1[data-v-496d680c] {\n  width: auto;\n  height: 48px;\n  margin: 20px 20px 0 20px;\n  display: flex;\n  justify-content: center;\n  align-items: center;\n  font-size: 16px;\n  border-radius: 30px;\n  color: #FFFFFF;\n  background: #3298F7;\n}\n/* 弹窗内容样式 */\n.popup-content[data-v-496d680c] {\n  width: 80vw;\n  background: #fff;\n  border-radius: 20px;\n  padding: 20px;\n  box-sizing: border-box;\n}\n/* 弹窗内容样式 */\n.popup-content111[data-v-496d680c] {\n  background: #fff;\n  border-radius: 20px;\n  padding: 20px;\n  margin: 20px 20px 80px 20px;\n  text-align: center;\n  box-sizing: border-box;\n}", ""]);
 // Exports
 module.exports = exports;
 
@@ -44693,9 +44772,30 @@ var render = function () {
         "uni-view",
         { staticClass: _vm._$g(1, "sc"), attrs: { _i: 1 } },
         _vm._l(_vm._$g(2, "f"), function (item, index, $20, $30) {
-          return _c("unit-row", { key: item, attrs: { _i: "2-" + $30 } })
+          return _c("unit-row", {
+            key: item,
+            attrs: { _i: "2-" + $30 },
+            on: {
+              "unit-change": function ($event) {
+                return _vm.$handleViewEvent($event)
+              },
+            },
+          })
         }),
         1
+      ),
+      _c(
+        "v-uni-button",
+        {
+          staticStyle: { margin: "50px 20px 0 20px", "border-radius": "100px" },
+          attrs: { type: "primary", _i: 3 },
+          on: {
+            click: function ($event) {
+              return _vm.$handleViewEvent($event)
+            },
+          },
+        },
+        [_vm._v(" " + _vm._$g(3, "t0-0") + " ")]
       ),
     ],
     1
@@ -44946,7 +45046,7 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = void 0;
 var _default = {
   name: "unit-row",
-  props: ["title", "array", "storageKey"],
+  props: ["title", "array", "storageKey", "currentIndex"],
   data: function data() {
     return {
       wxsProps: {}

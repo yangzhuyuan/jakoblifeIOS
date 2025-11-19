@@ -58,7 +58,7 @@
 		</view>
 		<view style="position: fixed; bottom: 0;left: 0; width: 100vw;">
 			<button class="btn_BG" @click="btn_success()">{{$t('完成')}}</button>
-			<button class="btn_BG_1" plain="true" @click="btn_skip()">{{$t('跳过')}}</button>
+			<button class="btn_BG_1" @click="btn_skip()">{{$t('跳过')}}</button>
 		</view>
 	</view>
 </template>
@@ -278,7 +278,6 @@
 	.btn_BG {
 		width: auto;
 		margin: 0 20px 24px 20px;
-		background: #DBDBDB;
 		color: white;
 		height: 48px;
 		display: flex;
@@ -294,7 +293,7 @@
 	.btn_BG_1 {
 		width: auto;
 		margin: 20px 20px 68px 20px;
-		background: #DBDBDB !important;
+		background: #3298F7;
 		height: 48px;
 		display: flex;
 		justify-content: center;
@@ -302,8 +301,7 @@
 		border-radius: 100px;
 		font-size: 16px;
 		font-weight: 600;
-		color: #FFFFFF !important;
-		border: none !important;
+		color: white;
 	}
 
 

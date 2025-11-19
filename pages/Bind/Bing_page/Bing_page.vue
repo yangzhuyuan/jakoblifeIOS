@@ -250,7 +250,7 @@
 	.list-container {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
-		padding: 0 10px 160px 10px;
+		padding: 0 10px 200px 10px;
 		justify-content: space-between;
 	}
 
