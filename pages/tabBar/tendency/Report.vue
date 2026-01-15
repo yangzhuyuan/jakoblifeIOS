@@ -762,21 +762,19 @@
 				Current_medication: '-',
 				Whether_the_work: '-',
 				chartData: {
-					categories: ["6:12", "8:00", "12:30",
-						"15:00", "17:00", "19:00", "21:30", "23:00"
-					],
+					categories: [],
 					series: [{
 						legendShape: "none",
 						name: "",
-						data: ["145", "122", "132", "142", "150", "101", "120", "124"]
+						data: []
 					}, {
 						legendShape: "none",
 						name: "",
-						data: ["80", 90, 78, 88, 89, 100, 79, 68]
+						data: []
 					}, {
 						legendShape: "none",
 						name: "",
-						data: [120, 100, 98, 96, 110, 80, 99, 86]
+						data: []
 					}]
 				},
 				opts: {
@@ -1142,7 +1140,7 @@
 			},
 
 			getUserInfo() {
-				this.$get(this.$url_getInfo, {}, {
+				this.$get(this.$url_APP_IP + this.$url_getInfo, {}, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(res => {
@@ -1162,7 +1160,7 @@
 			queryDevices() {
 				let that = this
 				uni.request({
-					url: that.$url_queryDevices,
+					url: that.$url_APP_IP + that.$url_queryDevices,
 					method: 'POST',
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
@@ -1247,7 +1245,7 @@
 				let that = this
 				console.log("get_retVarList", that.pacitime)
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/device_app/get_retVarList",
+					url: that.$url_APP_IP + "/prod-api/device_app/get_retVarList",
 					method: 'POST',
 					data: {
 						deviceSn: deviceSn,
@@ -1260,6 +1258,7 @@
 						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
 					},
 					success(get_retVarList) {
+						console.log("get_retVarLis：", get_retVarList)
 						if (get_retVarList.data.code === 200) {
 							let resultArray = get_retVarList.data.data.retVarList.split(";");
 							that.chartData.categories = []
@@ -1291,7 +1290,7 @@
 				let that = this
 				console.log("get_finalRetVarList", that.pacitime)
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/device_app/get_finalRetVarList",
+					url: that.$url_APP_IP + "/prod-api/device_app/get_finalRetVarList",
 					method: 'POST',
 					data: {
 						deviceSn: deviceSn,
@@ -1652,7 +1651,7 @@
 				console.log("endTime", endTime)
 				console.log("deviceSn", deviceSn)
 				uni.request({
-					url: that.$url_query_log_v2,
+					url: that.$url_APP_IP + that.$url_query_log_v2,
 					method: 'POST',
 					data: {
 						deviceSn: deviceSn,
@@ -1682,39 +1681,87 @@
 						if (res.data.code == 200) {
 							if (res.data.data !== "") {
 								that.listall = []
-								for (let i = 0; res.data.data.length > i; i++) {
-									let lowPressureAvg = res.data.data[i].object.summary.lowPressureAvg
-									let highPressureAvg = res.data.data[i].object.summary.highPressureAvg
-									if ((lowPressureAvg >= 61 && lowPressureAvg <= 80) && (highPressureAvg >= 91 &&
-											highPressureAvg <= 120)) {
-										that.setBloodPressureLevel(1)
-									} else if ((lowPressureAvg >= 81 && lowPressureAvg <= 90) || (
-											highPressureAvg >= 121 && highPressureAvg <= 140)) {
-										that.setBloodPressureLevel(2)
-									} else if ((lowPressureAvg >= 91 && lowPressureAvg <= 100) || (
-											highPressureAvg >= 141 && highPressureAvg <= 160)) {
-										that.setBloodPressureLevel(3)
-									} else if ((lowPressureAvg >= 101 && lowPressureAvg <= 110) || (
-											highPressureAvg >= 161 && highPressureAvg <= 180)) {
-										that.setBloodPressureLevel(4)
+								// ---------- 1. 记录每日是否命中高血压 ----------
+								const dailyHit = []; // true / false
+
+								res.data.data.forEach(day => {
+									let hit = false;
+
+									// 1.1 原有 setBloodPressureLevel 逻辑（不变）
+									const sum = day.object.summary;
+									const l = sum.lowPressureAvg;
+									const h = sum.highPressureAvg;
+
+									if (l >= 61 && l <= 80 && h >= 91 && h <= 120) {
+										that.setBloodPressureLevel(1);
+									} else if ((l >= 81 && l <= 90) || (h >= 121 && h <= 140)) {
+										that.setBloodPressureLevel(2);
+									} else if ((l >= 91 && l <= 100) || (h >= 141 && h <= 160)) {
+										that.setBloodPressureLevel(3);
+									} else if ((l >= 101 && l <= 110) || (h >= 161 && h <= 180)) {
+										that.setBloodPressureLevel(4);
 									}
-									res.data.data[i].object.details.forEach((item1, index1) => {
-										item1.date = res.data.data[i].dateTime
-										item1.modelName = res.data.data[i].modelName
-										if ((item1.lowPressure >= 81 && item1.lowPressure <= 90) || (item1
-												.highPressure >= 121 && item1.highPressure <= 140)) {
-											that.gaoya = 0
-										} else if ((item1.lowPressure >= 91 && item1.lowPressure <= 100) ||
-											(item1.highPressure >= 141 && item1.highPressure <= 160)) {
-											that.gaoya = 0
-										} else if ((item1.lowPressure >= 101 && item1.lowPressure <=
-												110) || (item1.highPressure >= 161 && item1.highPressure <=
-												180)) {
-											that.gaoya = 0
+
+									// 1.2 判断当天是否出现高血压记录
+									day.object.details.forEach(item => {
+										const lp = item.lowPressure;
+										const hp = item.highPressure;
+
+										if (
+											(lp >= 81 && lp <= 90) || (hp >= 121 && hp <= 140) ||
+											(lp >= 91 && lp <= 100) || (hp >= 141 && hp <= 160) ||
+											(lp >= 101 && lp <= 110) || (hp >= 161 && hp <= 180)
+										) {
+											hit = true;
 										}
-										that.listall.push(item1)
+
+										// 原有 listall 组装逻辑（不变）
+										item.date = day.dateTime;
+										item.modelName = day.modelName;
+										that.listall.push(item);
 									});
+
+									dailyHit.push(hit);
+								});
+
+								// ---------- 2. 仅当最近连续 3 天都命中时，才置 gaoya = 0 ----------
+								const n = dailyHit.length;
+								if (n >= 3 && dailyHit[n - 1] && dailyHit[n - 2] && dailyHit[n - 3]) {
+									that.gaoya = 0;
 								}
+								// for (let i = 0; res.data.data.length > i; i++) {
+								// 	let lowPressureAvg = res.data.data[i].object.summary.lowPressureAvg
+								// 	let highPressureAvg = res.data.data[i].object.summary.highPressureAvg
+								// 	if ((lowPressureAvg >= 61 && lowPressureAvg <= 80) && (highPressureAvg >= 91 &&
+								// 			highPressureAvg <= 120)) {
+								// 		that.setBloodPressureLevel(1)
+								// 	} else if ((lowPressureAvg >= 81 && lowPressureAvg <= 90) || (
+								// 			highPressureAvg >= 121 && highPressureAvg <= 140)) {
+								// 		that.setBloodPressureLevel(2)
+								// 	} else if ((lowPressureAvg >= 91 && lowPressureAvg <= 100) || (
+								// 			highPressureAvg >= 141 && highPressureAvg <= 160)) {
+								// 		that.setBloodPressureLevel(3)
+								// 	} else if ((lowPressureAvg >= 101 && lowPressureAvg <= 110) || (
+								// 			highPressureAvg >= 161 && highPressureAvg <= 180)) {
+								// 		that.setBloodPressureLevel(4)
+								// 	}
+								// 	res.data.data[i].object.details.forEach((item1, index1) => {
+								// 		item1.date = res.data.data[i].dateTime
+								// 		item1.modelName = res.data.data[i].modelName
+								// 		if ((item1.lowPressure >= 81 && item1.lowPressure <= 90) || (item1
+								// 				.highPressure >= 121 && item1.highPressure <= 140)) {
+								// 			that.gaoya = 0
+								// 		} else if ((item1.lowPressure >= 91 && item1.lowPressure <= 100) ||
+								// 			(item1.highPressure >= 141 && item1.highPressure <= 160)) {
+								// 			that.gaoya = 0
+								// 		} else if ((item1.lowPressure >= 101 && item1.lowPressure <=
+								// 				110) || (item1.highPressure >= 161 && item1.highPressure <=
+								// 				180)) {
+								// 			that.gaoya = 0
+								// 		}
+								// 		that.listall.push(item1)
+								// 	});
+								// }
 								that.checkDateRange()
 							}
 						}
@@ -1801,15 +1848,10 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-
-				console.log(data)
-
-				this.$post(this.$url_query_log_v2, data, {
+				this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json'
 				}).then(res => {
-					console.log("token",uni.getStorageSync("token"))
-					console.log("$url_query_log_v2",res)
 					if (res.code === 200) {
 						const last = res.data[res.data.length - 1]
 						console.log(this.BloodPressureLevel)

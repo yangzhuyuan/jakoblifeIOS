@@ -94,7 +94,7 @@
 			user() {
 				let that = this
 				uni.request({
-					url: that.$url_getInfo,
+					url: that.$url_APP_IP + that.$url_getInfo,
 					method: 'GET',
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),

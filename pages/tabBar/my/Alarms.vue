@@ -439,7 +439,7 @@
 			list_recipe() {
 				let that = this
 				uni.request({
-					url: that.$url_list_recipe,
+					url: that.$url_APP_IP + that.$url_list_recipe,
 					method: 'POST',
 					data: {
 						userId: uni.getStorageSync("userid")
@@ -506,7 +506,7 @@
 			receiver_list() {
 				let that = this
 				uni.request({
-					url: that.$url_receiver_list,
+					url: that.$url_APP_IP + that.$url_receiver_list,
 					method: 'POST',
 					data: {
 						receiverId: uni.getStorageSync("userid")

@@ -183,7 +183,7 @@
 			},
 			queryDevices() {
 				uni.request({
-					url: this.$url_queryDevices,
+					url: this.$url_APP_IP + this.$url_queryDevices,
 					method: 'POST',
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync('token'),
@@ -269,7 +269,7 @@
 			},
 			getunbind(deviceSn, mac, deviceModelId) {
 				uni.request({
-					url: this.$url_getunbind,
+					url: this.$url_APP_IP + this.$url_getunbind,
 					method: 'POST',
 					data: {
 						deviceSn

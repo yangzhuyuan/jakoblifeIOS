@@ -1,6 +1,6 @@
 <template>
-	<view style="padding:10px 10px 0 10px;background: #F7F7F7; color: black;height: 100vh;">
-		<view style="background: white; border-radius: 20px;margin-left: 10px; margin-right: 10px; ">
+	<view class="health_page">
+		<view class="health_avatr">
 			<view class="context_btn" @click="btn_avatar()">
 				<view class="context_title">{{$t('头像')}}</view>
 				<view style="width: 35vw; display: flex;justify-content: flex-end;">
@@ -18,9 +18,9 @@
 			</view> -->
 		</view>
 
-		<view style="margin: 20px 0 20px 15px; color: gray;">{{$t('身体基础信息')}}</view>
+		<view style="margin: 20px 0 20px 15px; color: black;">{{$t('身体基础信息')}}：</view>
 
-		<view style="background: white; border-radius: 20px; margin-top: 10px;margin-left: 10px; margin-right: 10px;">
+		<view class="health_avatr">
 			<view class="bt_BG">
 				<view class="text">{{$t('性别')}}</view>
 				<view
@@ -49,7 +49,7 @@
 				<view style="justify-content: flex-end; display: flex;flex-direction: row; align-items: center;">
 					<input type="number" :placeholder="$t('请输入')" v-model="height"
 						style="color: black; text-align: right; font-size: 14px;" maxlength="5" />
-					<view style="margin-right: 10px;width: 80px;">
+					<view style="margin-right: 15px;width: 60px;">
 						<picker @change="bindPickerChange_Height" :value="Height_index" :range="Height_array">
 							<view class="uni-input" style="text-align: right;">{{Height_array[Height_index]}}</view>
 						</picker>
@@ -62,7 +62,7 @@
 				<view style="justify-content: flex-end;display: flex;flex-direction: row;align-items: center;">
 					<input type="number" :placeholder="$t('请输入')" v-model="width"
 						style="color: black; text-align: right; font-size: 14px;" maxlength="5" />
-					<view style="margin-right: 10px;width: 80px;">
+					<view style="margin-right: 15px;width: 60px;">
 						<picker @change="bindPickerChange_Width" :value="Width_index" :range="Width_array">
 							<view class="uni-input" style="text-align: right;background: none;">
 								{{Width_array[Width_index]}}
@@ -104,66 +104,46 @@
 		},
 
 		onBackPress(options) {
-			console.log('from:' + options.from)
 			if (options.from === 'backbutton') {
 				this.update_info()
 			}
 		},
-
-
-
 
 		onShow() {
 			let that = this;
 			uni.setNavigationBarTitle({
 				title: that.$t('健康档案')
 			})
-
 			//头像返回的数据
 			uni.$once('uploadFileRes', function(data) {
-				console.log(data)
 				that.avatar = data
 			})
-
-			uni.request({
-				url: that.$url_getInfo,
-				method: 'GET',
-				header: {
-					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-				},
-				success: function(res) {
-					if (res.statusCode == 200) {
-						if (res.data.code == 200) {
-							if (res.data.data.avatar === "" || res.data.data.avatar === undefined) {
-								that.avatar = "../../../static/icons/40x40.png"
-							} else {
-								that.avatar = res.data.data.avatar
-							}
-							that.username = res.data.data.nickName === null ? res.data.data.userName : res.data
-								.data.nickName
-							that.select = res.data.data.sex === '0' ? that.$t('男') : that.$t('女')
-							that.date = res.data.data.birthTime
-							that.height = that.Height_index === 0 ? WeightConverter.cmToInch(res.data
-								.data.height) : res.data.data.height
-							that.width = that.Width_index === 0 ? res.data.data.weight : WeightConverter
-								.kgToLb(res.data.data.weight)
-							that.phone = res.data.data.phonenumber
-						} else {
-							uni.showToast({
-								title: res.data.msg,
-								icon: 'none'
-							})
-						}
+			that.$get(that.$url_APP_IP + that.$url_getInfo, {}, {
+				'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+				'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+			}).then(getInfo => {
+				console.log("getInfo：", getInfo)
+				if (getInfo.code === 200) {
+					if (getInfo.data.avatar === "" || getInfo.data.avatar === undefined) {
+						that.avatar = "../../../static/icons/40x40.png"
 					} else {
-						console.log("获取数据错误")
+						that.avatar = getInfo.data.avatar
 					}
-				},
-				fail(err) {
-					console.log(err)
+					that.username = getInfo.data.nickName === null ? getInfo.data.userName : getInfo.data.nickName
+					that.select = getInfo.data.sex === '0' ? that.$t('男') : that.$t('女')
+					that.date = getInfo.data.birthTime
+					that.height = that.Height_index === 0 ? WeightConverter.cmToInch(getInfo.data
+						.height) : getInfo.data.height
+					that.width = that.Width_index === 0 ? getInfo.data.weight : WeightConverter
+						.kgToLb(getInfo.data.weight)
+					that.phone = getInfo.data.phonenumber
+				} else {
+					uni.showToast({
+						title: getInfo.msg,
+						icon: 'none'
+					})
 				}
 			})
-
 		},
 
 		methods: {
@@ -173,7 +153,7 @@
 				let that = this
 				that.Height_index = e.detail.value
 				uni.request({
-					url: that.$url_getInfo,
+					url: that.$url_APP_IP + that.$url_getInfo,
 					method: 'GET',
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
@@ -217,7 +197,7 @@
 				let that = this
 				that.Width_index = e.detail.value
 				uni.request({
-					url: that.$url_getInfo,
+					url: that.$url_APP_IP + that.$url_getInfo,
 					method: 'GET',
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
@@ -262,7 +242,7 @@
 			update_info() {
 				let that = this
 				uni.request({
-					url: that.$url_update_info,
+					url: that.$url_APP_IP + that.$url_update_info,
 					method: 'POST',
 					data: {
 						nickName: that.username,
@@ -280,8 +260,7 @@
 						console.log("更新个人信息", res)
 						if (res.statusCode == 200) {
 							if (res.data.code == 200) {
-								uni.setStorageSync("danwei1", that.Height_index)
-								uni.setStorageSync("danwei2", that.Width_index)
+								that.saveUnit(that.Height_index, that.Width_index)
 							} else {
 								uni.showToast({
 									title: res.data.msg,
@@ -297,7 +276,34 @@
 				})
 			},
 
-
+			// 保存单位
+			saveUnit(Height_index, Width_index) {
+				const postData = {
+					bloodUnit: uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" :
+						"kPa",
+					heightUnit: Height_index === 0 || Height_index === "" ? "inch" : 'cm',
+					weightUnit: Width_index === 0 || Width_index === "" ? "kg" : "lb"
+				}
+				const editData = {
+					dataType: 'Unitdata',
+					data: this.formatDatacard([postData])
+				}
+				console.log(editData)
+				this.$post(this.$url_APP_IP + '/prod-api/device/data/editData', editData, {
+					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/json'
+				}).then(res => {
+					if (res.code === 200) {
+						console.log(res)
+						uni.setStorageSync("danwei1", Height_index)
+						uni.setStorageSync("danwei2", Width_index)
+					}
+				})
+			},
+			// 格式化数据为接口格式
+			formatDatacard(dataArray) {
+				return dataArray.map(obj => JSON.stringify(obj).replace(/"/g, '')).join(',')
+			},
 			select_click() {
 				this.$refs.popup.open("bottom")
 			},
@@ -336,6 +342,20 @@
 </script>
 
 <style>
+	.health_page {
+		padding: 20px 10px 0 10px;
+		color: black;
+		height: 100vh;
+	}
+
+	.health_avatr {
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+		background: white;
+		border-radius: 20px;
+		margin-left: 10px;
+		margin-right: 10px;
+	}
+
 	.context_btn {
 		height: 48px;
 		display: flex;

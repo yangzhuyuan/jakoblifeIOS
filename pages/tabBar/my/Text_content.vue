@@ -103,7 +103,7 @@
 			article(id) {
 				let that = this
 				uni.request({
-					url: that.$url_article,
+					url: that.$url_APP_IP + that.$url_article,
 					method: 'GET',
 					data: {
 						articleId: id
@@ -112,7 +112,6 @@
 						'content-type': 'application/json' //自定义请求头信息
 					},
 					success(res) {
-						console.log("血压手表", res)
 						that.title = res.data.data.title
 						// that.content = res.data.data.content
 						// 在赋值前处理内容
@@ -132,10 +131,10 @@
 						newSrc = 'https:' + src;
 					} else if (src.startsWith('/')) {
 						// 绝对路径，添加完整域名
-						newSrc = 'https://jakoblife.jakob-techs.com' + src;
+						newSrc = this.$url_APP_IP + src;
 					} else if (!src.startsWith('http')) {
 						// 相对路径，添加基础URL
-						newSrc = 'https://jakoblife.jakob-techs.com/' + src;
+						newSrc = `${this.$url_APP_IP}/${src}`;
 					}
 					return `<img src="${newSrc}" style="max-width: 100%; height: auto; display: block;" />`;
 				});

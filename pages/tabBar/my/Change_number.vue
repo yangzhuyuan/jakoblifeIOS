@@ -153,9 +153,14 @@
 					})
 					return
 				} else {
-					this.tanchuang = true
-					this.yzm = ''
-					this.captchaImage();
+					// this.tanchuang = true
+					// this.yzm = ''
+					// this.captchaImage();
+					if (this.loact === "境内") {
+						this.send_phone_unbind_code()
+					} else if (this.loact === "境外") {
+						this.send_email_unbind_code()
+					}
 				}
 			},
 
@@ -163,7 +168,7 @@
 			captchaImage() {
 				let _that = this
 				uni.request({
-					url: _that.$url_captchaImage,
+					url: _that.$url_APP_IP + _that.$url_captchaImage,
 					method: 'GET',
 					header: {
 						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
@@ -211,7 +216,7 @@
 				} else {
 					let that = this
 					uni.request({
-						url: that.$url_check_code,
+						url: that.$url_APP_IP + that.$url_check_code,
 						method: 'POST',
 						data: {
 							code: that.yzm,
@@ -267,7 +272,7 @@
 			send_phone_unbind_code() {
 				let that = this
 				uni.request({
-					url: that.$url_send_phone_unbind_code,
+					url: that.$url_APP_IP + that.$url_send_phone_unbind_code,
 					method: 'POST',
 					data: {
 						phone: that.unername_phone
@@ -321,7 +326,7 @@
 			send_email_unbind_code() {
 				let that = this
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/app/user/profile/send_email_unbind_code",
+					url: that.$url_APP_IP + "/prod-api/app/user/profile/send_email_unbind_code",
 					method: 'POST',
 					data: {
 						email: that.unername_phone
@@ -377,7 +382,7 @@
 				console.log(uni.getStorageSync("token"))
 				let that = this
 				uni.request({
-					url: that.$url_check_phone_unbind_code,
+					url: that.$url_APP_IP + that.$url_check_phone_unbind_code,
 					method: 'POST',
 					data: {
 						code: that.yanzhengma,
@@ -422,7 +427,7 @@
 				console.log(uni.getStorageSync("token"))
 				let that = this
 				uni.request({
-					url: that.$url_check_phone_unbind_code,
+					url: that.$url_APP_IP + that.$url_check_phone_unbind_code,
 					method: 'POST',
 					data: {
 						code: that.yanzhengma,

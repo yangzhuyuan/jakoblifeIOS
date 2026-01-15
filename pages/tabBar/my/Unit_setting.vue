@@ -49,7 +49,7 @@
 				const data = {
 					dataType: 'Unitdata'
 				};
-				this.$get('https://jakoblife.jakob-techs.com/prod-api/device/data/list', data, {
+				this.$get(this.$url_APP_IP + '/prod-api/device/data/list', data, {
 					Authorization: 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json'
 				}).then(res => {
@@ -93,7 +93,7 @@
 					dataType: 'Unitdata',
 					data: this.formatDatacard([postData])
 				}
-				this.$post('https://jakoblife.jakob-techs.com/prod-api/device/data/editData', editData, {
+				this.$post(this.$url_APP_IP + '/prod-api/device/data/editData', editData, {
 					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json'
 				}).then(res => {

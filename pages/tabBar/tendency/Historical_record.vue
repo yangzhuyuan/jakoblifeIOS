@@ -237,7 +237,7 @@
 				const data = {
 					dataType: 'Unitdata'
 				};
-				this.$get('https://jakoblife.jakob-techs.com/prod-api/device/data/list', data, {
+				this.$get(this.$url_APP_IP + '/prod-api/device/data/list', data, {
 					Authorization: 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json'
 				}).then(res => {
@@ -379,7 +379,7 @@
 			async queryDevices() {
 				this.loading = true;
 				try {
-					const res = await this.$post(this.$url_queryDevices, {}, {
+					const res = await this.$post(this.$url_APP_IP + this.$url_queryDevices, {}, {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token")
 					});
 					if (res.code === 200 && res.rows && res.rows.length > 0) {
@@ -425,7 +425,7 @@
 					endTime,
 				};
 
-				const res = await this.$post(this.$url_query_log_v2, data, {
+				const res = await this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				});
@@ -450,7 +450,7 @@
 					endTime,
 				};
 
-				const res = await this.$post(this.$url_query_log_v2, data, {
+				const res = await this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token")
 				});
 
@@ -664,7 +664,7 @@
 			query_log_v2s(deviceSn, startTime, endTime) {
 				let that = this
 				uni.request({
-					url: that.$url_query_log_v2,
+					url: that.$url_APP_IP + that.$url_query_log_v2,
 					method: 'POST',
 					data: {
 						deviceSn: deviceSn,
@@ -756,9 +756,16 @@
 							const jsonData = that.swipeList1111
 							// 列标题
 							let worksheet = 'sht1'
+							const lan = uni.getLocale();
 							let str =
-								'<tr><td style="text-align: center">日期</td><td style="text-align: center">设备型号</td><td style="text-align: center">设备sn</td><td style="text-align: center">平均收缩压/mmHg</td><td style="text-align: center">平均舒张压/mmHg</td><td style="text-align: center">平均脉搏/BPM</td><td style="text-align: center">时间</td><td style="text-align: center">收缩压/mmHg</td><td style="text-align: center">舒张压/mmHg</td><td style="text-align: center">脉搏/BPM</td></tr>'
-							// 循环遍历，每行加入tr标签，每个单元格加td标签
+								'<tr><td style="text-align: center">Date</td><td style="text-align: center">Equipment model</td><td style="text-align: center">Equipment sn</td><td style="text-align: center">Average SBP/mmHg</td><td style="text-align: center">Average DBP/mmHg</td><td style="text-align: center">Average Pulse/BPM</td><td style="text-align: center">Time</td><td style="text-align: center">SBP/mmHg</td><td style="text-align: center">DBP/mmHg</td><td style="text-align: center">Pulse/BPM</td></tr>'
+							if (lan == 'zh-Hans' || lan == 'zh-Hant') {
+								str =
+									'<tr><td style="text-align: center">日期</td><td style="text-align: center">设备型号</td><td style="text-align: center">设备sn</td><td style="text-align: center">平均收缩压/mmHg</td><td style="text-align: center">平均舒张压/mmHg</td><td style="text-align: center">平均脉搏/BPM</td><td style="text-align: center">时间</td><td style="text-align: center">收缩压/mmHg</td><td style="text-align: center">舒张压/mmHg</td><td style="text-align: center">脉搏/BPM</td></tr>'
+							} else {
+								str =
+									'<tr><td style="text-align: center">Date</td><td style="text-align: center">Equipment model</td><td style="text-align: center">Equipment sn</td><td style="text-align: center">Average SBP/mmHg</td><td style="text-align: center">Average DBP/mmHg</td><td style="text-align: center">Average Pulse/BPM</td><td style="text-align: center">Time</td><td style="text-align: center">SBP/mmHg</td><td style="text-align: center">DBP/mmHg</td><td style="text-align: center">Pulse/BPM</td></tr>'
+							} // 循环遍历，每行加入tr标签，每个单元格加td标签
 							for (let i = 0; i < jsonData.length; i++) {
 								str += '<tr>'
 								for (let item in jsonData[i]) {
@@ -800,7 +807,7 @@
 				console.log('startTimedadadadada', startTime)
 				console.log('endTimedadadadadada', endTime)
 				uni.request({
-					url: that.$url_query_log_v2,
+					url: that.$url_APP_IP + that.$url_query_log_v2,
 					method: 'POST',
 					data: {
 						deviceSn: deviceSn,
@@ -873,8 +880,16 @@
 							const jsonData = that.swipeList1111
 							// 列标题
 							let worksheet = 'sht1'
+							const lan = uni.getLocale();
 							let str =
-								'<tr><td style="text-align: center">日期</td><td style="text-align: center">型号</td><td style="text-align: center">设备sn</td><td style="text-align: center">平均体重/kg</td><td style="text-align: center">平均BMI</td><td style="text-align: center">时间</td><td style="text-align: center">体重/kg</td><td style="text-align: center">BMI</td></tr>'
+								'<tr><td style="text-align: center">Date</td><td style="text-align: center">Model number</td><td style="text-align: center">Equipment sn</td><td style="text-align: center">Average weight/kg</td><td style="text-align: center">Average BMI</td><td style="text-align: center">Time</td><td style="text-align: center">Weight/kg</td><td style="text-align: center">BMI</td></tr>'
+							if (lan == 'zh-Hans' || lan == 'zh-Hant') {
+								str =
+									'<tr><td style="text-align: center">日期</td><td style="text-align: center">型号</td><td style="text-align: center">设备sn</td><td style="text-align: center">平均体重/kg</td><td style="text-align: center">平均BMI</td><td style="text-align: center">时间</td><td style="text-align: center">体重/kg</td><td style="text-align: center">BMI</td></tr>'
+							} else {
+								str =
+									'<tr><td style="text-align: center">Date</td><td style="text-align: center">Model number</td><td style="text-align: center">Equipment sn</td><td style="text-align: center">Average weight/kg</td><td style="text-align: center">Average BMI</td><td style="text-align: center">Time</td><td style="text-align: center">Weight/kg</td><td style="text-align: center">BMI</td></tr>'
+							}
 							for (let i = 0; i < jsonData.length; i++) {
 								str += '<tr>'
 								for (let item in jsonData[i]) {
@@ -988,7 +1003,7 @@
 						deviceSn: recordInfo.deviceSn,
 						timeList: recordInfo.timestamps
 					}
-					const res = await this.$post(this.$url_batch_del_data_log, data, {
+					const res = await this.$post(this.$url_APP_IP + this.$url_batch_del_data_log, data, {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 						'content-type': 'application/json'
 					});

@@ -47,7 +47,7 @@
 			accepted(isAccepted) {
 				let that = this
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/share/data/accepted",
+					url: that.$url_APP_IP + "/prod-api/share/data/accepted",
 					method: 'POST',
 					data: {
 						id: that.id,

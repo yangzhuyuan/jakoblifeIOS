@@ -66,7 +66,7 @@
 					searchValue: this.searchValue
 				}
 				console.log(uni.getStorageSync("token"))
-				this.$get("https://jakoblife.jakob-techs.com/prod-api/system/user/list", data, {
+				this.$get(this.$url_APP_IP + "/prod-api/system/user/list", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;'
 				}).then(res => {

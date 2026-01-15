@@ -60,7 +60,7 @@
 				console.log("sn", sn)
 				console.log("MACdeviceID", MACdeviceID)
 				uni.request({
-					url: that.$url_bind_device,
+					url: that.$url_APP_IP + that.$url_bind_device,
 					method: 'POST',
 					data: {
 						deviceSn: sn,

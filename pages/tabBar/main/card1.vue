@@ -130,17 +130,7 @@
 			return {
 				pulse: "-",
 				pulsetime: '-/-',
-				list: [
-					// {
-					// 	bmi_show: false,
-					// 	image: "../../../static/icons/1.png",
-					// 	Step_number: "-",
-					// 	title: this.$t('步数'),
-					// 	type_LX: this.$t('计步'),
-					// 	Step_count: "-",
-					// 	checkbox: false,
-					// },
-					{
+				list: [{
 						bmi_show: false,
 						image: "../../../static/icons/2.png",
 						Step_number: "-",
@@ -159,8 +149,7 @@
 						type_LX: "%",
 						Step_count: "-",
 						checkbox: false,
-					},
-					{
+					}, {
 						bmi_show: false,
 						image: "../../../static/icons/5.png",
 						Step_number: "-",
@@ -206,7 +195,6 @@
 					}
 				});
 			}
-			// 调用相关方法
 			this.list_recipe();
 		},
 
@@ -230,6 +218,8 @@
 				let newarr = list2.concat(list1);
 				// 更新本地存储
 				uni.setStorageSync("kapianlist", newarr);
+				// console.log(newarr)
+				this.cardeditData(newarr)
 				// 返回上一页
 				uni.navigateBack();
 			},
@@ -241,11 +231,32 @@
 			knowe2() {
 				this.$refs.popup2.close()
 			},
+
+			cardeditData(list) {
+				let editData = {
+					dataType: "bloodData",
+					data: this.formatData(list)
+				}
+				this.$post(this.$url_APP_IP + "/prod-api/device/data/editData", editData, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json'
+				}).then((reseditData) => {
+					if (reseditData.code === 200) {
+						// console.log("reseditData", reseditData)
+					}
+				})
+			},
+
+			formatData(dataArray) {
+				return dataArray.map(obj => JSON.stringify(obj).replace(/"/g, '')).join(','); // 多条之间用换行分隔（可改 | 或 ,）
+			},
+
+			//设备数据概览
 			list_recipe() {
 				const data = {
 					userId: uni.getStorageSync("userid")
 				}
-				this.$post(this.$url_list_recipe, data, {
+				this.$post(this.$url_APP_IP + this.$url_list_recipe, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
 				}).then(res => {
@@ -291,13 +302,6 @@
 			getRegisterVal(data, type, key) {
 				const value = this.findValue(data, type, key);
 				return value.registerVal !== null ? value.registerVal : "-/-";
-			},
-			// 处理心率卡片
-			processxiblv(item) {
-				let that = this
-				const temperatureItem = that.findValue(that.list, 'title', that.$t('心率'));
-				temperatureItem.Step_number = that.pulse;
-				temperatureItem.Step_count = that.pulsetime
 			},
 			// 处理步数卡片
 			processSteps(item) {
@@ -347,12 +351,18 @@
 				temperatureItem.Step_number = uni.getStorageSync("yali") || "0";
 				temperatureItem.Step_count = uni.getStorageSync("yalitimes") || "--/--";
 			},
+			// 处理心率卡片
+			processxiblv(item) {
+				let that = this
+				const temperatureItem = that.findValue(that.list, 'title', that.$t('心率'));
+				temperatureItem.Step_number = that.pulse;
+				temperatureItem.Step_count = that.pulsetime
+			},
 			// 处理血氧卡片
 			processBloodOxygen(item) {
 				let that = this
 				uni.getStorageInfo({
 					success: (xueyangres) => {
-						console.log(xueyangres)
 						const bloodOxygenItem = that.findValue(that.list, 'title', that.$t('血氧'));
 						if (xueyangres.keys.includes("xueyang")) {
 							const xueyang = uni.getStorageSync("xueyang");
@@ -456,7 +466,7 @@
 		/* 内边距 */
 		box-sizing: border-box;
 		/* 盒模型 */
-
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 
@@ -514,6 +524,7 @@
 		font-size: 16px;
 		font-weight: 600;
 		border-radius: 50px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.list_item_bg {

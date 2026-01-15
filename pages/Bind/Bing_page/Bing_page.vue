@@ -122,7 +122,7 @@
 
 			NOclick() {
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'||lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					uni.navigateTo({
 						url: "../../Bind/Bing_page/helpcenterss?id=1153"
 					})
@@ -136,9 +136,8 @@
 			//获取设备型号列表
 			getlist() {
 				let that = this
-				// console.log(that.tokens)
 				uni.request({
-					url: that.$url_list,
+					url: that.$url_APP_IP + that.$url_list,
 					method: 'GET',
 					data: {
 						pageNum: that.per,
@@ -161,7 +160,7 @@
 									if (res.data.rows[i] && res.data.rows[i].modelPicturePath && res.data.rows[i]
 										.modelPicturePath.includes(that.$url_APP_IP)) {
 										const lan = uni.getLocale();
-										if (lan == 'zh-Hans'||lan == 'zh-Hant') {
+										if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 											res.data.rows[i].modelPicturePath = res.data.rows[i].modelPicturePath
 										} else {
 											if (res.data.rows[i].modelId === 30000) { //手表
@@ -188,7 +187,7 @@
 										}
 									} else {
 										const lan = uni.getLocale();
-										if (lan == 'zh-Hans'||lan == 'zh-Hant') {
+										if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 											res.data.rows[i].modelPicturePath = that.$url_APP_IP + res.data.rows[i]
 												.modelPicturePath
 										} else {

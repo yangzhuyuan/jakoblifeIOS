@@ -2,7 +2,7 @@
 	<view style="padding-top: 20px; background: #F7F7F7; color: black;width: 100vw; height: 100vh;">
 		<view class="linear">
 			<image class="img_bg" src="../../static/icons/17.png" />
-			<input type="text" :placeholder="$t('请输入邮箱')" style="width: 70vw;margin-left: 10px; " ˚
+			<input type="text" :placeholder="$t('请输入邮箱')" style="width: 70vw;margin-left: 10px; "
 				v-model="unername_email" />
 		</view>
 
@@ -74,7 +74,7 @@
 		onLoad(res) {
 			//标题名称
 			uni.setNavigationBarTitle({
-				title: this.$t('绑定手机号')
+				title: this.$t('绑定邮箱')
 			})
 		},
 
@@ -101,9 +101,10 @@
 					})
 					return
 				} else {
-					this.tanchuang = true
-					this.yzm = ''
-					this.captchaImage();
+					// this.tanchuang = true
+					// this.yzm = ''
+					// this.captchaImage();
+					this.send_register_code()
 				}
 			},
 
@@ -111,7 +112,7 @@
 			captchaImage() {
 				let that = this
 				uni.request({
-					url: that.$url_captchaImage,
+					url: that.$url_APP_IP + that.$url_captchaImage,
 					method: 'GET',
 					header: {
 						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
@@ -158,7 +159,7 @@
 				} else {
 					let that = this
 					uni.request({
-						url: that.$url_check_code,
+						url: that.$url_APP_IP + that.$url_check_code,
 						method: 'POST',
 						data: {
 							code: that.yzm,
@@ -204,8 +205,12 @@
 						that.getweixincode()
 					} else if (that.other_types == "qq") {
 						that.getqqcode()
-					} else if (that.other_types == "apple") {} else {
-						this.bind_email()
+					} else if (that.other_types == "apple") {
+						that.third_loginregister("apple")
+					} else if (that.other_types == "google") {
+						that.third_loginregister("google")
+					} else {
+						that.bind_email()
 					}
 				}
 			},
@@ -213,7 +218,7 @@
 			send_register_code() {
 				let that = this
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/app/send_register_code",
+					url: that.$url_APP_IP + "/prod-api/app/send_register_code",
 					method: 'POST',
 					data: {
 						email: that.email
@@ -256,6 +261,38 @@
 				})
 			},
 
+			third_loginregister(type) {
+				let data = {
+					openId: this.openid,
+					userThirdPart: type,
+					code: this.yanzhengma,
+					email: this.unername_email,
+				}
+				console.log("传参：", data)
+				this.$post(this.$url_APP_IP + "/prod-api/app/third_parts/oauth/third_login/register", data, {
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then((third_loginregisterres) => {
+					console.log("third_loginregisterres", third_loginregisterres)
+					if (third_loginregisterres.code == 200) {
+						uni.setStorageSync("token", third_loginregisterres.data.token)
+						uni.showToast({
+							title: this.$t("成功"),
+							icon: 'none'
+						})
+						setTimeout(function() {
+							uni.navigateTo({
+								url: '../../pages/login/Register_success'
+							})
+						}, 300)
+					} else {
+						uni.showToast({
+							title: this.$t("失败"),
+							icon: "none"
+						})
+					}
+				})
+			},
+
 			//微信使用accessToken和openId登录
 			getweixincode() {
 				const data = {
@@ -264,7 +301,7 @@
 					code: this.yanzhengma,
 					phoneNum: this.unername_phone
 				}
-				this.$post(this.$url_wechat_login, data, {
+				this.$post(this.$url_APP_IP + this.$url_wechat_login, data, {
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					if (res.code == 200) {
@@ -295,7 +332,7 @@
 					code: this.yanzhengma,
 					phoneNum: this.unername_phone
 				}
-				this.$post(this.$url_qq_login, data, {
+				this.$post(this.$url_APP_IP + this.$url_qq_login, data, {
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					if (res.code == 200) {
@@ -322,7 +359,7 @@
 			bind_email() {
 				let that = this
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/app/user/profile/bind_email",
+					url: that.$url_APP_IP + "/prod-api/app/user/profile/bind_email",
 					method: 'PUT',
 					data: {
 						code: that.yanzhengma,

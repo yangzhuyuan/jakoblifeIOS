@@ -2,8 +2,8 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "2.0.43",
-    "versionCode" : 210,
+    "versionName" : "2.0.4055",
+    "versionCode" : 265,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
@@ -346,7 +346,10 @@
                         "UniversalLinks" : "https://jakob-techs.com/qq_conn/102445791/"
                     },
                     "univerify" : {},
-                    "apple" : {}
+                    "apple" : {},
+                    "google" : {
+                        "clientid" : "849884323332-juu09r5mamqnvncfbtjesjqq00c647sb.apps.googleusercontent.com"
+                    }
                 },
                 "geolocation" : {
                     "system" : {
@@ -461,11 +464,11 @@
             "enable" : true
         },
         "nativePlugins" : {
-            "CBConnectPlugin" : {
+            "DCTestUniPlugin" : {
                 "__plugin_info__" : {
-                    "name" : "TestCBCPlugin",
-                    "description" : "uni示例插件",
-                    "platforms" : "iOS",
+                    "name" : "TestUniPlugin",
+                    "description" : "ailink uni插件",
+                    "platforms" : "Android,iOS",
                     "url" : "",
                     "android_package_name" : "",
                     "ios_bundle_id" : "",
@@ -475,11 +478,11 @@
                     "parameters" : {}
                 }
             },
-            "DCTestUniPlugin" : {
+            "CBConnectPlugin" : {
                 "__plugin_info__" : {
-                    "name" : "TestUniPlugin",
-                    "description" : "ailink uni插件",
-                    "platforms" : "Android,iOS",
+                    "name" : "TestCBCPlugin",
+                    "description" : "uni示例插件",
+                    "platforms" : "iOS",
                     "url" : "",
                     "android_package_name" : "",
                     "ios_bundle_id" : "",

@@ -496,7 +496,7 @@
 			},
 			getunbind(deviceSn) {
 				uni.request({
-					url: this.$url_getunbind,
+					url: this.$url_APP_IP + this.$url_getunbind,
 					method: 'POST',
 					data: {
 						deviceSn
@@ -1118,7 +1118,7 @@
 					console.log(timess)
 				}
 				uni.request({
-					url: _this.$url_jakoblife_fat_scale,
+					url: _this.$url_APP_IP + _this.$url_jakoblife_fat_scale,
 					method: 'POST',
 					data: {
 						deviceSn: _this.sn,
@@ -1138,7 +1138,7 @@
 			jakoblife_fat_scale1(deviceId, parsedData, listleng) {
 				let _this = this
 				uni.request({
-					url: _this.$url_jakoblife_fat_scale,
+					url: _this.$url_APP_IP + _this.$url_jakoblife_fat_scale,
 					method: 'POST',
 					data: {
 						deviceSn: _this.sn,
@@ -1179,7 +1179,7 @@
 				timess = _this.datatime(_this.dundatetime())
 				console.log(timess)
 				uni.request({
-					url: _this.$url_jakoblife_fat_scale,
+					url: _this.$url_APP_IP + _this.$url_jakoblife_fat_scale,
 					method: 'POST',
 					data: {
 						deviceSn: _this.sn,
@@ -1244,13 +1244,12 @@
 			},
 			// 设备绑定
 			bind_devicetz(sn, MACdeviceID) {
-				const url = this.$url_bind_device;
 				const data = {
 					deviceSn: sn,
 					mac: MACdeviceID.trim()
 				};
 				const header = this.getRequestHeader();
-				this.$post(url, data, header).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_bind_device, data, header).then(res => {
 					console.log(res)
 					if (res.code === 200) {
 						uni.setStorageSync("deviceSn", this.sn);
@@ -1273,13 +1272,12 @@
 			},
 			bind_device(sn, MACdeviceID, modelId, item) {
 				let that = this
-				const url = that.$url_bind_device;
 				const data = {
 					deviceSn: sn,
 					mac: MACdeviceID.trim()
 				};
 				const header = that.getRequestHeader();
-				that.$post(url, data, header).then(res => {
+				that.$post(that.$url_APP_IP + that.$url_bind_device, data, header).then(res => {
 					if (res.code === 200) {
 						uni.setStorageSync("deviceSn", that.sn);
 						if (item.name === "BPW1") {

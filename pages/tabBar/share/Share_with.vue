@@ -485,7 +485,7 @@
 					receiverId: this.receiverId,
 					dataPointIds: [dataPointIds]
 				}
-				this.$post("https://jakoblife.jakob-techs.com/prod-api/share/data/req", data, {
+				this.$post(this.$url_APP_IP + "/prod-api/share/data/req", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then((req) => {

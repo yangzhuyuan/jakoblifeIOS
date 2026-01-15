@@ -668,15 +668,15 @@
 				Systolic_blood_pressure: "--",
 				Diastolic_blood_pressure: "--",
 				chartData: {
-					categories: [0],
+					categories: [],
 					series: [{
 						legendShape: "#FC7F41",
 						name: this.$t("收缩压"),
-						data: [0]
+						data: []
 					}, {
 						legendShape: "#7AE545",
 						name: this.$t("舒张压"),
-						data: [0]
+						data: []
 					}]
 				},
 				xeuyaopts: {
@@ -750,11 +750,11 @@
 				},
 				is_color_type: false,
 				chartData2: {
-					categories: [0],
+					categories: [],
 					series: [{
 						legendShape: "#3298F7",
 						name: this.$t("体重"),
-						data: [0]
+						data: []
 					}, ]
 				},
 				tizhonngopts: {
@@ -873,7 +873,7 @@
 				const data = {
 					dataType: 'Unitdata'
 				};
-				this.$get('https://jakoblife.jakob-techs.com/prod-api/device/data/list', data, {
+				this.$get(this.$url_APP_IP + '/prod-api/device/data/list', data, {
 					Authorization: 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json'
 				}).then(res => {
@@ -951,7 +951,7 @@
 					});
 					return;
 				}
-				this.$get(this.$url_getInfo, {}, getheader).then(res => {
+				this.$get(this.$url_APP_IP + this.$url_getInfo, {}, getheader).then(res => {
 					if (res.code !== 200) return;
 					if (this.loact === "境内") {
 						if (!res.data.phonenumber && !res.data.email) {
@@ -1103,7 +1103,7 @@
 					new Date().toISOString().slice(0, 10) + " " + new Date().getHours() + ":" + new Date()
 					.getMinutes() : that.birthday2).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
-					url: that.$url_fat_scale,
+					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
 					data: {
 						deviceSn: uni.getStorageSync("deviceSn"),
@@ -1145,7 +1145,7 @@
 					new Date()
 					.toISOString().slice(0, 10) : that.birthday111).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
-					url: that.$url_fat_scale,
+					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
 					data: {
 						slaveSn: "1",
@@ -1209,7 +1209,7 @@
 					new Date()
 					.toISOString().slice(0, 10) : that.birthday1).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
-					url: that.$url_fat_scale,
+					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
 					data: {
 						slaveSn: "1",
@@ -1297,7 +1297,7 @@
 			},
 			//获取已绑定的设备
 			queryDevices() {
-				this.$post(this.$url_queryDevices, {}, getheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_queryDevices, {}, getheader).then(res => {
 					if (res.code === 200) {
 						uni.stopPullDownRefresh(); // 停止下拉刷新动画
 						if (!res.rows || res.rows.length === 0) {
@@ -1451,7 +1451,7 @@
 					},
 					time: parsedData.createTime
 				}
-				this.$post(this.$url_jakoblife_fat_scale, data, {
+				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
 					if (res.code === 500) {
@@ -1541,7 +1541,7 @@
 				const data = {
 					deviceSn: deviceSn
 				}
-				this.$post(this.$url_get_device_info, data, postheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_get_device_info, data, postheader).then(res => {
 					if (res.code == 200) {
 						switch (this.types_index) {
 							case 0:
@@ -1699,7 +1699,7 @@
 					endTime: endTime,
 					aggregateType: this.aggregateType
 				}
-				this.$post(this.$url_get_trend_data, data, getheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_get_trend_data, data, getheader).then(res => {
 					if (res.code == 200) {
 						this.chartData.categories = []
 						this.chartData.series[0].data = []
@@ -1762,7 +1762,7 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-				this.$post(this.$url_query_month_avg, data, getheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_query_month_avg, data, getheader).then(res => {
 					if (res.code == 200) {
 						this.Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.high.min + "-" + res.data
 							.high.max : (Number(res.data.high.min) * 0.133).toFixed(1) + "-" + (Number(res.data
@@ -1794,7 +1794,7 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-				this.$post(this.$url_query_minmax, data, getheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_query_minmax, data, getheader).then(res => {
 					if (res.code == 200) {
 						//最近
 						this.lately_Blood_pressure = this.bgaaa(res.data.last.lowPressure, res.data.last
@@ -1869,7 +1869,7 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-				this.$post(this.$url_query_weight_avg, data, getheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_query_weight_avg, data, getheader).then(res => {
 					if (res.code == 200) {
 						this.Mean_value = res.data.avgWeight
 						this.bmi = res.data.bmi
@@ -1893,7 +1893,7 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-				this.$post(this.$url_query_weight_day, data, getheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_query_weight_day, data, getheader).then(res => {
 					console.log("query_weight_day", res)
 					if (res.code == 200) {
 						this.level_weight = res.data.level
@@ -1973,7 +1973,7 @@
 					},
 					time: timestamp
 				}
-				this.$post(this.$url_pressure_data, data, getheader).then(res => {
+				this.$post(this.$url_APP_IP + this.$url_pressure_data, data, getheader).then(res => {
 					if (res.code == 200) {
 						this.$refs.qs_popup.close()
 						this.birthday = this.$t('今天')

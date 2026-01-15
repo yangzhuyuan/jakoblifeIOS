@@ -92,7 +92,7 @@
 			},
 			getLocaleImage(defaultName, zhImage, enImage) {
 				const lan = uni.getLocale();
-				return lan === 'zh-Hans' || lan == 'zh-Hant'? zhImage : enImage;
+				return lan === 'zh-Hans' || lan == 'zh-Hant' ? zhImage : enImage;
 			},
 			deleteDevice() {
 				if (this.act === -1) {
@@ -183,7 +183,7 @@
 			},
 			queryDevices() {
 				uni.request({
-					url: this.$url_queryDevices,
+					url: this.$url_APP_IP + this.$url_queryDevices,
 					method: 'POST',
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync('token'),
@@ -274,7 +274,7 @@
 			},
 			getunbind(deviceSn, mac, deviceModelId) {
 				uni.request({
-					url: this.$url_getunbind,
+					url: this.$url_APP_IP + this.$url_getunbind,
 					method: 'POST',
 					data: {
 						deviceSn

@@ -139,26 +139,7 @@
 	export default {
 		data() {
 			return {
-				list: [
-					// {
-					// 	bmi_show: false,
-					// 	image: "../../../static/icons/1.png",
-					// 	Step_number: "-",
-					// 	title: this.$t('步数'),
-					// 	type_LX: this.$t('计步'),
-					// 	Step_count: "-",
-					// 	checkbox: false,
-
-					// }, {
-					// 	bmi_show: false,
-					// 	image: "../../../static/icons/2.png",
-					// 	Step_number: "-",
-					// 	title: this.$t('身高'),
-					// 	type_LX: "cm",
-					// 	Step_count: "-",
-					// 	checkbox: false,
-					// },
-					{
+				list: [{
 						BMI_TF: 0,
 						BMI_ys: "-",
 						bmi_show: true,
@@ -293,9 +274,30 @@
 				let newarr = list2.concat(list1);
 				// 更新本地存储
 				uni.setStorageSync("kapianlist2", newarr);
+				this.cardeditData(newarr)
 				// 返回上一页
 				uni.navigateBack();
 			},
+			cardeditData(list) {
+				let editData = {
+					dataType: "WeightData",
+					data: this.formatData(list)
+				}
+				console.log("editData", editData)
+				this.$post(this.$url_APP_IP + "/prod-api/device/data/editData", editData, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json'
+				}).then((reseditData) => {
+					if (reseditData.code === 200) {
+						// console.log("reseditData", reseditData)
+					}
+				})
+			},
+
+			formatData(dataArray) {
+				return dataArray.map(obj => JSON.stringify(obj).replace(/"/g, '')).join(','); // 多条之间用换行分隔（可改 | 或 ,）
+			},
+
 			BMI_tap(title) {
 				this.$refs.popup1.open("center")
 			},
@@ -304,29 +306,16 @@
 			},
 			// 查询用户的绑定设备
 			queryDevices() {
-				let that = this
-				uni.request({
-					url: that.$url_queryDevices,
-					method: 'POST',
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-					},
-					success(res) {
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								if (res.data.rows !== "") {
-									for (let i = 0; res.data.rows.length > i; i++) {
-										if (res.data.rows[i].deviceTypeId === "11") {
-											that.get_device_data(res.data.rows[i].deviceSn)
-										}
-									}
+				this.$post(this.$url_APP_IP + this.$url_queryDevices, {}, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				}).then(res => {
+					if (res.code == 200) {
+						if (res.rows !== "") {
+							for (let i = 0; res.rows.length > i; i++) {
+								if (res.rows[i].deviceTypeId === "11") {
+									this.get_device_data(res.rows[i].deviceSn)
 								}
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
 							}
 						}
 					}
@@ -334,49 +323,38 @@
 			},
 
 			get_device_data(deviceSn) {
-				let that = this
-				uni.request({
-					url: that.$url_get_device_data,
-					method: 'POST',
-					data: {
-						deviceSn: deviceSn
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
-					},
-					success(res) {
-						if (res.data.code == 200) {
-							const data = res.data.data;
-							for (let i = 0; i < that.list.length; i++) {
-								const item = that.list[i];
-								if (item.title === "BMI") {
-									that.updateBMI(data);
-								} else if (item.title === that.$t("骨含量")) {
-									that.updateCard(data, that.$t("骨含量"), "BM");
-								} else if (item.title === that.$t("肌肉量")) {
-									that.updateCard(data, that.$t("肌肉量"), "ROM");
-								} else if (item.title === that.$t("蛋白率")) {
-									that.updateCard(data, that.$t("蛋白率"), "PP");
-								} else if (item.title === that.$t("水分")) {
-									that.updateCard(data, that.$t("水分"), "MOI");
-								} else if (item.title === that.$t("内脏脂肪指数")) {
-									that.updateCard(data, that.$t("内脏脂肪指数"), "UVI");
-								} else if (item.title === that.$t("脂肪率")) {
-									that.updateCard(data, that.$t("脂肪率"), "BFR");
-								} else if (item.title === that.$t("基础代谢率")) {
-									that.updateCard(data, that.$t("基础代谢率"), "BMR");
-								} else if (item.title === that.$t("皮下脂肪率")) {
-									that.updateCard(data, that.$t("皮下脂肪率"), "SFR");
-								} else if (item.title === that.$t("身体年龄")) {
-									that.updateCard(data, that.$t("身体年龄"), "PA");
-								}
+				const data = {
+					deviceSn: deviceSn
+				}
+				this.$post(this.$url_APP_IP + this.$url_get_device_data, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
+				}).then(res => {
+					if (res.code == 200) {
+						const data = res.data;
+						for (let i = 0; i < this.list.length; i++) {
+							const item = this.list[i];
+							if (item.title === "BMI") {
+								this.updateBMI(data);
+							} else if (item.title === this.$t("骨含量")) {
+								this.updateCard(data, this.$t("骨含量"), "BM");
+							} else if (item.title === this.$t("肌肉量")) {
+								this.updateCard(data, this.$t("肌肉量"), "ROM");
+							} else if (item.title === this.$t("蛋白率")) {
+								this.updateCard(data, this.$t("蛋白率"), "PP");
+							} else if (item.title === this.$t("水分")) {
+								this.updateCard(data, this.$t("水分"), "MOI");
+							} else if (item.title === this.$t("内脏脂肪指数")) {
+								this.updateCard(data, this.$t("内脏脂肪指数"), "UVI");
+							} else if (item.title === this.$t("脂肪率")) {
+								this.updateCard(data, this.$t("脂肪率"), "BFR");
+							} else if (item.title === this.$t("基础代谢率")) {
+								this.updateCard(data, this.$t("基础代谢率"), "BMR");
+							} else if (item.title === this.$t("皮下脂肪率")) {
+								this.updateCard(data, this.$t("皮下脂肪率"), "SFR");
+							} else if (item.title === this.$t("身体年龄")) {
+								this.updateCard(data, this.$t("身体年龄"), "PA");
 							}
-						} else {
-							uni.showToast({
-								title: res.data.msg,
-								icon: 'none'
-							})
 						}
 					}
 				})
@@ -391,35 +369,33 @@
 			},
 			// 定义BMI分类逻辑
 			updateBMI(data) {
-				let that = this
-				const bmiItem = that.findValue(that.list, 'title', "BMI");
+				const bmiItem = this.findValue(this.list, 'title', "BMI");
 				const bmiValue = data.BMI || 0;
 				bmiItem.Step_number = bmiValue;
 				if (bmiValue < 18.5) {
 					bmiItem.BMI_TF = 0;
-					bmiItem.BMI_ys = that.$t("体重过轻");
+					bmiItem.BMI_ys = this.$t("体重过轻");
 				} else if (bmiValue <= 24.9) {
 					bmiItem.BMI_TF = 1;
-					bmiItem.BMI_ys = that.$t("正常体重");
+					bmiItem.BMI_ys = this.$t("正常体重");
 				} else if (bmiValue <= 29.9) {
 					bmiItem.BMI_TF = 2;
-					bmiItem.BMI_ys = that.$t("超重");
+					bmiItem.BMI_ys = this.$t("超重");
 				} else if (bmiValue <= 34.9) {
 					bmiItem.BMI_TF = 3;
-					bmiItem.BMI_ys = that.$t("一级肥胖");
+					bmiItem.BMI_ys = this.$t("一级肥胖");
 				} else if (bmiValue <= 39.9) {
 					bmiItem.BMI_TF = 4;
-					bmiItem.BMI_ys = that.$t("二级肥胖");
+					bmiItem.BMI_ys = this.$t("二级肥胖");
 				} else {
 					bmiItem.BMI_TF = 5;
-					bmiItem.BMI_ys = that.$t("三级肥胖或病态肥胖");
+					bmiItem.BMI_ys = this.$t("三级肥胖或病态肥胖");
 				}
 			},
 
 			// 定义一个通用的处理函数
 			updateCard(data, titleKey, dataKey) {
-				let that = this
-				const item = that.findValue(that.list, 'title', titleKey);
+				const item = this.findValue(this.list, 'title', titleKey);
 				item.Step_number = data[dataKey] || '-/-';
 			},
 			// 封装获取存储信息的通用函数
@@ -431,7 +407,6 @@
 					}
 				});
 			},
-
 			//时间戳转时间
 			formatDate(value) {
 				const data = new Date(value);
@@ -441,53 +416,46 @@
 				const hours = data.getHours();
 				const minutes = data.getMinutes();
 				const seconds = data.getSeconds();
-				const formattedTime = `${month}/${day}`;
-				return formattedTime;
+				return `${month}/${day}`;
 			},
 
 			//设备数据概览
 			list_recipe() {
-				let that = this
-				uni.request({
-					url: that.$url_list_recipe,
-					method: 'POST',
-					data: {
-						userId: uni.getStorageSync("userid")
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
-					},
-					success(res) {
-						if (res.data.code == 200) {
-							that.list.forEach(item => {
-								if (item.title === that.$t('步数')) {
-									that.processSteps(res.data.data);
-								} else if (item.title === that.$t('身高')) {
-									that.processHeight(res.data.data);
-								} else if (item.title === "BMI") {
-									that.processGenericData(res.data.data, "BMI", "weight");
-								} else if (item.title === that.$t("骨含量")) {
-									that.processGenericData(res.data.data, "骨含量", "weight");
-								} else if (item.title === that.$t("肌肉量")) {
-									that.processGenericData(res.data.data, "肌肉量", "weight");
-								} else if (item.title === that.$t("蛋白率")) {
-									that.processGenericData(res.data.data, "蛋白率", "weight");
-								} else if (item.title === that.$t("水分")) {
-									that.processGenericData(res.data.data, "水分", "weight");
-								} else if (item.title === that.$t("内脏脂肪指数")) {
-									that.processGenericData(res.data.data, "内脏脂肪指数", "weight");
-								} else if (item.title === that.$t("脂肪率")) {
-									that.processGenericData(res.data.data, "脂肪率", "weight");
-								} else if (item.title === that.$t("基础代谢率")) {
-									that.processGenericData(res.data.data, "基础代谢率", "weight");
-								} else if (item.title === that.$t("皮下脂肪率")) {
-									that.processGenericData(res.data.data, "皮下脂肪率", "weight");
-								} else if (item.title === that.$t("身体年龄")) {
-									that.processGenericData(res.data.data, "身体年龄", "weight");
-								}
-							});
-						}
+				const data = {
+					userId: uni.getStorageSync("userid")
+				}
+				this.$post(this.$url_APP_IP + this.$url_list_recipe, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then(res => {
+					if (res.code == 200) {
+						this.list.forEach(item => {
+							if (item.title === this.$t('步数')) {
+								this.processSteps(res.data);
+							} else if (item.title === this.$t('身高')) {
+								this.processHeight(res.data);
+							} else if (item.title === "BMI") {
+								this.processGenericData(res.data, "BMI", "weight");
+							} else if (item.title === this.$t("骨含量")) {
+								this.processGenericData(res.data, "骨含量", "weight");
+							} else if (item.title === this.$t("肌肉量")) {
+								this.processGenericData(res.data, "肌肉量", "weight");
+							} else if (item.title === this.$t("蛋白率")) {
+								this.processGenericData(res.data, "蛋白率", "weight");
+							} else if (item.title === this.$t("水分")) {
+								this.processGenericData(res.data, "水分", "weight");
+							} else if (item.title === this.$t("内脏脂肪指数")) {
+								this.processGenericData(res.data, "内脏脂肪指数", "weight");
+							} else if (item.title === this.$t("脂肪率")) {
+								this.processGenericData(res.data, "脂肪率", "weight");
+							} else if (item.title === this.$t("基础代谢率")) {
+								this.processGenericData(res.data, "基础代谢率", "weight");
+							} else if (item.title === this.$t("皮下脂肪率")) {
+								this.processGenericData(res.data, "皮下脂肪率", "weight");
+							} else if (item.title === this.$t("身体年龄")) {
+								this.processGenericData(res.data, "身体年龄", "weight");
+							}
+						});
 					}
 				})
 			},
@@ -547,7 +515,6 @@
 	}
 
 	.list-item {
-
 		/* 两列宽度分配比例 */
 		margin: 5px 5px 10px 5px;
 		/* 列表项间距 */
@@ -558,9 +525,8 @@
 		/* 内边距 */
 		box-sizing: border-box;
 		/* 盒模型 */
-
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
-
 
 	.icon_bgsss {
 		flex: 1;
@@ -593,7 +559,6 @@
 		height: 25px;
 	}
 
-
 	.icon_text_bgsss {
 		margin-top: 10px;
 		line-height: 15px;
@@ -616,6 +581,7 @@
 		font-size: 16px;
 		font-weight: 600;
 		border-radius: 50px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.list_item_bg {

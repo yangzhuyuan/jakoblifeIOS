@@ -28,7 +28,7 @@
 				title: this.$t('血压手表绑定问题')
 			})
 			const lan = uni.getLocale();
-			if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+			if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 				this.article(1151)
 			} else {
 				this.article(1152)
@@ -51,7 +51,7 @@
 			article(id) {
 				let that = this
 				uni.request({
-					url: that.$url_article,
+					url: that.$url_APP_IP + that.$url_article,
 					method: 'GET',
 					data: {
 						articleId: id

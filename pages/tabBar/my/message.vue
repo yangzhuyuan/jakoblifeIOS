@@ -79,7 +79,7 @@
 				let that = this
 				console.log(that.info.userId)
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/share/data/pending",
+					url: that.$url_APP_IP + "/prod-api/share/data/pending",
 					method: 'POST',
 					data: {
 						receiverId: that.info.userId
@@ -111,7 +111,7 @@
 				let that = this
 				console.log(that.info.userId)
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/share/data/batch_del",
+					url: that.$url_APP_IP + "/prod-api/share/data/batch_del",
 					method: 'POST',
 					data: {
 						receiverId: that.info.userId

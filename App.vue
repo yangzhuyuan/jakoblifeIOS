@@ -11,6 +11,7 @@
 				stepCount: 0, //步数
 				notifyTriggered: false, // 初始化通知标志
 				intervalId: null, // 用于存储定时器的 ID
+				isMandatory: false,
 			}
 		},
 
@@ -46,6 +47,7 @@
 			setTimeout(() => {
 				that.startInterval();
 			}, 1000)
+			that.check_new_version("io.dcloud.jakob", "1") //更新
 			// that.accelerometerStart()
 		},
 
@@ -80,6 +82,86 @@
 						})
 					})
 			},
+			//获取app最新版本
+			check_new_version(pkgName, type) {
+				let that = this
+				uni.request({
+					url: that.$url_APP_IP + "/prod-api/system/version/check_new_version",
+					method: 'POST',
+					data: {
+						pkgName: pkgName,
+						type: type,
+						versionName: systemInfo.appVersion,
+					},
+					header: {
+						'content-type': 'application/x-www-form-urlencoded;' //自定义请求头信息
+					},
+					success(version) {
+						if (version.data.code === 4003) {
+							return
+						} else {
+							that.isMandatory = version.data.data.updateForce === 0 ? false : true;
+							let remarkParts = version.data.data.remark === null ? "" : version.data
+								.data.remark.split("&&&");
+							// 初始化中英文变量
+							let englishPart = '';
+							let chinesePart = '';
+							// 安全地获取分割后的部分
+							if (remarkParts.length > 0) {
+								englishPart = remarkParts[0];
+							}
+							if (remarkParts.length > 1) {
+								chinesePart = remarkParts[1];
+							}
+							let lan = uni.getLocale();
+							// let today = new Date().toISOString().slice(0, 10);
+							let today = version.data.data.versionName;
+							if (version.data.data.updateForce === 0) {
+								if (uni.getStorageSync("aboutupdate") === today) {
+									// console.log("不需要强制更新，按钮取消")
+									return
+								}
+								// console.log("不需要强制更新")
+								uni.showModal({
+									content: `${that.$t('版本更新1')}${version.data.data.versionName}${that.$t('版本更新2')}\n${lan == 'zh-Hans' || lan == 'zh-Hant' ? chinesePart : englishPart}`,
+									confirmText: that.$t('安装'),
+									cancelText: that.$t("稍后安装"),
+									success(modal) {
+										if (modal.confirm) {
+											// iOS 无法直接下载安装包，只能引导用户跳转 App Store 更新：
+											const appleId = "6737795065"; // 替换为你的 App Store ID
+											plus.runtime.launchApplication({
+												action: `itms-apps://itunes.apple.com/app/id${appleId}?mt=8`
+											});
+										} else if (modal.cancel) {
+											uni.setStorageSync("aboutupdate", today)
+										}
+									}
+								});
+							} else {
+								// console.log("需要强制更新")
+								uni.showModal({
+									content: `${that.$t('版本更新1')}${version.data.data.versionName}${that.$t('版本更新2')}\n${(lan == 'zh-Hans' || lan == 'zh-Hant') ? chinesePart : englishPart}`,
+									confirmText: that.$t('安装'),
+									showCancel: false,
+									success(modal) {
+										if (modal.confirm) {
+											// iOS 无法直接下载安装包，只能引导用户跳转 App Store 更新：
+											const appleId = "6737795065"; // 替换为你的 App Store ID
+											plus.runtime.launchApplication({
+												action: `itms-apps://itunes.apple.com/app/id${appleId}?mt=8`
+											});
+										} else if (modal.cancel) {
+
+										}
+									}
+								});
+							}
+						}
+					}
+				})
+			},
+
 			naozhog() {
 				let week = that.week(new Date().toDateString())
 				this.timer = setInterval(function() {
@@ -227,7 +309,7 @@
 				const data = {
 					receiverId: uni.getStorageSync("userid")
 				}
-				that.$post(that.$url_receiver_list, data, {
+				that.$post(that.$url_APP_IP + that.$url_receiver_list, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {

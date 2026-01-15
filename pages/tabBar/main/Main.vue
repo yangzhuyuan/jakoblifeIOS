@@ -188,10 +188,197 @@
 							</view>
 							<view>
 								<image src="/static/image/yundomng.png"
-									style="width: 88vw;height: 220px; margin: 0 20px 120px 20px;border-radius: 20px;">
+									style="width: 88vw;height: 220px; margin: 0 20px 20px 20px;border-radius: 20px;">
 								</image>
 							</view>
 						</view>
+					</view>
+				</scroll-view>
+			</swiper-item>
+			<!-- PPG -->
+			<swiper-item>
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
+					<view style="background: white;">
+						<view class="title_zs_ppg">{{$t("本页面显示均为最近测量数据")}}</view>
+						<view class="title_zs_ppg_2">{{$t("分析置信度")}}:{{signal_quality_score}}/1</view>
+						<view style="padding: 0 20px 20px 20px;">
+							<button class="btnstyle" @click="setting()">{{$t("定时测量")}}</button>
+							<button class="btnstyle" @click="sleep_alert()"
+								:disabled="sleep_alertdisabled">{{$t("立即测量")}}</button>
+							<view style="margin-top: 20px; display: flex;justify-content: center;color: red;">
+								{{$t("重要提示本报告结果由算法生成")}}
+							</view>
+						</view>
+						<view class="data_bg_ppg_set">
+							<view
+								style="margin:20px 20px 180px 20px;background: white;border-radius: 20px; padding: 20px;">
+								<view v-show="ppgnewpoint" style="font-size: 14px;font-weight: 600;color: black;">
+									😊 {{$t("心情状态评估")}}：<text
+										style="font-size: 14px; font-weight: 600;color: black;">{{mood_Description}}</text>
+									<view
+										style="padding: 0 20px 0 30px; color: #040000;display: flex;flex-direction: row;align-items: center;">
+										{{$t("心情指数")}}：
+									</view>
+									<view
+										style=" font-size: 16px;padding: 0 20px 0 40px; color: #3298F7;display: flex;flex-direction: row;align-items: center;">
+										{{ppgnewpoint}}
+									</view>
+									<view
+										style="padding: 0 20px 0 30px; color: #040000;display: flex;flex-direction: row;align-items: center;">
+										{{$t("心情等级")}}：
+									</view>
+									<view
+										style="font-size: 16px; padding: 0 20px 0 40px; color: #3298F7;display: flex;flex-direction: row;align-items: center;">
+										{{mood_level}}
+									</view>
+								</view>
+								<view v-show="depression_risk_score"
+									style="font-size: 14px;font-weight: 600;color: black;">
+									🧠 {{$t("心理健康评估")}}：
+									<view
+										style="padding: 0 20px 0 30px; color: #040000;display: flex;flex-direction: row;align-items: center;">
+										{{$t("抑郁风险评分")}}：
+									</view>
+									<view
+										style="font-size: 18px; padding: 0 20px 0 40px; color: #3298F7;display: flex;flex-direction: row;align-items: center;">
+										{{depression_risk_score}}
+									</view>
+									<view
+										style="padding: 0 20px 0 30px; color: #040000;display: flex;flex-direction: row;align-items: center;">
+										{{$t("抑郁风险等级")}}：<button @click="xiangxibaogo()"
+											style="margin: 0;  width: 120px; height: 30px; font-size: 10px; display: flex; justify-content: center;align-items: center;"
+											:disabled="baoggaodisabled">{{$t("详细报告")}}</button>
+									</view>
+									<view
+										style="font-size: 16px; padding: 0 20px 0 40px; color: #3298F7;display: flex;flex-direction: row;align-items: center;">
+										{{depression_risk_level}}.
+									</view>
+									<view v-if="!finalResult" @click="pingfentiaozhuan()" style=" font-size: 16px; padding: 0 20px 0 40px; color: black;display: flex;flex-direction: row;align-items:
+										center;">
+										({{$t("需要两周以上测试数据进行评估")}})
+									</view>
+									<view v-else
+										style="font-size: 16px; padding: 0 20px 0 40px; color: black;display: flex;flex-direction: row;align-items: center;">
+										<button @click="pingfentiaozhuan()"
+											style="margin: 0; width: 100%; background: #3298F7; color: white;  height: 30px; font-size: 10px; display: flex; justify-content: center;align-items: center;">{{$t("进行进一步风险评估")}}</button>
+									</view>
+								</view>
+								<view v-show="stress_Index||fatigue_index||recovery_index"
+									style="font-size: 14px;font-weight: 600;color: black;">
+									<view style="display: flex;flex-direction: row;align-items: center;">🏥
+										{{$t("综合健康指标")}}：<view @click="health_Explanation()">❓</view>
+									</view>
+									<view
+										style="padding: 0 20px 0 30px; color: #e60012;display: flex;flex-direction: row;align-items: center;">
+										{{$t("压力指数")}}：
+									</view>
+									<view
+										style="font-size: 18px; padding: 0 20px 0 40px; color: #3298F7;display: flex;flex-direction: row;align-items: center;">
+										{{stress_Index}}
+									</view>
+									<view v-show="stress_Index>=5&&sleep_point<70"
+										style="font-size: 14px; padding: 0 20px 0 40px; color: black;display: flex;flex-direction: row;align-items: center;">
+										<text>{{$t("高压力睡眠碎片化")}}</text>
+									</view>
+									<view
+										style="padding: 0 20px 0 30px; color: #e60012;display: flex;flex-direction: row;align-items: center;">
+										{{$t("疲劳指数")}}：
+									</view>
+									<view
+										style="font-size: 16px; padding: 0 20px 0 40px; color: #3298F7;display: flex;flex-direction: row;align-items: center;">
+										{{fatigue_index}}
+									</view>
+									<view v-if="fatigue_index>=5&&sleep_point<60"
+										style="font-size: 14px; padding: 0 20px 0 40px; color: black;display: flex;flex-direction: row;align-items: center;">
+										<text>{{$t("高疲劳睡眠时长不足")}}</text>
+									</view>
+									<view v-else-if="fatigue_index>=5&&(sleep_point<80&&sleep_point>60)"
+										style="font-size: 14px; padding: 0 20px 0 40px; color: black;display: flex;flex-direction: row;align-items: center;">
+										<text>{{$t("高疲劳深睡比例异常")}}</text>
+									</view>
+									<view v-else
+										style="font-size: 14px; padding: 0 20px 0 40px; color: black;display: flex;flex-direction: row;align-items: center;">
+									</view>
+									<view
+										style="padding: 0 20px 0 30px; color: #e60012;display: flex;flex-direction: row;align-items: center;">
+										{{$t("恢复指数")}}：
+									</view>
+									<view
+										style="font-size: 16px; padding: 0 20px 0 40px; color: #3298F7;display: flex;flex-direction: row;align-items: center;">
+										{{recovery_index}}
+									</view>
+								</view>
+								<view v-show="fenxi" style="font-size: 14px;font-weight: 600;color: #3298F7;">
+									{{$t("建议")}}
+									<view
+										style="padding: 0 20px 20px 20px; color: #040000;display: flex;flex-direction: row;align-items: center;">
+										{{fenxi}}
+									</view>
+								</view>
+								<view v-show="fenxi||ppgnewpoint" style="width: 100%;height: 1px; background: gray;">
+								</view>
+								<view class="pagedsismj_4">
+									<picker style="flex: 2;" @change="types_change" :value="types_index"
+										:range="types_array">
+										<view style="font-size: 14px;color: white;">
+											{{types_array[types_index]}}
+										</view>
+									</picker>
+									<picker @change="types_change" :value="types_index" :range="types_array">
+										<uni-icons style="flex: 1;" type="bottom" size="18" color="white"></uni-icons>
+									</picker>
+								</view>
+								<view
+									style="margin: 20px 0;font-size: 20px; font-weight: 600; display: flex;justify-content: flex-start;">
+									{{$t('当天')}}：
+								</view>
+								<view class="charts-box-ppg">
+									<qiun-data-charts type="line" :opts="optsPPG" :chartData="chartDataPPG" />
+								</view>
+								<view
+									style="margin: 20px 0;font-size: 20px; font-weight: 600; display: flex;justify-content: flex-start;">
+									{{$t('两周')}}：{{$t('平均')}}
+								</view>
+								<view class="charts-box-ppg">
+									<qiun-data-charts type="line" :opts="optsPPG2" :chartData="chartDataPPG2" />
+								</view>
+								<view style="margin-top: 20px; width: 100%;height: 1px; background: gray;">
+								</view>
+								<view class="page-transparent">
+									<view
+										style="font-size: 17px; font-weight: 600;display: flex;justify-content: center;">
+										{{$t("指标阈值表")}}
+									</view>
+									<view class="table-box">
+										<!-- 表头 -->
+										<view class="thead">
+											<text class="th">{{$t("指标名称")}}</text>
+											<text class="th">{{$t("阈值")}}</text>
+											<text class="th">{{$t("对应描述")}}</text>
+										</view>
+										<!-- 表格体 -->
+										<view class="tbody" v-for="(row, i) in Indicatorlist" :key="i">
+											<text class="td">{{ row.zh }}</text>
+											<text class="td">
+												<text :class="row.red ? 'red' : ''">{{ row.val }}</text>
+											</text>
+											<text class="td">
+												<text :class="row.red ? 'red' : ''">{{ row.desc }}</text>
+											</text>
+										</view>
+									</view>
+								</view>
+							</view>
+							<!-- <scroll-view class="log" scroll-y :scroll-top="scrollTop">
+								<view v-for="(l,i) in logs" :key="i" class="log-item">
+									log：{{l}}
+								</view>
+							</scroll-view> -->
+						</view>
+						<!-- PPG波形组件 -->
+						<!-- <view class="container">
+							<PpgWaveform @draw-complete="onDrawComplete" ref="ppgWaveformRef" />
+						</view> -->
 					</view>
 				</scroll-view>
 			</swiper-item>
@@ -436,7 +623,7 @@
 										color="#3298F7" />
 								</view>
 							</view>
-							<view
+							<view v-show="sleep_point!=='--/--'"
 								style="padding: 15px; background: white;margin-top: 20px;border-radius: 20px;box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);">
 								<view v-if="sleepTip && sleep_point<85" class="sleep-card">
 									<view class="sleep-title">{{ $t('睡眠血压交叉分析') }}:</view>
@@ -556,6 +743,10 @@
 				</view>
 			</scroll-view>
 		</view>
+
+
+
+
 		<!-- 悬浮弹窗 -->
 		<view class="showTotal" v-show="fillOut">
 			<view class="over">
@@ -996,9 +1187,41 @@
 				:time-init="datass" :time-hide="[true, true, true, true, true, false]"
 				:time-label="[$t('年'), $t('月'), $t('日'), $t('时'), $t('分'), $t('周')]" />
 		</view>
+
+		<view>
+			<uni-popup ref="health_Explanationpopu" :mask-click="false">
+				<view class="xueyastyle">
+					<view style="font-size: 17px; font-weight: 600;display: flex;justify-content: center;">
+						{{$t("综合健康指数说明")}}
+					</view>
+					<!-- 表格 -->
+					<view class="table">
+						<!-- 表头 -->
+						<view class="tr head">
+							<view class="th">{{$t("健康指数")}}</view>
+							<view class="th">{{$t("它主要衡量什么")}}</view>
+							<view class="th">{{$t("指数越大")}}</view>
+						</view>
+
+						<!-- 数据行 -->
+						<view class="tr" v-for="(row, i) in healthlist" :key="i">
+							<view class="td">{{ row.name }}</view>
+							<view class="td">{{ row.desc }}</view>
+							<view class="td">{{ row.mean }}</view>
+						</view>
+					</view>
+
+					<button @tap="health_Explanationpopuclose()"
+						style="width: 120px; height: 48px;  border-radius: 20px;background: #3298F7;color: white;margin-top: 20px">{{$t('知道了')}}</button>
+				</view>
+			</uni-popup>
+		</view>
+
+
 	</view>
 </template>
 <script setup>
+	const Language = uni.getLocale();
 	const systemInfo = uni.getSystemInfoSync();
 	const windowHeight = systemInfo.windowHeight;
 	import BasicDrag from '@/components/basic-drag/index.vue';
@@ -1021,11 +1244,18 @@
 	} from '../../api/unitls/sleepParser.js';
 	import WeightConverter from '../../api/unitls/weightConverter.js';
 	import logManager from '../../api/unitls/logManager.js';
-	import FloatButton from '../../components/float-button.vue'
+	import FloatButton from '../../components/float-button.vue';
+
+	import AccDataParser from '../../api/unitls/accDataParser.js';
+	import PPGParser from '../../api/unitls/PPGParser.js'
+	import PpgDataService from "../../api/servicesppg/PpgDataService.js";
+	import PpgWaveform from "../../../components/ACC_PPG/PpgWaveform.vue";
+
 	export default {
 		components: {
 			BasicDrag,
-			FloatButton
+			FloatButton,
+			PpgWaveform
 		},
 		computed: {
 			...mapState(['info', 'getpendinglenth', 'acktypes', 'xueyehuilian', 'xueyjitypesd']),
@@ -1054,6 +1284,121 @@
 		},
 		data() {
 			return {
+				logs: [],
+				scrollTop: 0,
+				sleep_alertdisabled: false,
+				healthlist: [{
+						name: this.$t("压力指数"),
+						desc: this.$t("神经系统"),
+						mean: this.$t("身体正处于更强烈的应激状态中")
+					},
+					{
+						name: this.$t("疲劳指数"),
+						desc: this.$t("身体和心理的消耗程度"),
+						mean: this.$t("身体和精神的疲劳感更重")
+					},
+					{
+						name: this.$t("恢复指数"),
+						desc: this.$t("身体从应激和疲劳状态中恢复过来的能力和速度"),
+						mean: this.$t("身体的恢复能力更强")
+					}
+				],
+
+				Indicatorlist: [{
+						zh: this.$t("心情状态"),
+						val: '>=8',
+						desc: this.$t("积极愉悦2"),
+						red: false
+					},
+					{
+						zh: '',
+						val: '>=6',
+						desc: this.$t("平静稳定2"),
+						red: false
+					},
+					{
+						zh: '',
+						val: '>=4',
+						desc: this.$t("轻微压力2"),
+						red: false
+					},
+					{
+						zh: '',
+						val: '<4',
+						desc: this.$t("明显压力2"),
+						red: true
+					},
+					{
+						zh: this.$t("心理健康"),
+						val: '>=8',
+						desc: this.$t("较高风险2"),
+						red: true
+					},
+					{
+						zh: '',
+						val: '>=5',
+						desc: this.$t("中等风险2"),
+						red: false
+					},
+					{
+						zh: '',
+						val: '<5',
+						desc: this.$t("较低风险2"),
+						red: false
+					},
+					{
+						zh: this.$t("压力指数"),
+						val: '>=5',
+						desc: this.$t("压力大2"),
+						red: true
+					},
+					{
+						zh: '',
+						val: '<5',
+						desc: this.$t("压力小2"),
+						red: false
+					},
+					{
+						zh: this.$t("疲劳指数"),
+						val: '>=5',
+						desc: this.$t("疲劳度高2"),
+						red: true
+					},
+					{
+						zh: '',
+						val: '<5',
+						desc: this.$t("疲劳度低2"),
+						red: false
+					},
+					{
+						zh: this.$t("恢复指数"),
+						val: '>=5',
+						desc: this.$t("恢复快2"),
+						red: false
+					},
+					{
+						zh: "",
+						val: '<5',
+						desc: this.$t("恢复慢2"),
+						red: true
+					}
+				],
+
+				types_index: uni.getStorageSync("types_index") || 0,
+				types_array: [this.$t("心情指数"), this.$t("抑郁风险评分"), this.$t("压力指数"), this.$t("疲劳指数"), this.$t("恢复指数")],
+				ppgnewpoint: "",
+				mood_Description: '',
+				signal_quality_score: '-', //信号质量评分(0-1)
+				fenxi: '',
+				signal_quality_level: '',
+				mood_level: '',
+				depression_risk_level: '',
+				baoggaodisabled: false, //报告按钮
+				finalResult: false, //最终同时满足两个条件
+				data_sufficiency: '',
+				watchtimer: null,
+				watchtimer2: null,
+				isExpanded2: false, // 控制是否展开
 				Daily_Goal: '',
 				today_Daily_Goal: uni.getStorageSync("today_Daily_Goal") || "0",
 				medication: uni.getStorageSync("medication") || false,
@@ -1080,7 +1425,7 @@
 									url: "/pages/tabBar/my/Alarms"
 								})
 							}
-						}
+						},
 					],
 				},
 				Blood: uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa",
@@ -1089,7 +1434,7 @@
 				timer: null, // 定时器变量
 				timertwslist: null,
 				screenHeight: windowHeight,
-				tabs: [this.$t("心血管"), this.$t("体重"), this.$t("睡眠"), this.$t("运动")],
+				tabs: [this.$t("心血管"), this.$t("情绪"), this.$t("体重"), this.$t("睡眠"), this.$t("运动")],
 				// swiper索引
 				currentIndex: 0,
 				scrollLeft: 0,
@@ -1098,16 +1443,7 @@
 				connectedDevices: {}, // 存储已连接设备的信息
 				deviceList: [], // 存储搜索到的设备列表
 				endtimesss: new Date().toISOString().slice(0, 10),
-				list: [
-					// {
-					// 	bmi_show: false,
-					// 	image: "../../../static/icons/1.png",
-					// 	Step_number: "-",
-					// 	title: this.$t('步数'),
-					// 	type_LX: this.$t('计步'),
-					// 	Step_count: "-"
-					// },
-					{
+				list: [{
 						bmi_show: false,
 						image: "../../../static/icons/2.png",
 						Step_number: "-",
@@ -1151,106 +1487,89 @@
 					// 	checkbox: false,
 					// }
 				],
-				list2: [
-					// 	{
-					// 	image: "../../../static/icons/1.png",
-					// 	Step_number: "0",
-					// 	title: this.$t('步数'),
-					// 	type_LX: this.$t('计步'),
-					// 	Step_count: "0"
-					// }, {
-					// 	bmi_show: false,
-					// 	image: "../../../static/icons/2.png",
-					// 	Step_number: "-",
-					// 	title: this.$t('身高'),
-					// 	type_LX: "cm",
-					// 	Step_count: "-",
-					// 	checkbox: false,
-					// },
-					{
-						BMI_TF: 0,
-						BMI_ys: "-",
-						bmi_show: true,
-						image: "../../../static/icons/4.png",
-						Step_number: "-",
-						title: 'BMI',
-						type_LX: "kg/m²",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/3.png",
-						Step_number: "-",
-						title: this.$t("骨含量"),
-						type_LX: "kg",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/7.png",
-						Step_number: "-",
-						title: this.$t("肌肉量"),
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/4.png",
-						Step_number: "-",
-						title: this.$t("蛋白率"),
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/5.jpg",
-						Step_number: "-",
-						title: this.$t("水分"),
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/8.png",
-						Step_number: "-",
-						title: this.$t("内脏脂肪指数"),
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/6.png",
-						Step_number: "-",
-						title: this.$t("脂肪率"),
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/1.png",
-						Step_number: "-",
-						title: this.$t("基础代谢率"),
-						type_LX: "KCAL",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/2.png",
-						Step_number: "-",
-						title: this.$t("皮下脂肪率"),
-						type_LX: "%",
-						Step_count: "-",
-						checkbox: false,
-					}, {
-						bmi_show: false,
-						image: "../../../static/page_icon/9.png",
-						Step_number: "-",
-						title: this.$t("身体年龄"),
-						type_LX: this.$t("岁"),
-						Step_count: "-",
-						checkbox: false,
-					}
-				],
+				list2: [{
+					BMI_TF: 0,
+					BMI_ys: "-",
+					bmi_show: true,
+					image: "../../../static/icons/4.png",
+					Step_number: "-",
+					title: 'BMI',
+					type_LX: "kg/m²",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/3.png",
+					Step_number: "-",
+					title: this.$t("骨含量"),
+					type_LX: "kg",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/7.png",
+					Step_number: "-",
+					title: this.$t("肌肉量"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/4.png",
+					Step_number: "-",
+					title: this.$t("蛋白率"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/5.jpg",
+					Step_number: "-",
+					title: this.$t("水分"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/8.png",
+					Step_number: "-",
+					title: this.$t("内脏脂肪指数"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/6.png",
+					Step_number: "-",
+					title: this.$t("脂肪率"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/1.png",
+					Step_number: "-",
+					title: this.$t("基础代谢率"),
+					type_LX: "KCAL",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/2.png",
+					Step_number: "-",
+					title: this.$t("皮下脂肪率"),
+					type_LX: "%",
+					Step_count: "-",
+					checkbox: false,
+				}, {
+					bmi_show: false,
+					image: "../../../static/page_icon/9.png",
+					Step_number: "-",
+					title: this.$t("身体年龄"),
+					type_LX: this.$t("岁"),
+					Step_count: "-",
+					checkbox: false,
+				}],
 				show: true,
 				fillOut: false,
 				Latest_weight: "-",
@@ -1324,11 +1643,218 @@
 				totalDeep: 'NA',
 				totalRem: 'NA',
 				sleep_point: '--/--',
-				chartData: {
+				chartDataPPG: {
 					categories: [],
 					series: [{
-						name: this.$t("步数"),
+							legendShape: "none",
+							name: "",
+							data: []
+						},
+						{
+							legendShape: "none",
+							name: "",
+							data: []
+						}, {
+							legendShape: "none",
+							name: "",
+							data: [],
+						}, {
+							legendShape: "none",
+							name: "",
+							data: [],
+						}, {
+							legendShape: "none",
+							name: "",
+							data: [],
+						}
+					]
+				},
+				optsPPG: {
+					color: ["#3298F7", "#3298F7", "#3298F7", "#3298F7", "#3298F7"],
+					padding: [15, 15, 0, 5],
+					enableScroll: false,
+					xAxis: {
+						disableGrid: true
+					},
+					yAxis: {
+						splitNumber: 10,
+						data: [{
+							min: 0,
+							max: 10,
+						}]
+					},
+					extra: {
+						column: {
+							type: "group",
+							width: 30,
+							activeBgColor: "#000000",
+							activeBgOpacity: 0.08
+						},
+						markLine: {
+							data: [{
+									value: 8,
+									lineColor: "#FF6B6B",
+									showLabel: true,
+									labelText: this.$t("积极愉悦2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 145,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+									borderWidth: 0,
+									borderColor: "transparent",
+									borderRadius: 4,
+									padding: [4, 8, 4, 8]
+
+								},
+								{
+									value: 6,
+									lineColor: "#3298F7",
+									showLabel: true,
+									labelText: this.$t("平静稳定2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 115,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+								},
+								{
+									value: 4,
+									lineColor: "#EE6666",
+									showLabel: true,
+									labelText: this.$t("轻微压力2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 83,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+								},
+								{
+									value: 0,
+									lineColor: "#D8D8D6",
+									showLabel: true,
+									labelText: this.$t("明显压力2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 122,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+								}
+							]
+						}
+
+					}
+				},
+
+				chartDataPPG2: {
+					categories: [],
+					series: [{
+						legendShape: "none",
+						name: "",
 						data: []
+					}, {
+						legendShape: "none",
+						name: "",
+						data: []
+					}, {
+						legendShape: "none",
+						name: "",
+						data: [],
+					}, {
+						legendShape: "none",
+						name: "",
+						data: [],
+					}, {
+						legendShape: "none",
+						name: "",
+						data: [],
+					}]
+				},
+
+
+				optsPPG2: {
+					color: ["#3298F7", "#3298F7", "#3298F7", "#3298F7", "#3298F7"],
+					padding: [15, 15, 0, 5],
+					enableScroll: false,
+					xAxis: {
+						disableGrid: true,
+					},
+					yAxis: {
+						splitNumber: 10,
+						data: [{
+							min: 0,
+							max: 10,
+						}]
+					},
+
+					extra: {
+						column: {
+							type: "group",
+							width: 30,
+							activeBgColor: "#000000",
+							activeBgOpacity: 0.08
+						},
+						markLine: {
+							data: [{
+									value: 8,
+									lineColor: "#FF6B6B",
+									showLabel: true,
+									labelText: this.$t("积极愉悦2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 145,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+									borderWidth: 0,
+									borderColor: "transparent",
+									borderRadius: 4,
+									padding: [4, 8, 4, 8]
+
+								},
+								{
+									value: 6,
+									lineColor: "#3298F7",
+									showLabel: true,
+									labelText: this.$t("平静稳定2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 115,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+								},
+								{
+									value: 4,
+									lineColor: "#EE6666",
+									showLabel: true,
+									labelText: this.$t("轻微压力2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 83,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+								},
+								{
+									value: 0,
+									lineColor: "#D8D8D6",
+									showLabel: true,
+									labelText: this.$t("明显压力2"),
+									labelAlign: "left",
+									labelOffsetX: Language == 'zh-Hans' || Language == 'zh-Hant' ? 60 : 122,
+									labelFontColor: "#D8D8D6",
+									labelOffsetY: -15,
+									labelBgOpacity: -0.8,
+								}
+							]
+						}
+					}
+				},
+
+
+				chartData: {
+					categories: [0],
+					series: [{
+						name: this.$t("步数"),
+						data: [0]
 					}, ]
 				},
 				opts: {
@@ -1360,9 +1886,14 @@
 				quotient: 0,
 				quotient1: 0,
 				quotient2: 0,
+				quotient3: 0,
+				quotientACC: 0,
+				quotientPPG: 0,
 				dataBuffer: [],
 				Protocolsubcommand: '',
 				writeuuid: '',
+				deviceIdwatch: '',
+				serviceIdwatch: '',
 				xeuyejisn: '0',
 				xeuyejimac: '0',
 				shoubiaosn: '0',
@@ -1379,6 +1910,18 @@
 				lastWeightbishi: "",
 				xeuyabiaoshi: "",
 				lixianlist: [],
+				PPGdataarray: 0x05,
+				bufferPPG: [],
+
+
+				depression_risk_level: "", //心理健康评估抑郁风险评分
+				depression_risk_score: '', //心理健康评估抑郁风险等级
+				depression_recommendation: '', //心理健康评估专业建议
+				stress_Index: '',
+				fatigue_index: '',
+				recovery_index: '',
+
+
 			}
 		},
 
@@ -1401,7 +1944,6 @@
 				clearInterval(this.timsdpad);
 				this.timsdpad = null;
 			}
-
 		},
 
 		onShow() {
@@ -1432,41 +1974,39 @@
 			setTimeout(() => {
 				const now = new Date();
 				const today7AM = new Date();
-				today7AM.setHours(7, 0, 0, 0); // 设置今天早上7点
-				console.log(that.sleep_time)
-				console.log(`${now.getMonth() + 1}/${now.getDate()}`)
+				today7AM.setHours(7, 0, 0, 0); // 设置当天早上7点
 				if (that.sleep_time === `${now.getMonth() + 1}/${now.getDate()}` || now < today7AM) {
 					that.hasSynced = true;
-					console.log("睡眠时间到")
 				} else {
 					that.hasSynced = false;
-					console.log("睡眠时间到2")
 				}
 			}, 3000)
 			uni.getNetworkType({
 				success: function(res) {
 					if (res.networkType === 'none') {
-						that.Latest_weight = that.newweightKG === "KG" ? uni.getStorageSync("weightkg") : uni
+						that.Latest_weight = that.newweightKG === "KG" ? uni.getStorageSync(
+								"weightkg") : uni
 							.getStorageSync("weightlb")
-						that.lowPressure = that.Blood === "mmHg" ? uni.getStorageSync("lowPressure") : (Number(
-							uni.getStorageSync("lowPressure")) * 0.133).toFixed(1);
-						that.highPressure = that.Blood === "mmHg" ? uni.getStorageSync("highPressure") : (
+						that.lowPressure = that.Blood === "mmHg" ? uni.getStorageSync("lowPressure") :
+							(Number(
+								uni.getStorageSync("lowPressure")) * 0.133).toFixed(1);
+						that.highPressure = that.Blood === "mmHg" ? uni.getStorageSync(
+							"highPressure") : (
 							Number(uni.getStorageSync("lowPressure")) * 0.133).toFixed(1);
 						that.pulse = uni.getStorageSync("pulse")
-						that.updateBloodPressureStatus(uni.getStorageSync("lowPressure"), uni.getStorageSync(
-							"highPressure"));
+						that.updateBloodPressureStatus(uni.getStorageSync("lowPressure"), uni
+							.getStorageSync(
+								"highPressure"));
 						that.sethuilian(true)
 						that.aaaa(uni.getStorageSync("lixianlist").rows)
 					} else {
-						console.log(uni.getStorageSync("xueyadatatype"))
-						console.log(uni.getStorageSync("xueyadata"))
-						console.log(uni.getStorageSync("tizhidata"))
 						if (uni.getStorageSync("xueyadatatype") && uni.getStorageSync("xueyadata")) {
 							if (uni.getStorageSync("xueyadatatype") === "1") {
-								that.$post(that.$url_jakoblife_fat_scale, uni.getStorageSync(
-									"xueyadata"), {
-									'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-								}).then(res => {
+								that.$post(that.$url_APP_IP + that.$url_jakoblife_fat_scale, uni
+									.getStorageSync(
+										"xueyadata"), {
+										'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+									}).then(res => {
 									console.log("上报数据手表成功", res)
 									if (res.code === 200) {
 										that.setbanhua(1)
@@ -1485,10 +2025,11 @@
 									console.log("errro", errro)
 								})
 							} else if (uni.getStorageSync("xueyadatatype") === "0") {
-								that.$post(that.$url_jakoblife_fat_scale, uni.getStorageSync(
-									"xueyadata"), {
-									'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-								}).then(resaa => {
+								that.$post(that.$url_APP_IP + that.$url_jakoblife_fat_scale, uni
+									.getStorageSync(
+										"xueyadata"), {
+										'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+									}).then(resaa => {
 									console.log("血压计", resaa)
 									if (resaa.code === 200) {
 										that.setbanhua(1)
@@ -1507,9 +2048,11 @@
 							}
 						}
 						if (uni.getStorageSync("tizhidata")) {
-							that.$post(that.$url_jakoblife_fat_scale, uni.getStorageSync("tizhidata"), {
-								'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-							}).then(res => {
+							that.$post(that.$url_APP_IP + that.$url_jakoblife_fat_scale, uni
+								.getStorageSync(
+									"tizhidata"), {
+									'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+								}).then(res => {
 								if (res.code === 500) {
 									uni.showToast({
 										title: that.$t("失败"),
@@ -1535,12 +2078,17 @@
 					console.error('获取网络类型失败：', err);
 				}
 			});
-
-
-
 		},
+
+
 		methods: {
 			...mapMutations(['getInfo', 'setacktypes', 'setbanhua', 'sethuilian', 'setxueyjitypesd']),
+
+			log(...a) {
+				this.logs.unshift(
+					`[${new Date().toLocaleTimeString()}] ${a.map(v => JSON.stringify(v)).join(' ')}`);
+			},
+
 
 			async initBluetooth() {
 				this.bluetoothManager = new BluetoothManager();
@@ -1589,6 +2137,112 @@
 					};
 				} catch (e) {}
 			},
+
+
+			toggleExpand2() {
+				this.isExpanded2 = !this.isExpanded2;
+			},
+			// 定时测量
+			setting() {
+				uni.navigateTo({
+					url: "/pages/tabBar/main/sleep_report/Reports_Alerts"
+				})
+			},
+			//详细报告
+			xiangxibaogo() {
+				if (!this.finalResult) {
+					uni.showModal({
+						content: this.$t("需要两周以上测试数据进行评估"),
+						confirmText: this.$t('确定'),
+						showCancel: false,
+						success(modal) {
+							if (modal.confirm) {}
+						}
+					})
+				} else {
+					uni.navigateTo({
+						url: "/pages/tabBar/main/score/qingxubaogao"
+					})
+				}
+			},
+			pingfentiaozhuan() {
+				uni.showModal({
+					content: this.$t("为了更准确地了解您的情绪状态"),
+					confirmText: this.$t('确定'),
+					cancelText: this.$t('取消'),
+					success(modal) {
+						if (modal.confirm) {
+							uni.navigateTo({
+								url: '/pages/tabBar/main/score/score'
+							})
+						}
+					}
+				})
+			},
+			//立即测量
+			sleep_alert() {
+				// this.log("点击了立即测量，准备发送命令，请稍后")
+				this.sendstartheartwatch(this.writeuuid, 1)
+				uni.showLoading({
+					title: this.$t("请稍后"),
+				})
+				uni.setStorageSync("sleep_alert", 1)
+			},
+
+			sendstartheartwatch(writeuuid, type) {
+				let that = this
+				let buffer2
+				if (type === 1) {
+					buffer2 = that.toArrayBuffer("e00006F3060104000101") //心率
+				} else if (type === 2) {
+					buffer2 = that.toArrayBuffer("e00006F5060106000101") //血氧
+				} else {
+					buffer2 = that.toArrayBuffer("e00006F4060105000101") //血压
+				}
+				console.log(that.deviceIdwatch)
+				console.log(that.serviceIdwatch)
+				console.log(writeuuid)
+				setTimeout(() => {
+					uni.writeBLECharacteristicValue({
+						deviceId: that.deviceIdwatch,
+						serviceId: that.serviceIdwatch,
+						characteristicId: writeuuid,
+						writeType: 'write',
+						value: buffer2,
+						complete(complete) {
+							// console.log("complete", complete)
+							if (complete.code === 10007) {
+								that.log("发送命令成功，开始等待手表测量")
+								if (type === 1 || type === 2) {
+									console.log("1开始心率/血氧测量：" + (type === 1 ?
+										"e00006F3060104000101" :
+										"e00006F5060106000101"))
+								} else {
+									console.log("1开始血压测量：" + "e00006F4060105000101")
+								}
+								uni.showToast({
+									title: that.$t("成功"),
+									icon: 'none'
+								})
+								uni.showLoading({
+									title: that.$t("测量中")
+								})
+								that.sleep_alertdisabled = true
+							} else {
+								that.log("发送命令失败，停止")
+								uni.hideLoading()
+								that.sleep_alertdisabled = false
+								uni.showToast({
+									title: that.$t("请检查设备连接"),
+									icon: 'none',
+									duration: 2000
+								})
+							}
+						},
+					})
+				}, 3000)
+			},
+
 
 			Daily_Goal_set() {
 				if (!this.Daily_Goal) {
@@ -1645,21 +2299,21 @@
 						if (res.networkType === 'none') {
 							console.log('无网络连接');
 						} else {
-							console.log(uni.getStorageSync("xueyadatatype"))
-							console.log(uni.getStorageSync("xueyadata"))
-							console.log(uni.getStorageSync("tizhidata"))
-							if (uni.getStorageSync("xueyadatatype") && uni.getStorageSync("xueyadata")) {
+							if (uni.getStorageSync("xueyadatatype") && uni.getStorageSync(
+									"xueyadata")) {
 								if (uni.getStorageSync("xueyadatatype") === "1") {
-									that.$post(that.$url_jakoblife_fat_scale, uni.getStorageSync(
-										"xueyadata"), {
-										'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-									}).then(res => {
+									that.$post(that.$url_APP_IP + that.$url_jakoblife_fat_scale, uni
+										.getStorageSync(
+											"xueyadata"), {
+											'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+										}).then(res => {
 										console.log("上报数据手表", res)
 										if (res.code === 200) {
 											that.setbanhua(1)
 											let deviceSnlixin = uni.getStorageSync("xueyadata")
 												.deviceSn
-											let slaveDatalixian = uni.getStorageSync("xueyadata")
+											let slaveDatalixian = uni.getStorageSync(
+													"xueyadata")
 												.slaveData
 											uni.removeStorageSync("xueyadatatype")
 											uni.removeStorageSync("xueyadata")
@@ -1672,16 +2326,18 @@
 										console.log("errro", errro)
 									})
 								} else if (uni.getStorageSync("xueyadatatype") === "0") {
-									that.$post(that.$url_jakoblife_fat_scale, uni.getStorageSync(
-										"xueyadata"), {
-										'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-									}).then(resaa => {
+									that.$post(that.$url_APP_IP + that.$url_jakoblife_fat_scale, uni
+										.getStorageSync(
+											"xueyadata"), {
+											'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+										}).then(resaa => {
 										console.log("血压计", resaa)
 										if (resaa.code === 200) {
 											that.setbanhua(1)
 											let deviceSnlixin = uni.getStorageSync("xueyadata")
 												.deviceSn
-											let slaveDatalixian = uni.getStorageSync("xueyadata")
+											let slaveDatalixian = uni.getStorageSync(
+													"xueyadata")
 												.slaveData
 											uni.removeStorageSync("xueyadatatype")
 											uni.removeStorageSync("xueyadata")
@@ -1694,10 +2350,11 @@
 								}
 							}
 							if (uni.getStorageSync("tizhidata")) {
-								that.$post(that.$url_jakoblife_fat_scale, uni.getStorageSync(
-									"tizhidata"), {
-									'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-								}).then(res => {
+								that.$post(that.$url_APP_IP + that.$url_jakoblife_fat_scale, uni
+									.getStorageSync(
+										"tizhidata"), {
+										'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+									}).then(res => {
 									if (res.code === 500) {
 										uni.showToast({
 											title: that.$t("失败"),
@@ -1706,7 +2363,8 @@
 										return
 									} else if (res.code === 200) {
 										that.setbanhua(1)
-										let deviceSntzlx = uni.getStorageSync("tizhidata").deviceSn
+										let deviceSntzlx = uni.getStorageSync("tizhidata")
+											.deviceSn
 										uni.removeStorageSync("tizhidata")
 										setTimeout(() => {
 											that.get_device_info(deviceSntzlx)
@@ -1724,6 +2382,14 @@
 						console.error('获取网络类型失败：', err);
 					}
 				});
+				const BleDeviceConfig = {
+					PROTOCOL_VERSION: 0x01 // 协议版本号
+				};
+				if (that.acktypes === "1" && that.currentIndex === 4) {
+					that.getsetp(that.deviceIdwatch, that.serviceIdwatch, that.writeuuid, BleDeviceConfig
+						.PROTOCOL_VERSION)
+				}
+
 				const token = uni.getStorageSync("token");
 				if (!token) {
 					uni.redirectTo({
@@ -1753,7 +2419,7 @@
 				const data = {
 					dataType: 'Unitdata'
 				};
-				this.$get('https://jakoblife.jakob-techs.com/prod-api/device/data/list', data, {
+				this.$get(this.$url_APP_IP + '/prod-api/device/data/list', data, {
 					Authorization: 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json'
 				}).then(res => {
@@ -1793,7 +2459,8 @@
 						// 移除可能的多余花括号
 						objStr = objStr.replace(/^{{/, '{').replace(/}}$/, '}');
 						// 修复键值对
-						const fixedObjStr = objStr.replace(/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (match, key, value) => {
+						const fixedObjStr = objStr.replace(/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (match, key,
+							value) => {
 							value = value.trim();
 
 							// 处理布尔值
@@ -1884,14 +2551,17 @@
 					success: function(res) {
 						if (res.networkType === 'none') {
 							console.log('无网络连接');
-							let uniqueArr = uni.getStorageSync("deviceList").filter((item, index) => uni
+							let uniqueArr = uni.getStorageSync("deviceList").filter((item,
+									index) => uni
 								.getStorageSync("deviceList").indexOf(item) ===
 								index);
-							let uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item, index) => uni
+							let uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item,
+									index) => uni
 								.getStorageSync("devicdsdmac")
 								.indexOf(item) ===
 								index);
-							let uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item, index) => uni
+							let uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item,
+									index) => uni
 								.getStorageSync("devicdsdmac1")
 								.indexOf(item) ===
 								index);
@@ -1904,23 +2574,12 @@
 								}
 							}, 3000)
 						} else {
-							//原来的
-							// let uniqueArr = that.deviceList.filter((item, index) => that.deviceList
-							// 	.indexOf(item) ===
-							// 	index);
-							// let uniqueArr1 = that.devicdsdmac.filter((item, index) => that.devicdsdmac
-							// 	.indexOf(item) ===
-							// 	index);
-							// let uniqueArr2 = that.devicdsdmac1.filter((item, index) => that
-							// 	.devicdsdmac1
-							// 	.indexOf(item) ===
-							// 	index);
-
 							let uniqueArr
 							let uniqueArr1
 							let uniqueArr2
 							if (that.deviceList === undefined) {
-								uniqueArr = uni.getStorageSync("deviceList").filter((item, index) =>
+								uniqueArr = uni.getStorageSync("deviceList").filter((item,
+										index) =>
 									uni
 									.getStorageSync("deviceList").indexOf(item) ===
 									index);
@@ -1930,17 +2589,20 @@
 									index);
 							}
 							if (that.devicdsdmac === undefined) {
-								uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item, index) =>
+								uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item,
+										index) =>
 									uni
 									.getStorageSync("devicdsdmac").indexOf(item) ===
 									index);
 							} else {
-								uniqueArr1 = that.devicdsdmac.filter((item, index) => that.devicdsdmac
+								uniqueArr1 = that.devicdsdmac.filter((item, index) => that
+									.devicdsdmac
 									.indexOf(item) ===
 									index);
 							}
 							if (that.devicdsdmac1 === undefined) {
-								uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item, index) =>
+								uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item,
+										index) =>
 									uni
 									.getStorageSync("devicdsdmac1").indexOf(item) ===
 									index);
@@ -1986,7 +2648,7 @@
 			},
 
 			geturl_queryDevices(devicesArray) {
-				this.$post(this.$url_queryDevices, {}, {
+				this.$post(this.$url_APP_IP + this.$url_queryDevices, {}, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
@@ -2112,8 +2774,9 @@
 
 							} else {
 								that.sethuilian(true)
-								that.Blood = uni.getStorageSync("Blood") === 0 || uni.getStorageSync(
-									"Blood") === "" ? "mmHg" : "kPa"
+								that.Blood = uni.getStorageSync("Blood") === 0 || uni
+									.getStorageSync(
+										"Blood") === "" ? "mmHg" : "kPa"
 								isInChinaByIP().then(isInChina => {
 									that.loact = isInChina ? "境内" : "境外";
 									const token = uni.getStorageSync("token");
@@ -2131,7 +2794,8 @@
 								});
 								// 在数据操作前检查清除
 								clearDailyGoalData();
-								that.today_Daily_Goal = uni.getStorageSync("today_Daily_Goal") || "0"
+								that.today_Daily_Goal = uni.getStorageSync(
+									"today_Daily_Goal") || "0"
 							}
 						},
 						fail: function(err) {
@@ -2205,7 +2869,7 @@
 						success: () => {
 							uni.onBLEConnectionStateChange(function(change) {
 								if (!change.connected) {
-									console.log('蓝牙设备已断开');
+									console.log('蓝牙设备已断开', deviceId);
 									if (that.characteristicsCache.has(deviceId)) {
 										console.log(`清除设备 ${deviceId} 的特征值缓存`);
 										that.characteristicsCache.delete(deviceId);
@@ -2231,12 +2895,11 @@
 										const today7AM = new Date();
 										today7AM.setHours(7, 0, 0, 0); // 设置今天早上7点
 										if (that.sleep_time ===
-											`${now.getMonth() + 1}/${now.getDate()}` || now < today7AM
+											`${now.getMonth() + 1}/${now.getDate()}` || now <
+											today7AM
 										) {
-											console.log("睡眠时间到3！");
 											that.hasSynced = true
 										} else {
-											console.log("睡眠时间到4！");
 											that.hasSynced = true; // 标记已同步
 											uni.writeBLECharacteristicValue({
 												deviceId: deviceId,
@@ -2247,7 +2910,8 @@
 													'e00006eb010101000101'),
 												complete(complete) {
 													console.log(
-														"发送同步所有数据命令：e00006eb010101000101")
+														"发送同步所有数据命令： e00006eb010101000101"
+													)
 												}
 											})
 										}
@@ -2295,13 +2959,15 @@
 										complete(complete) {
 											console.log("发送命令：",
 												"e00006e8000000000101");
+											that.deviceIdwatch = deviceId
+											that.serviceIdwatch = serviceId
 											that.writeuuid = item.uuid
 											const plugin = uni.requireNativePlugin(
 												"CBConnectPlugin-CBCModule");
 											plugin.connectPeripheral({
 												identifier: deviceId
 											}, (result, keepAlive) => {
-												console.log(result)
+												// console.log(result)
 											});
 										}
 									});
@@ -2406,9 +3072,10 @@
 							that.lowPressure = that.Blood === "mmHg" ? parsedData.dia.trim() : (Number(
 								parsedData.dia
 								.trim()) * 0.133).toFixed(1);
-							that.highPressure = that.Blood === "mmHg" ? parsedData.sys.trim() : (Number(
-								parsedData.sys
-								.trim()) * 0.133).toFixed(1);
+							that.highPressure = that.Blood === "mmHg" ? parsedData.sys.trim() : (
+								Number(
+									parsedData.sys
+									.trim()) * 0.133).toFixed(1);
 							that.pulse = parsedData.pul.trim();
 							uni.setStorageSync("lowPressure", parsedData.dia.trim())
 							uni.setStorageSync("highPressure", parsedData.sys.trim())
@@ -2417,13 +3084,17 @@
 							uni.getNetworkType({
 								success: function(res) {
 									if (res.networkType === 'none') {
-										that.bgaaa(parsedData.dia.trim(), parsedData.sys.trim())
-										that.updateBloodPressureStatus(parsedData.dia.trim(),
+										that.bgaaa(parsedData.dia.trim(), parsedData.sys
+											.trim())
+										that.updateBloodPressureStatus(parsedData.dia
+											.trim(),
 											parsedData.sys.trim());
 									} else {
 										console.log("hhhhhhh")
-										that.bgaaa(parsedData.dia.trim(), parsedData.sys.trim())
-										that.updateBloodPressureStatus(parsedData.dia.trim(),
+										that.bgaaa(parsedData.dia.trim(), parsedData.sys
+											.trim())
+										that.updateBloodPressureStatus(parsedData.dia
+											.trim(),
 											parsedData.sys.trim());
 										console.log("hhhhhhh")
 									}
@@ -2465,7 +3136,9 @@
 											.shoubiaosn);
 										break;
 									case "03":
-										that.handleCMD03(hexData);
+										that.handleCMD03(hexData, that.shoubiaomac,
+											"81EEA001-E735-49EC-8A11-7E32CAE1E14E", that.writeuuid,
+											deviceSn);
 										break;
 									case "11":
 										that.resetDataState();
@@ -2477,7 +3150,8 @@
 								that.resetDataState();
 							}
 							// 检查并处理完整数据集
-							that.processCompleteDataSets(that.shoubiaomac, that.shoubiaosn)
+							that.processCompleteDataSets(that.shoubiaomac, that.shoubiaosn,
+								"81EEA001-E735-49EC-8A11-7E32CAE1E14E", that.writeuuid)
 						}
 					} catch (error) {
 						that.resetDataState();
@@ -2494,10 +3168,11 @@
 					try {
 						// 转换数据为十六进制字符串
 						let hexData = that.ab2hex(res.value);
-						console.log("蓝牙接收到的数据", hexData)
+						// if (!hexData.startsWith("0000") || !hexData.endsWith("000000000")) {
+						// console.log("蓝牙接收到的数据", hexData)
+						// }
+						that.log("蓝牙接收到的数据", hexData)
 						let asciiString = that.hexToAscii(hexData)
-						// 调试输出
-						// console.log(`Received packet: ${hexData}`);
 						// 处理特殊断开请求包
 						if (asciiString === "error") {
 							that.handleDisconnectRequest(deviceId);
@@ -2541,6 +3216,7 @@
 						that.dataBuffer.push(hexData);
 						// 解析协议头和命令
 						const protocolId = hexData.slice(0, 2);
+						const protocolIdppg = hexData.slice(0, 4);
 						const cmd = hexData.slice(8, 10);
 						// 根据协议类型处理
 						if (protocolId === "e0") {
@@ -2551,9 +3227,8 @@
 								case "04":
 									switch (hexData.slice(12, 14)) {
 										case "01":
-											that.sendack(hexData, deviceId, serviceId, that
-												.writeuuid);
-											that.resetDataState()
+											await that.handleCMD0401(hexData, deviceId,
+												serviceId, deviceSn);
 											break
 										case "00":
 											await that.handleCMD04(hexData, deviceId,
@@ -2561,41 +3236,47 @@
 											break
 										case "10":
 											if (hexData.length < 160) {
-												const bytes = hexStringToBytes(hexData.slice(18, hexData
+												const bytes = hexStringToBytes(hexData.slice(18,
+													hexData
 													.length));
 												const sleepObj = receive5610SleepData(bytes);
 												const stats = that.calcSleepMinutes(sleepObj);
 												console.log('解析睡眠数据：', stats);
-												console.log('正式睡眠：', stats.formalReadable); // 5h 1min
-												console.log('totalLight：', stats.totalLight); // 6h 18min
-												console.log('totalDeep：', stats.totalDeep); // 5h 1min
-												console.log('totalRem：', stats.totalRem); // 6h 18min
-												console.log('napReadable：', stats.napReadable); // 6h 18min
+												// console.log('正式睡眠：', stats.formalReadable); // 5h 1min
+												// console.log('totalLight：', stats.totalLight); // 6h 18min
+												// console.log('totalDeep：', stats.totalDeep); // 5h 1min
+												// console.log('totalRem：', stats.totalRem); // 6h 18min
+												// console.log('napReadable：', stats.napReadable); // 6h 18min
 												that.sleeepalldata = stats
 												uni.setStorageSync("totalLight", stats.totalLight)
 												uni.setStorageSync("totalDeep", stats.totalDeep)
 												uni.setStorageSync("totalRem", stats.totalRem)
-												uni.setStorageSync("sleep", stats.totalReadable)
+												uni.setStorageSync("sleep", stats.formalReadable)
 												uni.setStorageSync("sleep_time", sleepObj.date.slice(6,
 													sleepObj.date.length).replace("-", "/"))
-												that.sleep = stats.totalReadable
+												that.sleep = stats.formalReadable
 												that.totalLight = stats.totalLight
 												that.totalDeep = stats.totalDeep
 												that.totalRem = stats.totalRem
 												// 1. 总睡眠小时数（ 保留 1 位小数）
-												const totalAll = that.timeStrToMinutes(that.sleep); // 436
+												const totalAll = that.timeStrToMinutes(that
+													.sleep); // 436
 												const totalH = (totalAll / 60).toFixed(1)
-												const deepMin = (that.timeStrToMinutes(that.totalDeep) / 60)
+												const deepMin = (that.timeStrToMinutes(that
+														.totalDeep) / 60)
 													.toFixed(1);
-												const remMin = (that.timeStrToMinutes(that.totalRem) / 60)
+												const remMin = (that.timeStrToMinutes(that.totalRem) /
+														60)
 													.toFixed(1);
-												const lightMin = (that.timeStrToMinutes(that.totalLight) / 60)
+												const lightMin = (that.timeStrToMinutes(that
+														.totalLight) / 60)
 													.toFixed(1)
-												that.sleep_point = that.overallSleepScore(totalAll, totalH,
+												that.sleep_point = that.overallSleepScore(totalAll,
+													totalH,
 													deepMin,
 													remMin, lightMin)
 												that.jakoblife_fat_scale3(that.shoubiaomac, stats
-													.totalReadable, that.shoubiaosn,
+													.formalReadable, that.shoubiaosn,
 													"睡眠");
 												that.resetDataState()
 											} else {
@@ -2609,7 +3290,8 @@
 									}
 									break;
 								case "03":
-									that.handleCMD03(hexData);
+									that.handleCMD03(hexData, deviceId, serviceId, that.writeuuid,
+										deviceSn);
 									break;
 								case "01":
 									that.sendack(hexData, deviceId, serviceId, that.writeuuid);
@@ -2620,17 +3302,83 @@
 									that.sendack(hexData, deviceId, serviceId, that.writeuuid);
 									that.resetDataState();
 									break;
+								case "20":
+									console.log("手表升级")
+									if (hexData.length === 20) {
+										switch (hexData.slice(18, hexData.length)) {
+											case "01":
+												console.log("手表电量不足")
+												uni.showModal({
+													content: that.$t("手表电量不足"),
+													confirmText: that.$t('确定'),
+													showCancel: false,
+													success(modal) {
+														if (modal.confirm) {}
+													}
+												});
+												that.resetDataState()
+												return
+												break
+											case "02":
+												that.resetDataState()
+												break
+											case "03":
+												that.resetDataState()
+												break
+											case "04":
+												that.resetDataState()
+												break
+										}
+									}
+									if (hexData.length > 20 && hexData.length < 160) {
+										const bytes = hexData.slice(18, hexData.length);
+										console.log("手环信息更新", bytes)
+										that.loadFiles(bytes.toUpperCase(), deviceId, serviceId)
+									}
+									break;
 								default:
-									that.resetDataState();
 									console.log("未知CMD:", cmd);
 									break
 							}
 						} else if (protocolId === "0e") {
-							that.resetDataState();
+							if (cmd === "06") {
+								if (uni.getStorageSync("sleep_alert") === 1 || uni.getStorageSync(
+										"sendwatch") === 1) {
+									if (that.watchtimer) {
+										clearInterval(that.watchtimer);
+										that.watchtimer = null;
+									}
+									let watchtime = 20
+									that.watchtimer = setInterval(() => {
+										watchtime--;
+										if (watchtime < 1) {
+											clearInterval(that.watchtimer);
+											that.watchtimer = null
+											uni.hideLoading()
+											uni.showModal({
+												content: that.$t("这个功能需要手表软件版本在"),
+												confirmText: that.$t('确定'),
+												showCancel: false,
+												success(modal) {
+													if (modal.confirm) {
+														uni.removeStorageSync(
+															"sleep_alert")
+														that.sleep_alertdisabled = false
+													}
+												}
+											})
+										}
+									}, 1000)
+								}
+							}
+							if (protocolIdppg === "0e00") {
+								that.resetDataState();
+							}
 						}
-
 						// 检查并处理完整数据集
-						that.processCompleteDataSets(deviceId, deviceSn);
+						that.processCompleteDataSets(deviceId, deviceSn, serviceId, that
+							.writeuuid);
+
 					} catch (error) {
 						that.resetDataState();
 					}
@@ -2639,9 +3387,6 @@
 			calcSleepMinutes(sleepObj) {
 				// 正式睡眠：浅睡 + 深睡 + 眼动
 				const formalMinutes = sleepObj.totalLight + sleepObj.totalDeep + sleepObj.totalRem;
-				// console.log("Light", sleepObj.totalLight)
-				// console.log("totalDeep", sleepObj.totalDeep)
-				// console.log("totalRem", sleepObj.totalRem)
 				const Light = sleepObj.totalLight
 				const Deep = sleepObj.totalDeep
 				const Rem = sleepObj.totalRem
@@ -2694,38 +3439,39 @@
 					success: function(res) {
 						if (res.networkType === 'none') {
 							that.bgaaa(parsedData.dia.trim(), parsedData.sys.trim())
-							that.updateBloodPressureStatus(parsedData.dia.trim(), parsedData.sys.trim());
+							that.updateBloodPressureStatus(parsedData.dia.trim(), parsedData.sys
+								.trim());
 						} else {
 							that.bgaaa(parsedData.dia.trim(), parsedData.sys.trim())
-							that.updateBloodPressureStatus(parsedData.dia.trim(), parsedData.sys.trim());
+							that.updateBloodPressureStatus(parsedData.dia.trim(), parsedData.sys
+								.trim());
 						}
 					},
 					fail: function(err) {
 						console.error('获取网络类型失败：', err);
 					}
 				});
-
 				that.xeuyabiaoshi = "1"
 				await that.jakoblife_fat_scale(deviceSn, parsedData, deviceSn);
 				that.resetDataState();
 			},
 			// 处理完整的数据集
-			processCompleteDataSets(deviceId, deviceSn) {
-				if (this.formatData(this.dataBuffer).slice(12, 14) === "01" && this.formatData(this
-						.dataBuffer).slice(8, 10) === "04") {
-					this.resetDataState()
-				}
-				if (this.formatData(this.dataBuffer).slice(12, 14) === "" && this.formatData(this
-						.dataBuffer).slice(8, 10) === "") {
-					this.resetDataState()
-				}
-				if (this.formatData(this.dataBuffer).startsWith("0000") || this.formatData(this
-						.dataBuffer).endsWith("0000")) {
-					this.resetDataState()
-				}
-				if (!this.formatData(this.dataBuffer).startsWith("e0")) {
-					this.resetDataState()
-				}
+			processCompleteDataSets(deviceId, deviceSn, serviceId, writeuuid) {
+				// if (this.formatData(this.dataBuffer).slice(12, 14) === "01" && this.formatData(this
+				// 		.dataBuffer).slice(8, 10) === "04") {
+				// 	this.resetDataState()
+				// }
+				// if (this.formatData(this.dataBuffer).slice(12, 14) === "" && this.formatData(this
+				// 		.dataBuffer).slice(8, 10) === "") {
+				// 	this.resetDataState()
+				// }
+				// if (this.formatData(this.dataBuffer).startsWith("000000") || this.formatData(this
+				// 		.dataBuffer).endsWith("000000000000")) {
+				// 	this.resetDataState()
+				// }
+				// if (!this.formatData(this.dataBuffer).startsWith("e0")) {
+				// 	this.resetDataState()
+				// }
 				if (this.quotient2 > 0 && this.dataBuffer.length === this.quotient2) {
 					console.log(this.dataBuffer.length)
 					console.log(this.dataBuffer)
@@ -2736,16 +3482,16 @@
 					const stats = this.calcSleepMinutes(sleepObj);
 					this.sleeepalldata = stats
 					console.log('解析睡眠数据：', stats);
-					console.log('正式睡眠：', stats.formalReadable); // 5h 1min
-					console.log('totalLight：', stats.totalLight); // 6h 18min
-					console.log('totalDeep：', stats.totalDeep); // 5h 1min
-					console.log('totalRem：', stats.totalRem); // 6h 18min
-					console.log('napReadable：', stats.napReadable); // 6h 18min
+					// console.log('正式睡眠：', stats.formalReadable);
+					// console.log('totalLight：', stats.totalLight);
+					// console.log('totalDeep：', stats.totalDeep);
+					// console.log('totalRem：', stats.totalRem);
+					// console.log('napReadable：', stats.napReadable);
 					uni.setStorageSync("totalLight", stats.totalLight)
 					uni.setStorageSync("totalDeep", stats.totalDeep)
 					uni.setStorageSync("totalRem", stats.totalRem)
-					uni.setStorageSync("sleep", stats.totalReadable)
-					this.sleep = stats.totalReadable
+					uni.setStorageSync("sleep", stats.formalReadable)
+					this.sleep = stats.formalReadable
 					this.totalLight = stats.totalLight
 					this.totalDeep = stats.totalDeep
 					this.totalRem = stats.totalRem
@@ -2759,9 +3505,12 @@
 						remMin, lightMin)
 					uni.setStorageSync("sleep_time", sleepObj.date.slice(6, sleepObj.date
 						.length).replace("-", "/"))
-					this.jakoblife_fat_scale3(this.shoubiaomac, stats.totalReadable, this
+					this.jakoblife_fat_scale3(this.shoubiaomac, stats.formalReadable, this
 						.shoubiaosn,
 						"睡眠");
+					this.resetDataState()
+				} else if (this.quotient3 > 0 && this.dataBuffer.length === this.quotient3) {
+					// console.log(this.quotient3, this.dataBuffer)
 					this.resetDataState()
 				} else if (this.quotient > 0 && this.quotient1 > 0 &&
 					this.dataBuffer.length === this.quotient + this.quotient1) {
@@ -2769,8 +3518,1374 @@
 					this.processCombinedBloodPressureAndHeartRate(deviceId, deviceSn);
 				} else if (this.quotient === 0 && this.quotient1 > 0 &&
 					this.dataBuffer.length === this.quotient1) {
-					// 情况2：只有心率/血氧数据
+					// 情况2：只有心率/血氧数据77
 					this.processSingleDataType(deviceId, deviceSn);
+				} else if (this.quotientACC > 0 && this.dataBuffer.length === this.quotientACC) {
+					// this.log("开始接收ACC蓝牙数据包：" + this.dataBuffer)
+					const allDataACC = this.formatData(this.dataBuffer);
+					const ACCdata = allDataACC.slice(18, allDataACC.length)
+					// console.log("ACC蓝牙数据包：" + allDataACC)
+					const result = AccDataParser.debugParseExample(ACCdata);
+					// console.log('ACC解析之后的数据列表:' + JSON.stringify(result));
+					if (result.success) {
+						// 获取所有X轴数据
+						const xData = result.data.map(item => item.x);
+						const yData = result.data.map(item => item.y);
+						const zData = result.data.map(item => item.z);
+					} else {
+						console.error('解析失败:', result.error);
+					}
+					setTimeout(() => {
+						this.resetDataState();
+						this.sendack(allDataACC, deviceId, serviceId, writeuuid);
+					}, 10)
+				} else if (this.quotientPPG > 0 && this.dataBuffer.length === this.quotientPPG) {
+					const allDataPPG = this.formatData(this.dataBuffer);
+					// console.log("PPG蓝牙数据包：" + allDataPPG)
+					const PPGdata = allDataPPG.slice(18, allDataPPG.length)
+					const result = PPGParser.parsePPGData(PPGdata, `0x${this.PPGdataarray}`);
+					// console.log("PPG解析之后的数据包：" + JSON.stringify(result))
+					for (let i = 0; i < result.data.length; i++) {
+						let jsonppglist = {
+							// heartRate: this.pulse,
+							// seqNumber: result.seqNumber,
+							// seconds: result.data[i].seconds,
+							// time: result.data[i].time,
+							greenValue: result.data[i].greenValue,
+							irValue: result.data[i].irValue,
+							// greenValueirValue: this.toHex(result.data[i].greenValue, result.data[i]
+							// 	.irValue)
+							// greenValueirValue: `${this.intToHex(result.data[i].greenValue, true, 4)}${this.intToHex(result.data[i].irValue, true, 4)}`,
+							// greenValue16: this.intToHex(result.data[i].greenValue, true, 4) //负数自动使用补码
+							// index: result.data[i].index
+						}
+						// this.log("PPG解析之后的数据：", JSON.stringify(result.data[i].greenValue))
+						// console.log("PPG解析之后的数据：", JSON.stringify(result.data[i].greenValue))
+						this.bufferPPG.push(result.data[i].greenValue)
+					}
+					setTimeout(() => {
+						this.resetDataState();
+						this.sendack(allDataPPG, deviceId, serviceId, this.writeuuid);
+					}, 10)
+				}
+			},
+
+			getCurrentTime() {
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = String(now.getMonth() + 1).padStart(
+					2, '0');
+				const day = String(now.getDate()).padStart(2, '0');
+				const hours = String(now.getHours()).padStart(2,
+					'0');
+				const minutes = String(now.getMinutes()).padStart(
+					2, '0');
+				const seconds = String(now.getSeconds()).padStart(
+					2, '0');
+
+				return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+			},
+			getCurrentTimePPG() {
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = String(now.getMonth() + 1).padStart(
+					2, '0');
+				const day = String(now.getDate()).padStart(2, '0');
+				const hours = String(now.getHours()).padStart(2,
+					'0');
+				const minutes = String(now.getMinutes()).padStart(
+					2, '0');
+				const seconds = String(now.getSeconds()).padStart(
+					2, '0');
+				return `${year}-${month}-${day}`;
+			},
+
+			// PPG原始波形数据存储 
+			ppgdata(rawData, deviceSn) {
+				let data = {
+					patientId: uni.getStorageSync("userid"), //患者id
+					deviceSn: deviceSn, //设备sn
+					deviceModel: "BPW1", //设备型号
+					samplingRate: 25, //采样率(Hz)
+					startTime: this.getCurrentTime(), // payload.duration, 采集开始时间(微秒精度)
+					dataFormat: "INT16", //数据编码格式
+					signalRange: 0, //信号强度范围
+					rawData: rawData, //二进制PPG波形数据
+					dataLength: "", //自动计算采样点数
+					signalType: "GREEN", //PPG信号类型
+					ledCurrent: 0, //LED驱动电流(mA)
+					ambientLight: 0, //环境光强度
+					motionLevel: 0,
+					qualityScore: 0,
+					qualityVersion: 0,
+					processingStatus: "RAW"
+				}
+				console.log("data", data)
+				this.$post(this.$url_APP_IP + "/prod-api/device/ppgdata", data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8'
+				}).then((ppgdatares) => {
+					console.log("ppgdatares", ppgdatares)
+					if (ppgdatares.code === 200) {
+						// this.log("上传ppg数据成功，弹窗云端数据计算中，并开始获取计算结果")
+						uni.showLoading({
+							title: this.$t("云端数据计算中")
+						})
+						// this.log("云端数据计算中")
+						this.deviceppgdatalist()
+					}
+				})
+			},
+			//查询PPG原始波形数据存储列表
+			deviceppgdatalist() {
+				let that = this
+				let dataparin = {
+					patientId: uni.getStorageSync("userid"), //患者id
+					// startTime: this.getCurrentTime()
+				}
+				that.$get(that.$url_APP_IP + "/prod-api/device/ppgdata/list", dataparin, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8'
+				}).then((deviceppgdatalist) => {
+					console.log("deviceppgdatalist", deviceppgdatalist)
+					// that.log("获取计算结果", deviceppgdatalist)
+					if (deviceppgdatalist.code === 200 && deviceppgdatalist.rows.length > 0) {
+						if (deviceppgdatalist.rows[deviceppgdatalist.total - 1].processingStatus ===
+							"ANALYZED") {
+							// that.log("获取计算结果：ANALYZED，准备下一步页面展示")
+							that.sleep_alertdisabled = false
+							uni.hideLoading();
+							that.ppgdatalist()
+						} else if (deviceppgdatalist.rows[deviceppgdatalist.total - 1].processingStatus ===
+							"ERROR") {
+							// that.log("获取计算结果：ERROR，弹窗，且不页面不展示")
+							that.sleep_alertdisabled = false
+							uni.hideLoading();
+							uni.showModal({
+								content: that.$t("测试质量不够好"),
+								confirmText: that.$t('确定'),
+								showCancel: false,
+								success(modal) {
+									if (modal.confirm) {
+
+									}
+								}
+							})
+							console.log("数据处理有误")
+						} else {
+							// that.log("未获取到ppg分析结果，继续获取", deviceppgdatalist.rows[deviceppgdatalist.total -
+							// 		1]
+							// 	.processingStatus)
+							setTimeout(() => {
+								that.deviceppgdatalist()
+							}, 1000)
+						}
+					} else {
+						// that.log("未获取到ppg分析结果，继续获取")
+						setTimeout(() => {
+							that.deviceppgdatalist()
+						}, 1000)
+					}
+				})
+			},
+			//根据患者id查询PPG信号最新分析结果
+			ppgdatalist() {
+				let that = this
+				let ppgdata = {
+					patientId: uni.getStorageSync("userid"),
+					// startTime: this.getCurrentTime()
+				}
+				that.$get(that.$url_APP_IP + "/prod-api/device/ppgresults/get_result_by_patient_id", ppgdata, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8'
+				}).then((ppgdatalist) => {
+					console.log("ppgdatalist", ppgdatalist)
+					if (ppgdatalist.code === 200) {
+						uni.hideLoading();
+						this.ppgresultslist(this.types_index)
+						this.ppgresultslist2(this.types_index)
+						// 计算信号质量
+						switch (ppgdatalist.data.signalQualityLevel) {
+							case "EXCELLENT":
+								that.signal_quality_level = that.$t("信号质量极佳")
+								break
+							case "GOOD":
+								that.signal_quality_level = that.$t("信号质量良好")
+								break
+							case "FAIR":
+								that.signal_quality_level = that.$t("信号质量一般")
+								break
+							case "POOR":
+								that.signal_quality_level = that.$t("信号质量较差")
+								break
+						}
+					} else {
+						console.log("哈哈哈哈哈哈哈")
+						uni.hideLoading();
+					}
+				})
+
+			},
+			ppgresultslist(recordId) {
+				let ppgdata = {
+					patientId: uni.getStorageSync("userid"),
+					startTime: this.getCurrentTimePPG() + " 00:00:00",
+					endTime: this.getCurrentTimePPG() + " 23:59:59",
+				}
+				// console.log("onshowppgdata", ppgdata)
+				this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id",
+					ppgdata, {
+						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'content-type': 'application/json;charset=UTF-8'
+					}).then((ppgresultslist) => {
+					console.log("ppgresultslist", ppgresultslist)
+					if (ppgresultslist.code === 200 && ppgresultslist.data.length > 0) {
+						this.chartDataPPG.categories = []
+						this.chartDataPPG.series = [{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7'
+							},
+							{
+								legendShape: "none",
+								name: "",
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7'
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7'
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7'
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7'
+							}
+						]
+						for (let p = ppgresultslist.data.length - 1; p >= 0; p--) {
+							this.signal_quality_score = ppgresultslist.data[p].analysisConfidence
+							this.ppgnewpoint = ppgresultslist.data[p].moodIndex + "/10";
+							this.depression_risk_score = ppgresultslist.data[p].depressionRiskScore +
+								"/10";
+							//综合指数
+							this.stress_Index = ppgresultslist.data[p].stressIndex +
+								"/10"; //压力指数
+							this.fatigue_index = ppgresultslist.data[p].fatigueIndex +
+								"/10"; //疲劳指数
+							this.recovery_index = ppgresultslist.data[p].recoveryIndex +
+								"/10"; //恢复指数
+							// this.chartDataPPG.categories.push(ppgresultslist.data[p].createdTime.slice(11, 16));
+							this.chartDataPPG.categories.push(ppgresultslist.data.length - p);
+							if (recordId === 0) {
+								this.chartDataPPG.series[0].data.push(ppgresultslist.data[p].moodIndex);
+								this.optsPPG.extra.markLine.data[0].value = 8
+								this.optsPPG.extra.markLine.data[0].lineColor = "#41EB08"
+								this.optsPPG.extra.markLine.data[0].showLabel = true
+								this.optsPPG.extra.markLine.data[0].labelText = this.$t("积极愉悦2")
+								this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[0].labelOffsetX = Language == 'zh-Hans' ||
+									Language ==
+									'zh-Hant' ? 60 : 145
+								this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[1].value = 6
+								this.optsPPG.extra.markLine.data[1].lineColor = "#3298F7"
+								this.optsPPG.extra.markLine.data[1].showLabel = true
+								this.optsPPG.extra.markLine.data[1].labelText = this.$t("平静稳定2")
+								this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[1].labelOffsetX = Language == 'zh-Hans' ||
+									Language ==
+									'zh-Hant' ? 60 : 115
+								this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[2].value = 4
+								this.optsPPG.extra.markLine.data[2].lineColor = "#FF6B6B"
+								this.optsPPG.extra.markLine.data[2].showLabel = true
+								this.optsPPG.extra.markLine.data[2].labelText = this.$t("轻微压力2")
+								this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[2].labelOffsetX = Language == 'zh-Hans' ||
+									Language ==
+									'zh-Hant' ? 60 : 83
+								this.optsPPG.extra.markLine.data[2].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[3].value = 0
+								this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[3].showLabel = true
+								this.optsPPG.extra.markLine.data[3].labelText = this.$t("明显压力2")
+								this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[3].labelOffsetX = Language == 'zh-Hans' ||
+									Language ==
+									'zh-Hant' ? 60 : 122
+								this.optsPPG.extra.markLine.data[3].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							} else if (recordId === 1) {
+								this.chartDataPPG.series[1].data.push(ppgresultslist.data[p].depressionRiskScore);
+								this.optsPPG.extra.markLine.data[0].value = 8
+								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG.extra.markLine.data[0].showLabel = true
+								this.optsPPG.extra.markLine.data[0].labelText = this.$t("较高风险2")
+								this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 70
+								this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[1].value = 5
+								this.optsPPG.extra.markLine.data[1].lineColor = "#3298F7"
+								this.optsPPG.extra.markLine.data[1].showLabel = true
+								this.optsPPG.extra.markLine.data[1].labelText = this.$t("中等风险2")
+								this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 90
+								this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[2].value = 0
+								this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[2].showLabel = true
+								this.optsPPG.extra.markLine.data[2].labelText = this.$t("较低风险2")
+								this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[2].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 70
+								this.optsPPG.extra.markLine.data[2].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[3].value = 0
+								this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[3].showLabel = false
+								this.optsPPG.extra.markLine.data[3].labelText = ""
+								this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							} else if (recordId === 2) {
+								this.chartDataPPG.series[2].data.push(ppgresultslist.data[p].stressIndex);
+								this.optsPPG.extra.markLine.data[0].value = 5
+								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG.extra.markLine.data[0].showLabel = true
+								this.optsPPG.extra.markLine.data[0].labelText = this.$t("压力大2")
+								this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 85
+								this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[1].value = 0
+								this.optsPPG.extra.markLine.data[1].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].showLabel = true
+								this.optsPPG.extra.markLine.data[1].labelText = this.$t("压力小2")
+								this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 85
+								this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[2].value = 0
+								this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[2].showLabel = false
+								this.optsPPG.extra.markLine.data[2].labelText = ""
+								this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[2].labelOffsetX = 60
+								this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[3].value = 0
+								this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[3].showLabel = false
+								this.optsPPG.extra.markLine.data[3].labelText = ""
+								this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							} else if (recordId === 3) {
+								this.chartDataPPG.series[3].data.push(ppgresultslist.data[p].fatigueIndex);
+								this.optsPPG.extra.markLine.data[0].value = 5
+								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG.extra.markLine.data[0].showLabel = true
+								this.optsPPG.extra.markLine.data[0].labelText = this.$t("疲劳度高2")
+								this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 125
+								this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[1].value = 0
+								this.optsPPG.extra.markLine.data[1].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].showLabel = true
+								this.optsPPG.extra.markLine.data[1].labelText = this.$t("疲劳度低2")
+								this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 120
+								this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[2].value = 0
+								this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[2].showLabel = false
+								this.optsPPG.extra.markLine.data[2].labelText = ""
+								this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[2].labelOffsetX = 60
+								this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[3].value = 0
+								this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[3].showLabel = false
+								this.optsPPG.extra.markLine.data[3].labelText = ""
+								this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							} else if (recordId === 4) {
+								this.chartDataPPG.series[4].data.push(ppgresultslist.data[p].recoveryIndex);
+								this.optsPPG.extra.markLine.data[0].value = 5
+								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG.extra.markLine.data[0].showLabel = true
+								this.optsPPG.extra.markLine.data[0].labelText = this.$t("恢复快2")
+								this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 100
+								this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[1].value = 0
+								this.optsPPG.extra.markLine.data[1].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].showLabel = true
+								this.optsPPG.extra.markLine.data[1].labelText = this.$t("恢复慢2")
+								this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 100
+								this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[2].value = 0
+								this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[2].showLabel = false
+								this.optsPPG.extra.markLine.data[2].labelText = ""
+								this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[2].labelOffsetX = 60
+								this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG.extra.markLine.data[3].value = 0
+								this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG.extra.markLine.data[3].showLabel = false
+								this.optsPPG.extra.markLine.data[3].labelText = ""
+								this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							}
+						}
+						// 计算信号质量
+						switch (ppgresultslist.data[0].signalQualityLevel) {
+							case "EXCELLENT":
+								this.signal_quality_level = this.$t("信号质量极佳")
+								break
+							case "GOOD":
+								this.signal_quality_level = this.$t("信号质量良好")
+								break
+							case "FAIR":
+								this.signal_quality_level = this.$t("信号质量一般")
+								break
+							case "POOR":
+								this.signal_quality_level = this.$t("信号质量较差")
+								break
+						}
+						switch (ppgresultslist.data[0].moodDescription) {
+							case "积极愉悦":
+								this.mood_Description = this.$t("积极愉悦1")
+								break
+							case "平静稳定":
+								this.mood_Description = this.$t("平静稳定1")
+								break
+							case "轻微压力":
+								this.mood_Description = this.$t("轻微压力1")
+								break
+							case "明显压力":
+								this.mood_Description = this.$t("明显压力1")
+								break
+						}
+						//心情等级
+						switch (ppgresultslist.data[0].moodLevel) {
+							case "VERY_POSITIVE":
+								this.mood_level = this.$t("非常积极")
+								break
+							case "POSITIVE":
+								this.mood_level = this.$t("积极")
+								break
+							case "NEUTRAL":
+								this.mood_level = this.$t("平静稳定")
+								break
+							case "NEGATIVE":
+								this.mood_level = this.$t("负面")
+								break
+							case "VERY_NEGATIVE":
+								this.mood_level = this.$t("非常负面")
+								break
+						}
+
+						switch (ppgresultslist.data[0].depressionRecommendation) {
+							case "🟢 **低风险**: 保持健康生活方式，定期监测":
+								this.depression_recommendation = this.$t("保持良好的生活习惯")
+								break
+							case "🟡 **中风险**: 建议定期监测并考虑专业咨询。可尝试心理自助方法和压力管理":
+								this.depression_recommendation = this.$t("建议增加放松活动")
+								break
+							case "🔴 **高风险**: 强烈建议尽快咨询精神科医生或心理医生。建议进行专业心理评估和临床访谈":
+								this.depression_recommendation = this.$t("强烈建议咨询心理健康专业人士进行详细评估")
+								break
+							case "保持良好的生活习惯，定期监测心率变异性":
+								this.depression_recommendation = this.$t("保持良好的生活习惯")
+								break
+							case "建议增加放松活动，如冥想、深呼吸练习，考虑咨询专业人士":
+								this.depression_recommendation = this.$t("建议增加放松活动")
+								break
+							case "🔴 **高风险**: 强烈建议尽快咨询精神科医生或心理医生。建议进行专业心理评估和临床访谈":
+								this.depression_recommendation = this.$t("强烈建议咨询心理健康专业人士进行详细评估")
+								break
+						}
+						//抑郁风险等级
+						switch (ppgresultslist.data[0].depressionRiskLevel) {
+							case "LOW_RISK":
+								this.depression_risk_level = this.$t("较低风险")
+								break
+							case "MEDIUM_RISK":
+								this.depression_risk_level = this.$t("中等风险")
+								break
+							case "HIGH_RISK":
+								this.depression_risk_level = this.$t("较高风险")
+								break
+						}
+						//数据充足性
+						switch (ppgresultslist.data[0].dataSufficiency) {
+							case "SUFFICIENT":
+								this.data_sufficiency = this.$t("充足")
+								break
+							case "MODERATE":
+								this.data_sufficiency = this.$t("适中")
+								break
+							case "INSUFFICIENT":
+								this.data_sufficiency = this.$t("不足")
+								break
+						}
+					} else {
+						if (recordId === 0) {
+							this.chartDataPPG.series[0].data = [];
+							this.optsPPG.extra.markLine.data[0].value = 8
+							this.optsPPG.extra.markLine.data[0].lineColor = "#41EB08"
+							this.optsPPG.extra.markLine.data[0].showLabel = true
+							this.optsPPG.extra.markLine.data[0].labelText = this.$t("积极愉悦2")
+							this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[0].labelOffsetX = Language == 'zh-Hans' || Language ==
+								'zh-Hant' ? 60 : 145
+							this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[0].borderWidth = 0
+							this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[0].borderRadius = 4
+							this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[1].value = 6
+							this.optsPPG.extra.markLine.data[1].lineColor = "#3298F7"
+							this.optsPPG.extra.markLine.data[1].showLabel = true
+							this.optsPPG.extra.markLine.data[1].labelText = this.$t("平静稳定2")
+							this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[1].labelOffsetX = Language == 'zh-Hans' || Language ==
+								'zh-Hant' ? 60 : 115
+							this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[1].borderWidth = 0
+							this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[1].borderRadius = 4
+							this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[2].value = 4
+							this.optsPPG.extra.markLine.data[2].lineColor = "#FF6B6B"
+							this.optsPPG.extra.markLine.data[2].showLabel = true
+							this.optsPPG.extra.markLine.data[2].labelText = this.$t("轻微压力2")
+							this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[2].labelOffsetX = Language == 'zh-Hans' || Language ==
+								'zh-Hant' ? 60 : 83
+							this.optsPPG.extra.markLine.data[2].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[2].borderWidth = 0
+							this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[2].borderRadius = 4
+							this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[3].value = 0
+							this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[3].showLabel = true
+							this.optsPPG.extra.markLine.data[3].labelText = this.$t("明显压力2")
+							this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[3].labelOffsetX = Language == 'zh-Hans' || Language ==
+								'zh-Hant' ? 60 : 122
+							this.optsPPG.extra.markLine.data[3].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[3].borderWidth = 0
+							this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[3].borderRadius = 4
+							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+						} else if (recordId === 1) {
+							this.chartDataPPG.series[1].data = [];
+							this.optsPPG.extra.markLine.data[0].value = 8
+							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+							this.optsPPG.extra.markLine.data[0].showLabel = true
+							this.optsPPG.extra.markLine.data[0].labelText = this.$t("较高风险2")
+							this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 70
+							this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[0].borderWidth = 0
+							this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[0].borderRadius = 4
+							this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[1].value = 5
+							this.optsPPG.extra.markLine.data[1].lineColor = "#3298F7"
+							this.optsPPG.extra.markLine.data[1].showLabel = true
+							this.optsPPG.extra.markLine.data[1].labelText = this.$t("中等风险2")
+							this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 90
+							this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[1].borderWidth = 0
+							this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[1].borderRadius = 4
+							this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[2].value = 0
+							this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[2].showLabel = true
+							this.optsPPG.extra.markLine.data[2].labelText = this.$t("较低风险2")
+							this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[2].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 70
+							this.optsPPG.extra.markLine.data[2].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[2].borderWidth = 0
+							this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[2].borderRadius = 4
+							this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[3].value = 0
+							this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[3].showLabel = false
+							this.optsPPG.extra.markLine.data[3].labelText = ""
+							this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+							this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[3].borderWidth = 0
+							this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[3].borderRadius = 4
+							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+						} else if (recordId === 2) {
+							this.chartDataPPG.series[2].data = [];
+							this.optsPPG.extra.markLine.data[0].value = 5
+							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+							this.optsPPG.extra.markLine.data[0].showLabel = true
+							this.optsPPG.extra.markLine.data[0].labelText = this.$t("压力大2")
+							this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 85
+							this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[0].borderWidth = 0
+							this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[0].borderRadius = 4
+							this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[1].value = 0
+							this.optsPPG.extra.markLine.data[1].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].showLabel = true
+							this.optsPPG.extra.markLine.data[1].labelText = this.$t("压力小2")
+							this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 85
+							this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[1].borderWidth = 0
+							this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[1].borderRadius = 4
+							this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[2].value = 0
+							this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[2].showLabel = false
+							this.optsPPG.extra.markLine.data[2].labelText = ""
+							this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[2].labelOffsetX = 60
+							this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[2].borderWidth = 0
+							this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[2].borderRadius = 4
+							this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[3].value = 0
+							this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[3].showLabel = false
+							this.optsPPG.extra.markLine.data[3].labelText = ""
+							this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+							this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[3].borderWidth = 0
+							this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[3].borderRadius = 4
+							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+						} else if (recordId === 3) {
+							this.chartDataPPG.series[3].data = [];
+							this.optsPPG.extra.markLine.data[0].value = 5
+							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+							this.optsPPG.extra.markLine.data[0].showLabel = true
+							this.optsPPG.extra.markLine.data[0].labelText = this.$t("疲劳度高2")
+							this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 125
+							this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[0].borderWidth = 0
+							this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[0].borderRadius = 4
+							this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[1].value = 0
+							this.optsPPG.extra.markLine.data[1].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].showLabel = true
+							this.optsPPG.extra.markLine.data[1].labelText = this.$t("疲劳度低2")
+							this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 120
+							this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[1].borderWidth = 0
+							this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[1].borderRadius = 4
+							this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[2].value = 0
+							this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[2].showLabel = false
+							this.optsPPG.extra.markLine.data[2].labelText = ""
+							this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[2].labelOffsetX = 60
+							this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[2].borderWidth = 0
+							this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[2].borderRadius = 4
+							this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[3].value = 0
+							this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[3].showLabel = false
+							this.optsPPG.extra.markLine.data[3].labelText = ""
+							this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+							this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[3].borderWidth = 0
+							this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[3].borderRadius = 4
+							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+						} else if (recordId === 4) {
+							this.chartDataPPG.series[4].data = [];
+							this.optsPPG.extra.markLine.data[0].value = 5
+							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
+							this.optsPPG.extra.markLine.data[0].showLabel = true
+							this.optsPPG.extra.markLine.data[0].labelText = this.$t("恢复快2")
+							this.optsPPG.extra.markLine.data[0].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[0].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 100
+							this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[0].borderWidth = 0
+							this.optsPPG.extra.markLine.data[0].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[0].borderRadius = 4
+							this.optsPPG.extra.markLine.data[0].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[1].value = 0
+							this.optsPPG.extra.markLine.data[1].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].showLabel = true
+							this.optsPPG.extra.markLine.data[1].labelText = this.$t("恢复慢2")
+							this.optsPPG.extra.markLine.data[1].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[1].labelOffsetX = Language ==
+								'zh-Hans' || Language == 'zh-Hant' ? 60 : 100
+							this.optsPPG.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[1].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[1].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[1].borderWidth = 0
+							this.optsPPG.extra.markLine.data[1].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[1].borderRadius = 4
+							this.optsPPG.extra.markLine.data[1].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[2].value = 0
+							this.optsPPG.extra.markLine.data[2].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[2].showLabel = false
+							this.optsPPG.extra.markLine.data[2].labelText = ""
+							this.optsPPG.extra.markLine.data[2].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[2].labelOffsetX = 60
+							this.optsPPG.extra.markLine.data[2].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[2].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[2].borderWidth = 0
+							this.optsPPG.extra.markLine.data[2].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[2].borderRadius = 4
+							this.optsPPG.extra.markLine.data[2].padding = [4, 8, 4, 8]
+							this.optsPPG.extra.markLine.data[3].value = 0
+							this.optsPPG.extra.markLine.data[3].lineColor = "#D8D8D6"
+							this.optsPPG.extra.markLine.data[3].showLabel = false
+							this.optsPPG.extra.markLine.data[3].labelText = ""
+							this.optsPPG.extra.markLine.data[3].labelAlign = "left"
+							this.optsPPG.extra.markLine.data[3].labelOffsetX = 60
+							this.optsPPG.extra.markLine.data[3].labelOffsetY = -15
+							this.optsPPG.extra.markLine.data[3].labelBgOpacity = -0.8
+							this.optsPPG.extra.markLine.data[3].borderWidth = 0
+							this.optsPPG.extra.markLine.data[3].borderColor = "transparent"
+							this.optsPPG.extra.markLine.data[3].borderRadius = 4
+							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
+						}
+
+					}
+
+				})
+			},
+
+
+
+			//两周平均分
+			ppgresultslist2(recordId) {
+				let endTime = this.getCurrentTimePPG() + " 23:59:59"
+				let initialDate = new Date(endTime)
+				let minusOneWeek = new Date(initialDate)
+				minusOneWeek.setDate(minusOneWeek.getDate() - 13) // 两周
+				let startTime = minusOneWeek.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
+				let ppgdata = {
+					patientId: uni.getStorageSync("userid"),
+					startTime: startTime,
+					endTime: endTime,
+				}
+				// console.log("onshowppgdata", ppgdata)
+				this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id",
+					ppgdata, {
+						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'content-type': 'application/json;charset=UTF-8'
+					}).then((ppgresultslist) => {
+					console.log("ppgresultslist", ppgresultslist)
+					if (ppgresultslist.code === 200 && ppgresultslist.data.length > 0) {
+						// 1. 按日期分组计算每日平均分
+						const dailyData = {};
+						ppgresultslist.data.forEach(item => {
+							const date = item.analysisTime.split(' ')[0]; // 获取日期部分，如 "2026-01-08"
+							if (!dailyData[date]) {
+								dailyData[date] = {
+									sumMoodIndex: 0, //心情评估
+									sumDepressionRisk: 0, //心理指数
+									sumstressIndex: 0, //压力指数
+									sumfatigueIndex: 0, //疲劳指数
+									sumrecoveryIndex: 0, //恢复指数
+									count: 0,
+									date: date
+								};
+							}
+							dailyData[date].sumMoodIndex += item.moodIndex;
+							// 假设后端返回的抑郁风险分数字段名为 depressionRiskScore
+							// 如果字段名不同，请修改为实际的字段名
+							dailyData[date].sumDepressionRisk += item.depressionRiskScore || 0;
+							dailyData[date].sumstressIndex += item.stressIndex || 0;
+							dailyData[date].sumfatigueIndex += item.fatigueIndex || 0;
+							dailyData[date].sumrecoveryIndex += item.recoveryIndex || 0;
+							dailyData[date].count++;
+						});
+
+						// 2. 计算每日平均值并转换为数组
+						const dailyAverages = Object.values(dailyData).map(item => {
+							return {
+								date: item.date,
+								averageMoodIndex: item.sumMoodIndex / item.count,
+								averageDepressionRisk: item.sumDepressionRisk / item.count,
+								averagestressIndex: item.sumstressIndex / item.count,
+								averagesumfatigueIndex: item.sumfatigueIndex / item.count,
+								averagesumrecoveryIndex: item.sumrecoveryIndex / item.count
+							};
+						});
+
+						// 3. 按日期排序（从早到晚）
+						dailyAverages.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+						// 4. 初始化图表数据
+						this.chartDataPPG2.categories = []
+						this.chartDataPPG2.series = [{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7' // 蓝色表示心情指数
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7' // 红色表示抑郁风险
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7' // 红色表示抑郁风险
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7' // 红色表示抑郁风险
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7' // 红色表示抑郁风险
+							}
+						]
+						// 5. 填充图表数据
+						let dayCount = 1;
+						dailyAverages.forEach(item => {
+							// 可以选择显示日期或简单的序号
+							const datesfd = item.date.slice(8);
+							this.chartDataPPG2.categories.push(datesfd); // 或使用 item.date.slice(5) 显示月日
+							if (recordId === 0) {
+								// 心情指数数据
+								const avgMoodScore = item.averageMoodIndex.toFixed(1);
+								this.chartDataPPG2.series[0].data.push(avgMoodScore);
+								this.optsPPG2.extra.markLine.data[0].value = 8
+								this.optsPPG2.extra.markLine.data[0].lineColor = "#41EB08"
+								this.optsPPG2.extra.markLine.data[0].showLabel = true
+								this.optsPPG2.extra.markLine.data[0].labelText = this.$t("积极愉悦2")
+								this.optsPPG2.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 145
+								this.optsPPG2.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[1].value = 6
+								this.optsPPG2.extra.markLine.data[1].lineColor = "#3298F7"
+								this.optsPPG2.extra.markLine.data[1].showLabel = true
+								this.optsPPG2.extra.markLine.data[1].labelText = this.$t("平静稳定2")
+								this.optsPPG2.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 115
+								this.optsPPG2.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[2].value = 4
+								this.optsPPG2.extra.markLine.data[2].lineColor = "#FF6B6B"
+								this.optsPPG2.extra.markLine.data[2].showLabel = true
+								this.optsPPG2.extra.markLine.data[2].labelText = this.$t("轻微压力2")
+								this.optsPPG2.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[2].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 83
+								this.optsPPG2.extra.markLine.data[2].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[3].value = 0
+								this.optsPPG2.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[3].showLabel = true
+								this.optsPPG2.extra.markLine.data[3].labelText = this.$t("明显压力2")
+								this.optsPPG2.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[3].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 122
+								this.optsPPG2.extra.markLine.data[3].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							} else if (recordId === 1) {
+								// 抑郁风险数据
+								const avgRiskScore = item.averageDepressionRisk.toFixed(1);
+								this.chartDataPPG2.series[1].data.push(avgRiskScore);
+								this.optsPPG2.extra.markLine.data[0].value = 8
+								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG2.extra.markLine.data[0].showLabel = true
+								this.optsPPG2.extra.markLine.data[0].labelText = this.$t("较高风险2")
+								this.optsPPG2.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 70
+								this.optsPPG2.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[1].value = 5
+								this.optsPPG2.extra.markLine.data[1].lineColor = "#3298F7"
+								this.optsPPG2.extra.markLine.data[1].showLabel = true
+								this.optsPPG2.extra.markLine.data[1].labelText = this.$t("中等风险2")
+								this.optsPPG2.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 90
+								this.optsPPG2.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[2].value = 0
+								this.optsPPG2.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[2].showLabel = true
+								this.optsPPG2.extra.markLine.data[2].labelText = this.$t("较低风险2")
+								this.optsPPG2.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[2].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 70
+								this.optsPPG2.extra.markLine.data[2].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[3].value = 0
+								this.optsPPG2.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[3].showLabel = false
+								this.optsPPG2.extra.markLine.data[3].labelText = ""
+								this.optsPPG2.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG2.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							} else if (recordId === 2) {
+								// 压力指数
+								const avgRiskScore = item.averagestressIndex.toFixed(1);
+								this.chartDataPPG2.series[2].data.push(avgRiskScore);
+								this.optsPPG2.extra.markLine.data[0].value = 5
+								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG2.extra.markLine.data[0].showLabel = true
+								this.optsPPG2.extra.markLine.data[0].labelText = this.$t("压力大2")
+								this.optsPPG2.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 85
+								this.optsPPG2.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[1].value = 0
+								this.optsPPG2.extra.markLine.data[1].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].showLabel = true
+								this.optsPPG2.extra.markLine.data[1].labelText = this.$t("压力小2")
+								this.optsPPG2.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 85
+								this.optsPPG2.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[2].value = 0
+								this.optsPPG2.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[2].showLabel = false
+								this.optsPPG2.extra.markLine.data[2].labelText = ""
+								this.optsPPG2.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[2].labelOffsetX = 60
+								this.optsPPG2.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[3].value = 0
+								this.optsPPG2.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[3].showLabel = false
+								this.optsPPG2.extra.markLine.data[3].labelText = ""
+								this.optsPPG2.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG2.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							} else if (recordId === 3) {
+								// 疲劳指数
+								const avgRiskScore = item.averagesumfatigueIndex.toFixed(1);
+								this.chartDataPPG2.series[3].data.push(avgRiskScore);
+								this.optsPPG2.extra.markLine.data[0].value = 5
+								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG2.extra.markLine.data[0].showLabel = true
+								this.optsPPG2.extra.markLine.data[0].labelText = this.$t("疲劳度高2")
+								this.optsPPG2.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 125
+								this.optsPPG2.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[1].value = 0
+								this.optsPPG2.extra.markLine.data[1].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].showLabel = true
+								this.optsPPG2.extra.markLine.data[1].labelText = this.$t("疲劳度低2")
+								this.optsPPG2.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 120
+								this.optsPPG2.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[2].value = 0
+								this.optsPPG2.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[2].showLabel = false
+								this.optsPPG2.extra.markLine.data[2].labelText = ""
+								this.optsPPG2.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[2].labelOffsetX = 60
+								this.optsPPG2.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[3].value = 0
+								this.optsPPG2.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[3].showLabel = false
+								this.optsPPG2.extra.markLine.data[3].labelText = ""
+								this.optsPPG2.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG2.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
+
+							} else if (recordId === 4) {
+								// 恢复指数
+								const avgRiskScore = item.averagesumrecoveryIndex.toFixed(1);
+								this.chartDataPPG2.series[4].data.push(avgRiskScore);
+								this.optsPPG2.extra.markLine.data[0].value = 5
+								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
+								this.optsPPG2.extra.markLine.data[0].showLabel = true
+								this.optsPPG2.extra.markLine.data[0].labelText = this.$t("恢复快2")
+								this.optsPPG2.extra.markLine.data[0].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 100
+								this.optsPPG2.extra.markLine.data[0].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[0].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[0].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[0].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[0].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[0].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[0].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[1].value = 0
+								this.optsPPG2.extra.markLine.data[1].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].showLabel = true
+								this.optsPPG2.extra.markLine.data[1].labelText = this.$t("恢复慢2")
+								this.optsPPG2.extra.markLine.data[1].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetX = Language ==
+									'zh-Hans' || Language == 'zh-Hant' ? 60 : 100
+								this.optsPPG2.extra.markLine.data[1].labelFontColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[1].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[1].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[1].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[1].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[1].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[1].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[2].value = 0
+								this.optsPPG2.extra.markLine.data[2].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[2].showLabel = false
+								this.optsPPG2.extra.markLine.data[2].labelText = ""
+								this.optsPPG2.extra.markLine.data[2].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[2].labelOffsetX = 60
+								this.optsPPG2.extra.markLine.data[2].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[2].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[2].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[2].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[2].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[2].padding = [4, 8, 4, 8]
+								this.optsPPG2.extra.markLine.data[3].value = 0
+								this.optsPPG2.extra.markLine.data[3].lineColor = "#D8D8D6"
+								this.optsPPG2.extra.markLine.data[3].showLabel = false
+								this.optsPPG2.extra.markLine.data[3].labelText = ""
+								this.optsPPG2.extra.markLine.data[3].labelAlign = "left"
+								this.optsPPG2.extra.markLine.data[3].labelOffsetX = 60
+								this.optsPPG2.extra.markLine.data[3].labelOffsetY = -15
+								this.optsPPG2.extra.markLine.data[3].labelBgOpacity = -0.8
+								this.optsPPG2.extra.markLine.data[3].borderWidth = 0
+								this.optsPPG2.extra.markLine.data[3].borderColor = "transparent"
+								this.optsPPG2.extra.markLine.data[3].borderRadius = 4
+								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
+							}
+							dayCount++;
+						});
+						// 6. 处理最新一条记录的详细信息
+						const latestRecord = ppgresultslist.data[0];
+						// 可选：输出每日平均分用于调试
+						console.log("每日平均数据:", dailyAverages);
+						const isMoodLowFrequently = dailyAverages.filter(d => d.averageMoodIndex < 6).length >= 10;
+						console.log(isMoodLowFrequently); // true 或 false
+						// 先找出 mood < 6 的所有日期
+						const lowMoodDays = dailyAverages.filter(d => d.averageMoodIndex < 6);
+						// 在这些日期里，检查是否至少有一天同时满足 fatigue > 0.5 或 stress > 0.5
+						const hasHighFatigueOrStressInLowMoodDays = lowMoodDays.some(
+							d => d.averagesumfatigueIndex > 0.5 || d.averagestressIndex > 0.5
+						);
+						console.log(hasHighFatigueOrStressInLowMoodDays); // true 或 false
+						// 3. 最终同时满足两个条件
+						this.finalResult = isMoodLowFrequently && hasHighFatigueOrStressInLowMoodDays;
+						console.log("最终同时满足两个条件:", this.finalResult); // true / false
+						if (this.finalResult) {
+							uni.showModal({
+								content: this.$t("为了更准确地了解您的情绪状态"),
+								confirmText: this.$t('确定'),
+								cancelText: this.$t('取消'),
+								success(modal) {
+									if (modal.confirm) {
+										uni.navigateTo({
+											url: '/pages/tabBar/main/score/score'
+										})
+									}
+								}
+							})
+						}
+					}
+				})
+			},
+
+
+			types_change(e) {
+				this.types_index = e.detail.value
+				this.ppgresultslist(this.types_index)
+				this.ppgresultslist2(this.types_index)
+				uni.setStorageSync("types_index", this.types_index)
+			},
+
+			toggleDebug() {
+				this.showDebug = !this.showDebug;
+			},
+			onDrawComplete(info) {
+				// 每100帧显示一次
+				if (this.packetCount % 100 === 0) {
+					console.log('🎨 绘制完成:', info);
 				}
 			},
 
@@ -2779,18 +4894,58 @@
 				let that = this;
 				// 合并数据
 				const allData = that.formatData(that.dataBuffer);
-				console.log(allData)
+				// console.log(allData)
 				// 解析协议数据
 				const protocolData = that.parseProtocolData(allData);
-				console.log(protocolData)
+				// console.log(protocolData)
 				// 根据子命令类型处理不同数据
 				switch (protocolData.Protocolsubcommand) {
+					case "19":
+						const pulValue19 = that.parseHeartRateData(protocolData.Covmamlueand);
+						console.log("pulValue19", pulValue19)
+						that.lowPressure = that.Blood === "mmHg" ? pulValue19.diastolic : (Number(pulValue19
+							.diastolic) * 0.133).toFixed(1);
+						that.highPressure = that.Blood === "mmHg" ? pulValue19.systolic : (Number(pulValue19
+								.systolic) * 0.133)
+							.toFixed(1);
+						that.pulse = pulValue19.bloodPressureType;
+						uni.setStorageSync("lowPressure", pulValue19.diastolic)
+						uni.setStorageSync("highPressure", pulValue19.systolic)
+						uni.setStorageSync("pulse", pulValue19.bloodPressureType)
+						that.updateBloodPressureStatus(pulValue19.diastolic, pulValue19.systolic);
+						uni.getNetworkType({
+							success: function(res) {
+								if (res.networkType === 'none') {
+									if (uni.getStorageSync("hearttime") !== pulValue19.time) {
+										that.bgaaa(pulValue19.diastolic, pulValue19.systolic)
+									}
+								}
+							},
+							fail: function(err) {
+								console.error('获取网络类型失败：', err);
+							}
+						});
+						that.xeuyabiaoshi = "1"
+						if (uni.getStorageSync("hearttime") !== pulValue19.time) {
+							uni.setStorageSync("hearttime", pulValue19.time)
+							that.jakoblife_fat_scale22(
+								deviceId,
+								pulValue19.systolic,
+								pulValue19.diastolic,
+								pulValue19.bloodPressureType,
+								deviceSn
+							);
+						}
+						break
 					case "00": // 心率
 						const heartRateValue = that.parseHeartRateData(protocolData.Covmamlueand);
-						this.pulse = heartRateValue.diastolic
-						this.xeuyabiaoshi = "1"
-						that.jakoblife_fat_scale22(deviceId, "", "", heartRateValue.diastolic,
-							deviceSn);
+						if (heartRateValue.time !== uni.getStorageSync("heartRateValuetime")) {
+							that.pulse = heartRateValue.diastolic
+							that.xeuyabiaoshi = "1"
+							uni.setStorageSync("heartRateValuetime", heartRateValue.time)
+							that.jakoblife_fat_scale22(deviceId, "", "", heartRateValue.diastolic,
+								deviceSn);
+						}
 						break;
 					case "02": // 血氧
 						const oxygenValue = that.parseOxygenData(protocolData.Covmamlueand);
@@ -2821,48 +4976,253 @@
 				await this.jakoblife_fat_scale3(deviceId, stepCount, deviceSn, "步数");
 				this.resetDataState();
 			},
+			async handleCMD0401(hexData, deviceId, serviceId, deviceSn) {
+				// this.sendack(hexData, deviceId, serviceId, this.writeuuid);
+				const key = hexData.slice(12, 14);
+				const lengthHex = hexData.slice(2, 6);
+				const dataLength = parseInt(lengthHex, 16) + 4;
+				// console.log(key, lengthHex)
+				// console.log("dataLength", dataLength)
+				// 根据子命令类型计算分包数量
+				switch (key) {
+					case "01": // 睡眠01数据
+						this.quotient3 = this.calculateQuotient(dataLength, 80);
+						// console.log("this.quotient3", this.quotient3)
+						break;
+				}
+			},
 			// 处理CMD03命令
 			handleCMD01(hexData) {
 				const key = hexData.slice(12, 14);
-				const ProtocolLength2 = hexData.slice(4, 6);
-				const lengthHex = hexData.slice(4, 6); // 长度字段的后1字节
+				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16) + 4;
 				// 根据子命令类型计算分包数量
 				switch (key) {
 					case "10": // 睡眠
-						this.quotient2 = this.calculateQuotient(dataLength,
-							80); // 每个分包40字节
-						// console.log(`睡眠数据需要分包: ${this.quotient2}包`);
+						this.quotient2 = this.calculateQuotient(dataLength, 80);
 						break;
-						// default:
-						// console.warn("未知子命令:", key);
-						// this.resetDataState();
 				}
 			},
 			// 处理CMD03命令
-			handleCMD03(hexData) {
+			handleCMD03(hexData, deviceId, serviceId, writeuuid, deviceSn) {
 				const subCmd = hexData.slice(12, 14);
-				const lengthHex = hexData.slice(4, 6); // 长度字段的后1字节
+				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16);
-				// 完整包长度 = 协议头(3字节) + 数据长度(包含校验和等)
-				const fullPacketLength = dataLength + 3;
+				const fullPacketLength = dataLength + 4;
 				// 根据子命令类型计算分包数量
 				switch (subCmd) {
 					case "01": // 血压
-						this.quotient = this.calculateQuotient(fullPacketLength,
-							80); // 每个分包40字节
-						// console.log(`血压数据需要分包: ${this.quotient}包`);
+						this.quotient = this.calculateQuotient(fullPacketLength, 80);
 						break;
+					case "1d":
+						clearInterval(this.watchtimer);
+						this.watchtimer = null
+						uni.removeStorageSync("sleep_alert")
+						const ACCPPG = hexData.slice(hexData.length - 12, hexData.length)
+						const heartTime = ACCPPG.slice(0, 4); // 时间部分（2个字节）
+						const {
+							year,
+							month,
+							day
+						} = this.parseBinaryTime(heartTime);
+						this.PPGdataarray = ACCPPG.slice(4, 6)
+						const ACCdataarrayall = ACCPPG.slice(6, 8)
+						const PPGdataarrayall = ACCPPG.slice(8, 10)
+						const Status = ACCPPG.slice(10, ACCPPG.length)
+						const parsePPGConfigdata = this.parsePPGConfigDescOrder(this.PPGdataarray)
+						const dataall = {
+							hexData: 'hexData' + hexData,
+							ACCPPG: 'ACCPPG' + ACCPPG,
+							date: "日期" + `${year}年${month}月${day}日`,
+							PPGdataarray: 'PPG数据项定义:' + this.PPGdataarray,
+							ACCdataarrayall: 'ACC数据总组数:' + ACCdataarrayall,
+							PPGdataarrayall: 'PPG数据总组数:' + PPGdataarrayall,
+							Status: '传输状态:' + Status,
+							parsePPGConfigdata: '解析PPG数据配置字节:' + JSON.stringify(parsePPGConfigdata)
+						}
+						console.log("dataall", dataall)
+						if (this.watchtimer2) {
+							clearInterval(this.watchtimer2);
+							this.watchtimer2 = null;
+						}
+						let watchtime2 = 15
+						this.watchtimer2 = setInterval(() => {
+							watchtime2--;
+							if (watchtime2 <= 0) {
+								clearInterval(this.watchtimer2);
+								this.watchtimer2 = null;
+								uni.hideLoading();
+								uni.showModal({
+									content: this.$t("这个功能需要手表软件版本在"),
+									confirmText: this.$t('确定'),
+									showCancel: false,
+									success(modal) {
+										if (modal.confirm) {
+											uni.removeStorageSync("sleep_alert")
+											this.sleep_alertdisabled = false
+										}
+									}
+								})
+							}
+						}, 1000)
+						this.resetDataState();
+						switch (Status) {
+							case "01":
+								// this.log("收到手表回复的1d数据，01")
+								this.bufferPPG = []
+								clearInterval(this.watchtimer);
+								this.watchtimer = null
+								uni.removeStorageSync("sleep_alert")
+								setTimeout(() => {
+									// if (uni.getStorageSync("sleep_alert") === 1 || uni.getStorageSync(
+									// "sendwatch") === 1) {
+									this.sendack(hexData, deviceId, serviceId, writeuuid);
+									// this.log("收到手表回复的1d数据，回复ack")
+									// }
+								}, 100)
+								break
+							case "02":
+								uni.hideLoading()
+								clearInterval(this.watchtimer);
+								this.watchtimer = null
+								clearInterval(this.watchtimer2);
+								this.watchtimer2 = null;
+								uni.removeStorageSync("sleep_alert")
+								const binary = this.packInt16(this.bufferPPG)
+								this.ppgdata(binary, deviceSn)
+								this.bufferPPG = []
+								this.resetDataState();
+								break
+						}
+						break
+					case "1e":
+						this.quotientACC = this.calculateQuotient(fullPacketLength, 80);
+						break
+					case "1f":
+						this.quotientPPG = this.calculateQuotient(fullPacketLength, 80);
+						break
+					case "19": // 血压
 					case "00": // 心率
 					case "02": // 血氧
-						this.quotient1 = this.calculateQuotient(fullPacketLength,
-							80); // 每个分包40字节
-						// console.log(`心率/血氧数据需要分包: ${this.quotient1}包`);
+						this.quotient1 = this.calculateQuotient(fullPacketLength, 80);
 						break;
-						// default:
-						// console.warn("未知子命令:", subCmd);
-						// this.resetDataState();
 				}
+			},
+
+			arrayBufferToHex(buffer) {
+				const uint8Array = new Uint8Array(buffer)
+				return Array.from(uint8Array)
+					.map(b => b.toString(16).padStart(2, '0'))
+					.join('')
+			},
+
+			bufferToHex(buffer) {
+				const uint8 = new Uint8Array(buffer);
+				let hex = '';
+				for (let i = 0; i < uint8.length; i++) {
+					const h = uint8[i].toString(16).padStart(2, '0');
+					hex += h;
+				}
+				return hex;
+			},
+
+			intToHex(num, prefix = false, padLength = 0) {
+				let hex = num.toString(16).toUpperCase();
+				if (padLength > 0) {
+					hex = hex.padStart(padLength, '');
+				}
+				return prefix ? hex : hex;
+			},
+
+			packInt16(arr) {
+				let signalMin = Math.min(...arr);
+				let signalMax = Math.max(...arr);
+				let voltageRange = Math.max(Math.abs(signalMin), Math.abs(signalMax)) * 1.2;
+				// 动态缩放比例
+				const scale = 32767 / voltageRange;
+				const n = arr.length;
+				const ab = new ArrayBuffer(n * 2);
+				const view = new DataView(ab);
+				let int_data = [];
+				let conversionLog = [];
+				for (let i = 0; i < n; i++) {
+					let original = arr[i];
+					let scaled = original * scale;
+					let int16 = Math.round(scaled);
+					// 记录前20个点的转换过程
+					if (i < 20) {
+						conversionLog.push({
+							index: i,
+							original: original,
+							scaled: scaled,
+							int16: int16
+						});
+					}
+					view.setInt16(i * 2, int16, true);
+					int_data.push(int16);
+					// 检查溢出（应该不会发生，因为有20%余量）
+					if (int16 < -32768 || int16 > 32767) {
+						console.warn("   索引", i, "溢出! 值:", int16);
+					}
+				}
+				let resultMin = Math.min(...int_data);
+				let resultMax = Math.max(...int_data);
+				// 检查原始数据中的极值点
+				let maxIndex = arr.indexOf(signalMax);
+				let minIndex = arr.indexOf(signalMin);
+				// 随机抽取5个点验证反向计算
+				for (let j = 0; j < 5; j++) {
+					let randomIndex = Math.floor(Math.random() * n);
+					let originalVal = arr[randomIndex];
+					let convertedVal = int_data[randomIndex];
+					let reconstructed = convertedVal / scale;
+					let error = Math.abs(originalVal - reconstructed);
+				}
+				let base64 = uni.arrayBufferToBase64(ab);
+				return base64;
+			},
+
+			parseHexToInt16(hexStr) {
+				const bytes = hexStr.split(' ').map(h => parseInt(h, 16));
+				const results = [];
+
+				for (let i = 0; i < bytes.length; i += 2) {
+					if (i + 1 < bytes.length) {
+						// 小端序：低位字节在前
+						const int16 = (bytes[i + 1] << 8) | bytes[i];
+						// 转换为有符号int16
+						const signedInt16 = int16 > 32767 ? int16 - 65536 : int16;
+						results.push(signedInt16);
+					}
+				}
+
+				return results;
+			},
+
+
+
+
+			parsePPGConfigDescOrder(configByte) {
+				const byte = Number(configByte);
+				// 二进制字符串
+				const binaryStr = byte.toString(2).padStart(8, '0');
+				const bits = binaryStr.split('').map(b => parseInt(b));
+				return {
+					reservedBits: binaryStr.slice(0, 4),
+					// 环境光线强度值 - bit3（二进制第5位）
+					hasAmbientLight: bits[4],
+					// 红外光值 - bit2（二进制第6位）
+					hasInfraredLight: bits[5],
+					// 红光值 - bit1（二进制第7位）
+					hasRedLight: bits[6],
+					// 绿光值 - bit0（二进制第8位）
+					hasGreenLight: bits[7],
+					// 原始信息
+					rawByte: byte,
+					hexString: '0x' + byte.toString(16).padStart(2, '0').toUpperCase(),
+					binaryString: binaryStr,
+					bitArray: bits
+				};
 			},
 
 			// 处理合并的血压和心率数据
@@ -2888,9 +5248,11 @@
 						duration: 2000
 					})
 				} else {
-					that.lowPressure = that.Blood === "mmHg" ? bpValues.diastolic : (Number(bpValues.diastolic) * 0.133)
+					that.lowPressure = that.Blood === "mmHg" ? bpValues.diastolic : (Number(bpValues.diastolic) *
+							0.133)
 						.toFixed(1);
-					that.highPressure = that.Blood === "mmHg" ? bpValues.systolic : (Number(bpValues.systolic) * 0.133)
+					that.highPressure = that.Blood === "mmHg" ? bpValues.systolic : (Number(bpValues.systolic) *
+							0.133)
 						.toFixed(1);
 					that.pulse = hrValue.diastolic;
 					uni.setStorageSync("lowPressure", bpValues.diastolic)
@@ -2954,6 +5316,9 @@
 				this.quotient = 0;
 				this.quotient1 = 0;
 				this.quotient2 = 0;
+				this.quotient3 = 0;
+				this.quotientACC = 0;
+				this.quotientPPG = 0;
 			},
 			// 解析血氧数据
 			parseOxygenData(stringdata) {
@@ -3006,6 +5371,9 @@
 				that.quotient = 0;
 				that.quotient1 = 0;
 				that.quotient2 = 0;
+				that.quotient3 = 0;
+				that.quotientACC = 0;
+				that.quotientPPG = 0;
 				const hexString = dataList
 				// 将十六进制字符串转换为字节数组
 				const bytes = [];
@@ -3070,8 +5438,10 @@
 						serviceId: serviceId,
 						characteristicId: writeuuid,
 						value: buffer,
-						success(res) {},
-						fail(err) {},
+						complete() {
+							console.log("回复ack", hexCommand)
+							// that.log("回复ack", hexCommand)
+						},
 					})
 				}
 			},
@@ -3108,7 +5478,7 @@
 			// 提取血压数据解析函数
 			parseBloodPressureData(stringdata) {
 				const Covmamlueand = stringdata.slice(18, stringdata.length);
-				const data = Covmamlueand.slice(Covmamlueand.length - 16, Covmamlueand
+				const data = stringdata.slice(stringdata.length - 16, stringdata
 					.length);
 				const secondsHex = data.substring(0, 8); // 秒（4 字节）
 				const bloodPressureTypeHex = data.substring(8, 10); // 血压类型（1 字节）
@@ -3128,11 +5498,10 @@
 				this.resetDataState();
 			},
 
-
 			// 提取心率数据解析函数
 			parseHeartRateData(stringdata) {
 				const Covmamlueand = stringdata.slice(18, stringdata.length);
-				const hexData = Covmamlueand.slice(Covmamlueand.length - 16, Covmamlueand
+				const hexData = stringdata.slice(stringdata.length - 16, stringdata
 					.length);
 				const secondsHex = hexData.substring(0, 8); // 秒（4 字节）
 				const bloodPressureTypeHex = hexData.substring(8, 10); // 心率值类型（1 字节）
@@ -3158,7 +5527,6 @@
 			parseValue(hexValue) {
 				return parseInt(hexValue, 16);
 			},
-
 			// 提取协议解析函数
 			parseProtocolData(alltypearray) {
 				const Protocollength = alltypearray.slice(2, 6); // 协议长度 2个byte
@@ -3295,7 +5663,7 @@
 							// that.dataBuffer = []
 						}
 					})
-				}, 6000)
+				}, 1000)
 			},
 
 			getsetp(deviceId, serviceId, writeuuid, PROTOCOL_VERSION) {
@@ -3333,7 +5701,7 @@
 						writeType: 'write',
 						value: buffer2,
 						complete(complete) {
-							console.log("运动数据命令：", complete)
+							console.log("运动数据命令：", hexCommand2)
 							this.dataBuffer = []
 						}
 					})
@@ -3605,7 +5973,7 @@
 				}
 				uni.setStorageSync("xueyadatatype", "0")
 				uni.setStorageSync("xueyadata", data)
-				this.$post(this.$url_jakoblife_fat_scale, data, {
+				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(resaa => {
 					if (resaa.code === 200) {
@@ -3631,8 +5999,10 @@
 					mac: deviceId,
 					deviceTypeId: "0",
 					slaveData: {
-						weight: parsedData.weightUnit === 2 || parsedData.weightUnit === 4 ? WeightConverter
-							.parseStoneString(parsedData.weight).toFixed(2) : (parsedData.weightUnit === 6 ?
+						weight: parsedData.weightUnit === 2 || parsedData.weightUnit === 4 ?
+							WeightConverter
+							.parseStoneString(parsedData.weight).toFixed(2) : (parsedData.weightUnit ===
+								6 ?
 								WeightConverter.lbToKg(parsedData.weight) : parsedData.weight),
 						adc: parsedData.adc
 					},
@@ -3640,7 +6010,7 @@
 				}
 				uni.setStorageSync("tizhidata", data)
 				console.log("上报体脂秤数据", data)
-				this.$post(this.$url_jakoblife_fat_scale, data, {
+				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
 					if (res.code === 200) {
@@ -3669,7 +6039,7 @@
 					slaveData: aaa,
 					time: timess
 				}
-				this.$post(this.$url_jakoblife_fat_scale, data, {
+				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(reslk => {
 					if (reslk.code === 200) {
@@ -3709,7 +6079,12 @@
 				}
 				uni.setStorageSync("xueyadatatype", "1")
 				uni.setStorageSync("xueyadata", data)
-				this.$post(this.$url_jakoblife_fat_scale, data, {
+
+				console.log("jakoblife_fat_scale22", data)
+
+				// this.log("解析心率数据并上传", data)
+
+				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(res => {
 					console.log("上报数据手表", res)
@@ -3739,16 +6114,15 @@
 					slaveData: aaa,
 					time: timess
 				}
-				console.log(aaa)
-				this.$post(this.$url_jakoblife_fat_scale, data, {
+				console.log("上报BPW1手表单独测量数据", data)
+				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(resdb => {
+					console.log("jakoblife_fat_scale3", resdb)
 					if (resdb.code === 200) {
 						this.setbanhua(1)
 						this.bgaaa(aaa.lowPressure, aaa.highPressure)
-						this.get_device_info(deviceSn)
 						setTimeout(() => {
-							this.list_recipe()
 							this.get_device_info(deviceSn)
 							this.getStorageInfooy(aaa)
 						}, 1000)
@@ -3963,20 +6337,18 @@
 				return finalData;
 			},
 			getUserInfo() {
-				this.$get(this.$url_getInfo, {}, {
+				this.$get(this.$url_APP_IP + this.$url_getInfo, {}, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(UserInfo => {
-					// console.log("getUserInfo",UserInfo)
 					if (UserInfo.code == 200) {
-						// uni.removeStorageSync("deviceList")
-						// uni.removeStorageSync("lixianlist")
-						if (this.currentIndex === 1) {
+						if (this.currentIndex === 2) {
 							this.chuhsikg = uni.getStorageSync("danwei2") === 1 ?
 								"lb" : "kg";
 							this.newweightKG = uni.getStorageSync("danwei2") === 1 ?
 								"lb" : "KG";
-							this.Initial_weight = this.chuhsikg === "kg" ? UserInfo.data.weight : WeightConverter
+							this.Initial_weight = this.chuhsikg === "kg" ? UserInfo.data.weight :
+								WeightConverter
 								.kgToLb(UserInfo.data.weight);
 						}
 						this.handleUserInformation(UserInfo.data);
@@ -4115,8 +6487,7 @@
 					},
 					time: timestamp
 				}
-				console.log("pressure_data——data", data)
-				this.$post(this.$url_pressure_data, data, {
+				this.$post(this.$url_APP_IP + this.$url_pressure_data, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json'
 				}).then((res) => {
@@ -4146,13 +6517,12 @@
 			},
 
 			delate_icon_cl(name, item) {
-				console.log("哈哈哈哈哈")
 				for (let i = 0; this.list.length > i; i++) {
 					if (this.list[i].title == name) {
 						this.list.splice(i, 1)
 						let kapianlist = []
 						kapianlist = this.list
-						uni.setStorageSync("kapianlist", kapianlist)
+						this.cardeditData(kapianlist, "bloodData")
 					}
 				}
 			},
@@ -4163,16 +6533,82 @@
 						this.list2.splice(i, 1)
 						let kapianlist2 = []
 						kapianlist2 = this.list2
-						uni.setStorageSync("kapianlist2", kapianlist2)
+						this.cardeditData(kapianlist2, "WeightData")
 					}
 				}
 			},
+			// 查询用户缓存数据列表
+			cardlist1(bloodData) {
+				let data = {
+					dataType: bloodData,
+				}
+				this.$get(this.$url_APP_IP + "/prod-api/device/data/list", data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json'
+				}).then((listres) => {
+					if (listres.code === 200) {
+						if (listres.rows[0].data === "") {
+							uni.setStorageSync("kapianlist", this.list)
+						} else {
+							let dataArray = this.robustParseData(listres.rows[0].data);
+							this.list = dataArray
+							uni.setStorageSync("kapianlist", this.list)
+						}
+					} else {
+						uni.setStorageSync("kapianlist", this.list)
+					}
+				})
+			},
+			cardlist2(WeightData) {
+				let data = {
+					dataType: WeightData,
+				}
+				this.$get(this.$url_APP_IP + "/prod-api/device/data/list", data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json'
+				}).then((listres) => {
+					if (listres.code === 200) {
+						if (listres.rows[0].data === "") {
+							uni.setStorageSync("kapianlist2", this.list2)
+						} else {
+							let dataArray = this.robustParseData(listres.rows[0].data);
+							this.list2 = dataArray
+							uni.setStorageSync("kapianlist2", this.list2)
+						}
+					} else {
+						uni.setStorageSync("kapianlist2", this.list2)
+					}
+				})
+			},
 
+			cardeditData(list, cardeditData) {
+				let editData = {
+					dataType: cardeditData,
+					data: this.formatDatacard(list) === "" ? cardeditData : this.formatDatacard(list)
+				}
+				this.$post(this.$url_APP_IP + "/prod-api/device/data/editData", editData, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json'
+				}).then((reseditData) => {
+					if (reseditData.code === 200) {
+						if (cardeditData === "WeightData") {
+							uni.setStorageSync("kapianlist2", list)
+						} else {
+							uni.setStorageSync("kapianlist", list)
+						}
+					}
+				})
+			},
+			//卡片相关
+			formatDatacard(dataArray) {
+				return dataArray.map(obj => JSON.stringify(obj).replace(/"/g, '')).join(
+					','); // 多条之间用换行分隔（可改 | 或 ,）
+			},
 			// 查询用户的绑定设备
 			queryDevices() {
 				let that = this
 				uni.request({
-					url: that.$url_queryDevices,
+					url: that.$url_APP_IP + that.$url_queryDevices,
 					method: 'POST',
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
@@ -4181,74 +6617,23 @@
 					success(res) {
 						if (res.data.code == 200) {
 							if (res.data.rows == "") {
-								if (that.currentIndex === 0) {
-									uni.getStorageInfo({
-										success: function(ress) {
-											// 判断缓存是否存在
-											if (ress.keys.includes('kapianlist')) {
-												that.list = uni.getStorageSync('kapianlist')
-											} else {
-												uni.setStorageSync(
-													"kapianlist",
-													that
-													.list)
-											}
-										}
-									});
-								} else if (that.currentIndex === 1) {
-									uni.getStorageInfo({
-										success: function(ress) {
-											// 判断缓存是否存在
-											if (ress.keys.includes(
-													'kapianlist2')) {
-												that.list2 = uni
-													.getStorageSync(
-														'kapianlist2')
-											} else {
-												uni.setStorageSync(
-													"kapianlist2",
-													that
-													.list2)
-											}
-										}
-									});
+								switch (that.currentIndex) {
+									case 0:
+										that.cardlist1("bloodData")
+										break
+									case 2:
+										that.cardlist2("WeightData")
+										break
 								}
 								that.list_recipe()
 							} else {
-								if (that.currentIndex === 0) {
-									uni.getStorageInfo({
-										success: function(ress) {
-											// 判断缓存是否存在
-											if (ress.keys.includes(
-													'kapianlist')) {
-												that.list = uni
-													.getStorageSync(
-														'kapianlist')
-											} else {
-												uni.setStorageSync(
-													"kapianlist",
-													that
-													.list)
-											}
-										}
-									});
-								} else if (that.currentIndex === 1) {
-									uni.getStorageInfo({
-										success: function(ress) {
-											// 判断缓存是否存在
-											if (ress.keys.includes(
-													'kapianlist2')) {
-												that.list2 = uni
-													.getStorageSync(
-														'kapianlist2')
-											} else {
-												uni.setStorageSync(
-													"kapianlist2",
-													that
-													.list2)
-											}
-										}
-									});
+								switch (that.currentIndex) {
+									case 0:
+										that.cardlist1("bloodData")
+										break
+									case 2:
+										that.cardlist2("WeightData")
+										break
 								}
 								that.list_recipe()
 								let deviceslist1 = []
@@ -4310,85 +6695,112 @@
 										// 检查 weight 是否存在且发生变化
 										if (parsedData.adc !== "" && parsedData
 											.weight !== undefined && parsedData.weight !== that
-											.lastWeight || (parsedData.createTime !== that.lastcreateTime && that
+											.lastWeight || (parsedData.createTime !== that
+												.lastcreateTime && that
 												.isTimeDifferenceLessThan(parsedData.createTime, that
 													.lastcreateTime, 8))) {
-											console.log('weight 发生变化，上传数据', parsedData.weight + "时间" + that
-												.isTimeDifferenceLessThan(parsedData.createTime, that
+											console.log('weight 发生变化，上传数据', parsedData.weight + "时间" +
+												that
+												.isTimeDifferenceLessThan(parsedData.createTime,
+													that
 													.lastcreateTime, 8));
 
-											if (parsedData.weightUnit === 6 && that.newweightKG === "lb") {
+											if (parsedData.weightUnit === 6 && that.newweightKG ===
+												"lb") {
 												that.Latest_weight = parsedData.weight
 												that.lastWeightbishi = "0"
 												uni.setStorageSync("weightlb", parsedData.weight)
-												uni.setStorageSync("weightkg", WeightConverter.lbToKg(parsedData
+												uni.setStorageSync("weightkg", WeightConverter.lbToKg(
+													parsedData
 													.weight))
 											} else if (parsedData.weightUnit === 4) {
-												that.Latest_weight = that.newweightKG === "lb" ? WeightConverter
+												that.Latest_weight = that.newweightKG === "lb" ?
+													WeightConverter
 													.parseStoneString(parsedData.weight).toFixed(2) :
-													WeightConverter.lbToKg(WeightConverter.parseStoneString(
-														parsedData.weight).toFixed(2))
+													WeightConverter.lbToKg(WeightConverter
+														.parseStoneString(
+															parsedData.weight).toFixed(2))
 												that.lastWeightbishi = ""
-												uni.setStorageSync("weightlb", WeightConverter.parseStoneString(
-													parsedData.weight).toFixed(2))
+												uni.setStorageSync("weightlb", WeightConverter
+													.parseStoneString(
+														parsedData.weight).toFixed(2))
 												uni.setStorageSync("weightkg", WeightConverter.lbToKg(
-													WeightConverter.parseStoneString(parsedData.weight)
+													WeightConverter.parseStoneString(parsedData
+														.weight)
 													.toFixed(2)))
 											} else {
 												if (that.newweightKG === "KG") {
 													if (parsedData.weightUnit === 0) {
 														that.Latest_weight = parsedData.weight
 														that.lastWeightbishi = ""
-														uni.setStorageSync("weightlb", WeightConverter.kgToLb(
-															parsedData
-															.weight))
-														uni.setStorageSync("weightkg", parsedData.weight)
+														uni.setStorageSync("weightlb", WeightConverter
+															.kgToLb(
+																parsedData
+																.weight))
+														uni.setStorageSync("weightkg", parsedData
+															.weight)
 													} else if (parsedData.weightUnit === 4) {
-														that.Latest_weight = WeightConverter.lbToKg(WeightConverter
-															.parseStoneString(parsedData.weight).toFixed(2))
+														that.Latest_weight = WeightConverter.lbToKg(
+															WeightConverter
+															.parseStoneString(parsedData.weight)
+															.toFixed(2))
 														that.lastWeightbishi = ""
 														uni.setStorageSync("weightlb", WeightConverter
-															.parseStoneString(parsedData.weight).toFixed(2))
-														uni.setStorageSync("weightkg", WeightConverter.lbToKg(
-															WeightConverter
-															.parseStoneString(parsedData.weight).toFixed(2)
-														))
+															.parseStoneString(parsedData.weight)
+															.toFixed(2))
+														uni.setStorageSync("weightkg", WeightConverter
+															.lbToKg(
+																WeightConverter
+																.parseStoneString(parsedData
+																	.weight).toFixed(2)
+															))
 													} else {
-														that.Latest_weight = WeightConverter.lbToKg(parsedData
+														that.Latest_weight = WeightConverter.lbToKg(
+															parsedData
 															.weight)
 														that.lastWeightbishi = ""
-														uni.setStorageSync("weightlb", parsedData.weight)
-														uni.setStorageSync("weightkg", WeightConverter.lbToKg(
-															parsedData
-															.weight))
+														uni.setStorageSync("weightlb", parsedData
+															.weight)
+														uni.setStorageSync("weightkg", WeightConverter
+															.lbToKg(
+																parsedData
+																.weight))
 													}
 												} else {
 													if (parsedData.weightUnit === 0) {
-														that.Latest_weight = WeightConverter.kgToLb(parsedData
+														that.Latest_weight = WeightConverter.kgToLb(
+															parsedData
 															.weight)
 														that.lastWeightbishi = ""
-														uni.setStorageSync("weightlb", WeightConverter.kgToLb(
-															parsedData
-															.weight))
-														uni.setStorageSync("weightkg", parsedData.weight)
+														uni.setStorageSync("weightlb", WeightConverter
+															.kgToLb(
+																parsedData
+																.weight))
+														uni.setStorageSync("weightkg", parsedData
+															.weight)
 													} else if (parsedData.weightUnit === 4) {
-														that.Latest_weight = WeightConverter.parseStoneString(
-															parsedData.weight).toFixed(2)
+														that.Latest_weight = WeightConverter
+															.parseStoneString(
+																parsedData.weight).toFixed(2)
 														that.lastWeightbishi = ""
 														uni.setStorageSync("weightlb", WeightConverter
 															.parseStoneString(
 																parsedData.weight).toFixed(2))
-														uni.setStorageSync("weightkg", WeightConverter.lbToKg(
-															WeightConverter.parseStoneString(parsedData
-																.weight).toFixed(2)
-														))
+														uni.setStorageSync("weightkg", WeightConverter
+															.lbToKg(
+																WeightConverter.parseStoneString(
+																	parsedData
+																	.weight).toFixed(2)
+															))
 													} else {
 														that.Latest_weight = parsedData.weight
 														that.lastWeightbishi = ""
-														uni.setStorageSync("weightlb", parsedData.weight)
-														uni.setStorageSync("weightkg", WeightConverter.lbToKg(
-															parsedData
-															.weight))
+														uni.setStorageSync("weightlb", parsedData
+															.weight)
+														uni.setStorageSync("weightkg", WeightConverter
+															.lbToKg(
+																parsedData
+																.weight))
 													}
 												}
 											}
@@ -4403,13 +6815,13 @@
 								}
 							}
 						});
-						if (that.currentIndex === 1) {
+						if (that.currentIndex === 2) {
 							uni.setStorageSync("deviceSn", rows[i].deviceSn)
 							that.get_device_data(rows[i].deviceSn)
 						}
 					}
 				}
-				if (that.currentIndex === 3) {
+				if (that.currentIndex === 4) {
 					that.list_recipe()
 				}
 			},
@@ -4424,78 +6836,34 @@
 				const data = {
 					deviceSn: deviceSn
 				}
-				this.$post(this.$url_get_device_info, data, {
+				this.$post(this.$url_APP_IP + this.$url_get_device_info, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					if (res.code == 200) {
-						if (this.currentIndex === 0) {
-							if (res.data.deviceTypeId === "10") {
-								uni.setStorageSync("deviceSn", deviceSn)
-							}
-							uni.getStorageInfo({
-								success: function(ress) {
-									// 判断缓存是否存在
-									if (ress.keys.includes('kapianlist')) {
-										this.list = uni.getStorageSync('kapianlist')
-									} else {
-										uni.setStorageSync("kapianlist",this.list)
-									}
+						switch (this.currentIndex) {
+							case 0:
+								if (res.data.deviceTypeId === "10") {
+									uni.setStorageSync("deviceSn", deviceSn)
 								}
-							});
-						} else if (this.currentIndex === 1) {
-							uni.getStorageInfo({
-								success: function(ress) {
-									// 判断缓存是否存在
-									if (ress.keys.includes(
-											'kapianlist2')) {
-										this.list2 = uni
-											.getStorageSync(
-												'kapianlist2')
-									} else {
-										uni.setStorageSync(
-											"kapianlist2",
-											this.list2)
-									}
+								this.cardlist1("bloodData")
+								break
+							case 2:
+								if (res.data.deviceTypeId === "11") {
+									uni.setStorageSync("deviceSn", deviceSn)
 								}
-							});
-							if (res.data.deviceTypeId === "11") {
-								uni.setStorageSync("deviceSn", deviceSn)
-							}
+								this.cardlist2("WeightData")
+								break
 						}
 						this.list_recipe()
 					} else {
-						if (this.currentIndex === 0) {
-							uni.getStorageInfo({
-								success: function(ress) {
-									// 判断缓存是否存在
-									if (ress.keys.includes(
-											'kapianlist')) {
-										this.list = uni.getStorageSync(
-											'kapianlist')
-									} else {
-										uni.setStorageSync(
-											"kapianlist",
-											this.list)
-									}
-								}
-							});
-						} else if (this.currentIndex === 1) {
-							uni.getStorageInfo({
-								success: function(ress) {
-									// 判断缓存是否存在
-									if (ress.keys.includes(
-											'kapianlist2')) {
-										this.list2 = uni
-											.getStorageSync(
-												'kapianlist2')
-									} else {
-										uni.setStorageSync(
-											"kapianlist2",
-											this.list2)
-									}
-								}
-							});
+						switch (this.currentIndex) {
+							case 0:
+								this.cardlist1("bloodData")
+								break
+							case 2:
+								this.cardlist2("WeightData")
+								break
 						}
 					}
 				})
@@ -4505,7 +6873,7 @@
 				const data = {
 					receiverId: datainfo
 				}
-				this.$post(this.$url_pending, data, {
+				this.$post(this.$url_APP_IP + this.$url_pending, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;' //自定义请求头信息
 				}).then(pending => {
@@ -4559,23 +6927,8 @@
 			// 处理步数卡片
 			processSteps(item, name) {
 				let that = this
-				// const stepKey = 'settept';
-				// const stepCacheKey = 'settept1';
 				const now = new Date().getTime();
-				// that.getStorageInfo([stepKey, stepCacheKey], (hasAllKeys, res) => {
-				// 	const currentStep = uni.getStorageSync(stepKey);
-				// 	const cachedStep = uni.getStorageSync(stepCacheKey);
 				const stepItem = that.findValue(that.list, 'title', name);
-				// if (hasAllKeys) {
-				// 	const stepDiff = currentStep - cachedStep;
-				// 	if (stepDiff > 0) {
-				// 		uni.setStorageSync(stepCacheKey, cachedStep +
-				// 			stepDiff);
-				// 	}
-				// } else {
-				// 	uni.setStorageSync(stepCacheKey, currentStep);
-				// }
-				// stepItem.Step_number = uni.getStorageSync(stepCacheKey);
 				stepItem.Step_number = that.getRegisterVal(item, 'register', "steps")
 				stepItem.Step_count = that.formatDate(now);
 				stepItem.title = that.$t("步数");
@@ -4583,7 +6936,6 @@
 				that.bushu = stepItem.Step_number;
 				that.bushu_time = stepItem.Step_count;
 				that.saveDailySteps(that.bushu, that.bushu_time);
-				// });
 			},
 			// 封装处理步数的逻辑
 			processSteps2(item, name) {
@@ -4679,9 +7031,11 @@
 				const unit = uni.getStorageSync("danwei1") === 0 ? "inch" : "cm";
 				heightItem.type_LX = unit;
 				heightItem.title = that.$t("身高")
-				heightItem.Step_number = height !== null ? (unit === "inch" ? WeightConverter.cmToInch(height) :
+				heightItem.Step_number = height !== null ? (unit === "inch" ? WeightConverter
+					.cmToInch(height) :
 					height) : '-/-';
-				heightItem.Step_count = that.formatDate(that.findValue(item, 'register', 'height')?.updateTime);
+				heightItem.Step_count = that.formatDate(that.findValue(item, 'register',
+					'height')?.updateTime);
 			},
 
 			// 处理体温卡片
@@ -4692,7 +7046,7 @@
 				temperatureItem.Step_number = uni.getStorageSync("tiwen") || "0";
 				temperatureItem.Step_count = uni.getStorageSync("tiwentimes") || "--/--";
 			},
-			processxiblv(item, name) {
+			async processxiblv(item, name) {
 				let that = this
 				const temperatureItem = that.findValue(that.list, 'title', name);
 				temperatureItem.title = that.$t("心率");
@@ -4703,47 +7057,24 @@
 			// 处理血氧卡片
 			async processBloodOxygen(item, name) {
 				let that = this
-				uni.getStorageInfo({
-					success: (xueyangres) => {
-						const bloodOxygenItem = that.findValue(that.list, 'title', name);
-						if (xueyangres.keys.includes("xueyang")) {
-							const xueyang = uni.getStorageSync("xueyang");
-							bloodOxygenItem.Step_number = xueyang !== null ? xueyang : "0"
-							if (xueyang <= 95) {
-								bloodOxygenItem.BMI_ys = that.$t('偏低');
-								bloodOxygenItem.BMI_TF = 0;
-							} else if (xueyang < 98) {
-								bloodOxygenItem.BMI_ys = that.$t('正常');
-								bloodOxygenItem.BMI_TF = 1;
-							} else if (parseInt(xueyang) >= 98) {
-								bloodOxygenItem.BMI_ys = that.$t('偏高');
-								bloodOxygenItem.BMI_TF = 10;
-							}
-						} else {
-							const xueyang = that.findValue(item, 'register', 'oxygen')?.registerVal;
-							bloodOxygenItem.Step_number = xueyang
-							if (parseInt(xueyang) <= 95) {
-								bloodOxygenItem.BMI_ys = that.$t('偏低');
-								bloodOxygenItem.BMI_TF = 0;
-							} else if (parseInt(xueyang) < 98) {
-								bloodOxygenItem.BMI_ys = that.$t('正常');
-								bloodOxygenItem.BMI_TF = 1;
-							} else if (parseInt(xueyang) >= 98) {
-								bloodOxygenItem.BMI_ys = that.$t('偏高');
-								bloodOxygenItem.BMI_TF = 10;
-							}
-						}
-						if (xueyangres.keys.includes("xueyangtimes")) {
-							bloodOxygenItem.Step_count = !uni.getStorageSync("xueyangtimes") ? "-/-" : uni
-								.getStorageSync("xueyangtimes");
-						} else {
-							const xueyangtime = that.formatDate(that.findValue(item, 'register', 'oxygen')
-								?.updateTime);
-							bloodOxygenItem.Step_count = !xueyangtime ? "-/-" : xueyangtime;
-						}
-						bloodOxygenItem.title = that.$t("血氧");
-					}
-				});
+				const bloodOxygenItem = that.findValue(that.list, 'title', name);
+				const xueyang = that.findValue(item, 'register', 'oxygen')
+					?.registerVal;
+				bloodOxygenItem.title = that.$t("血氧");
+				bloodOxygenItem.Step_number = xueyang
+				if (parseInt(xueyang) <= 95) {
+					bloodOxygenItem.BMI_ys = that.$t('偏低');
+					bloodOxygenItem.BMI_TF = 0;
+				} else if (parseInt(xueyang) < 98) {
+					bloodOxygenItem.BMI_ys = that.$t('正常');
+					bloodOxygenItem.BMI_TF = 1;
+				} else if (parseInt(xueyang) >= 98) {
+					bloodOxygenItem.BMI_ys = that.$t('偏高');
+					bloodOxygenItem.BMI_TF = 10;
+				}
+				const xueyangtime = that.formatDate(that.findValue(item,
+					'register', 'oxygen')?.updateTime);
+				bloodOxygenItem.Step_count = !xueyangtime ? "-/-" : xueyangtime;
 			},
 
 			// 处理压力卡片
@@ -4767,7 +7098,7 @@
 				const data = {
 					userId: this.info.userId
 				}
-				this.$post(this.$url_list_recipe, data, {
+				this.$post(this.$url_APP_IP + this.$url_list_recipe, data, {
 					'Authorization': 'Bearer ' + uni
 						.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
@@ -4779,14 +7110,23 @@
 						if (this.currentIndex === 0) {
 							// 获取血压值
 							// 使用对象存储最新数据，便于响应式更新
-							const slaveSn2Data = res.data.filter(item => item.slaveSn === "2");
-							const slaveSn3Data = res.data.filter(item => item.slaveSn === "3");
+							const slaveSn2Data = res.data.filter(
+								item => item.slaveSn === "2");
+							const slaveSn3Data = res.data.filter(
+								item => item.slaveSn === "3");
 							// 获取各项数据
-							const getLatestData = (data1, data2, type) => {
-								const time1 = this.findValue(data1, "register", type)?.updateTime || 0;
-								const time2 = this.findValue(data2, "register", type)?.updateTime || 0;
-								const val1 = this.getRegisterVal(data1, 'register', type);
-								const val2 = this.getRegisterVal(data2, 'register', type);
+							const getLatestData = (data1, data2,
+								type) => {
+								const time1 = this.findValue(data1,
+										"register", type)
+									?.updateTime || 0;
+								const time2 = this.findValue(data2,
+										"register", type)
+									?.updateTime || 0;
+								const val1 = this.getRegisterVal(
+									data1, 'register', type);
+								const val2 = this.getRegisterVal(
+									data2, 'register', type);
 								return time1 > time2 ? {
 									value: val1,
 									time: time1
@@ -4795,18 +7135,35 @@
 									time: time2
 								};
 							}
-							if (this.xeuyabiaoshi === "" && !uni.getStorageSync('xueyadata')) {
+							if (this.xeuyabiaoshi === "" && !uni
+								.getStorageSync('xueyadata')) {
 								// 血压数据
-								const lowPressureData = getLatestData(slaveSn2Data, slaveSn3Data, "lowPressure");
-								const highPressureData = getLatestData(slaveSn2Data, slaveSn3Data, "highPressure");
-								const pulseData = getLatestData(slaveSn2Data, slaveSn3Data, "heartrate");
+								const lowPressureData = getLatestData(
+									slaveSn2Data, slaveSn3Data,
+									"lowPressure");
+								const highPressureData = getLatestData(
+									slaveSn2Data, slaveSn3Data,
+									"highPressure");
+								const pulseData = getLatestData(
+									slaveSn2Data, slaveSn3Data,
+									"heartrate");
 								// 响应式更新血压数据
-								this.$set(this, 'lowPressure', this.Blood === "mmHg" ? lowPressureData.value : (
-									Number(lowPressureData.value) * 0.133).toFixed(1));
-								this.$set(this, 'highPressure', this.Blood === "mmHg" ? highPressureData.value : (
-									Number(highPressureData.value) * 0.133).toFixed(1));
-								this.$set(this, 'pulse', pulseData.value);
-								this.$set(this, 'pulsetime', this.formatDate(pulseData.time));
+								this.$set(this, 'lowPressure', this
+									.Blood === "mmHg" ?
+									lowPressureData.value : (
+										Number(lowPressureData
+											.value) * 0.133)
+									.toFixed(1));
+								this.$set(this, 'highPressure', this
+									.Blood === "mmHg" ?
+									highPressureData.value : (
+										Number(highPressureData
+											.value) * 0.133)
+									.toFixed(1));
+								this.$set(this, 'pulse', pulseData
+									.value);
+								this.$set(this, 'pulsetime', this
+									.formatDate(pulseData.time));
 								// 更新血压状态
 								this.updateBloodPressureStatus(
 									lowPressureData
@@ -4814,43 +7171,77 @@
 									highPressureData
 									.value);
 							}
-							const pulseData = getLatestData(slaveSn2Data, slaveSn3Data, "heartrate");
-							this.$set(this, 'pulsetime', this.formatDate(pulseData.time));
+							const pulseData = getLatestData(
+								slaveSn2Data, slaveSn3Data,
+								"heartrate");
+							this.$set(this, 'pulsetime', this
+								.formatDate(pulseData.time));
 							// 主逻辑：遍历卡片列表并处理
-							const kapianlist = uni.getStorageSync("kapianlist") || [];
+							const kapianlist = uni.getStorageSync(
+								"kapianlist") || [];
 							let itelistasd = []
-							for (let i = 0; i < kapianlist.length; i++) {
+							for (let i = 0; i < kapianlist
+								.length; i++) {
 								const item = kapianlist[i];
-								if (item.title === "步数" || item.title === "Steps") {
-									this.processSteps(res.data, item.title);
-								} else if (item.title === "身高" || item.title === "Height") {
-									this.processHeight(res.data, item.title);
-								} else if (item.title === "体温" || item.title === "Body Temperature") {
-									this.processTemperature(res.data, item.title);
-								} else if (item.title === "血氧" || item.title === "SpO₂") {
-									this.processBloodOxygen(res.data, item.title);
-								} else if (item.title === "压力" || item.title === "Stress") {
-									this.processyali(res.data, item.title);
-								} else if (item.title === "心率" || item.title === "Heart") {
-									this.processxiblv(res.data, item.title);
+								if (item.title === "步数" || item
+									.title === "Steps") {
+									this.processSteps(res.data, item
+										.title);
+								} else if (item.title === "身高" || item
+									.title === "Height") {
+									this.processHeight(res.data, item
+										.title);
+								} else if (item.title === "体温" || item
+									.title === "Body Temperature") {
+									this.processTemperature(res.data,
+										item.title);
+								} else if (item.title === "血氧" || item
+									.title === "SpO₂") {
+									this.processBloodOxygen(res.data,
+										item.title);
+								} else if (item.title === "压力" || item
+									.title === "Stress") {
+									this.processyali(res.data, item
+										.title);
+								} else if (item.title === "心率" || item
+									.title === "Heart") {
+									this.processxiblv(res.data, item
+										.title);
 								}
 								itelistasd.push(item)
 							}
-							uni.setStorageSync("kapianlist", itelistasd)
+							this.cardeditData(itelistasd,
+								"bloodData")
+
 						} else if (this.currentIndex === 1) {
+							this.ppgresultslist(this.types_index)
+							this.ppgresultslist2(this.types_index)
+						} else if (this.currentIndex === 2) {
 							// 获取体重值
-							if (this.lastWeightbishi === "" && !uni.getStorageSync("tizhidata")) {
-								this.Latest_weight = this.newweightKG === "KG" ? this.getRegisterVal(res.data,
-									'register', 'weight') : WeightConverter.kgToLb(this.getRegisterVal(res
-									.data, 'register', 'weight'));
+							if (this.lastWeightbishi === "" && !uni
+								.getStorageSync("tizhidata")) {
+								this.Latest_weight = this
+									.newweightKG === "KG" ? this
+									.getRegisterVal(res.data,
+										'register', 'weight') :
+									WeightConverter.kgToLb(this
+										.getRegisterVal(res
+											.data, 'register', 'weight'
+										));
 							}
-							this.Latest_date = this.getUpdateTime(res.data, 'register', 'weight')
-							this.Target_weight = this.chuhsikg === "kg" ? this.getRegisterVal(res.data, 'register',
-								'goal_weight') : WeightConverter.kgToLb(this.getRegisterVal(res.data,
-								'register', 'goal_weight'));
-							this.Chest_circumference = this.getRegisterVal(res.data, 'register',
-								'chest_circumference');
-							this.waistline = this.getRegisterVal(res.data, 'register', 'waistline');
+							this.Latest_date = this.getUpdateTime(res
+								.data, 'register', 'weight')
+							this.Target_weight = this.chuhsikg ===
+								"kg" ? this.getRegisterVal(res.data,
+									'register',
+									'goal_weight') : WeightConverter
+								.kgToLb(this.getRegisterVal(res.data,
+									'register', 'goal_weight'));
+							this.Chest_circumference = this
+								.getRegisterVal(res.data, 'register',
+									'chest_circumference');
+							this.waistline = this.getRegisterVal(res
+								.data, 'register', 'waistline');
 							this.Hip_circumference =
 								this.getRegisterVal(res
 									.data, 'register',
@@ -4871,75 +7262,124 @@
 									'calf_circumference'
 								);
 							// 主逻辑：遍历卡片列表并处理
-							const kapianlist2 = uni.getStorageSync("kapianlist2") || [];
-							for (let i = 0; i < kapianlist2.length; i++) {
+							const kapianlist2 = uni.getStorageSync(
+								"kapianlist2") || [];
+							for (let i = 0; i < kapianlist2
+								.length; i++) {
 								const item = kapianlist2[i];
-								if (item.title === "步数" || item.title === "Steps") {
+								if (item.title === "步数" || item
+									.title === "Steps") {
 									// this.processSteps2(res.data, item.title);
-								} else if (item.title === "身高" || item.title === "Height") {
+								} else if (item.title === "身高" || item
+									.title === "Height") {
 									// this.processCommonData(res.data, item.title, 'height', 'danwei1',
 									// 	"cm");
 								} else if (item.title === "BMI") {
-									this.processGenericData(res.data, "BMI", "weight");
-								} else if (item.title === "骨含量" || item.title === "Bone Mass") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "肌肉量" || item.title === "Muscle Mass") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "蛋白率" || item.title === "Protein%") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "水分" || item.title === "Water%") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "内脏脂肪指数" || item.title === "VFI") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "脂肪率" || item.title === "Fat%") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "基础代谢率" || item.title === "BMR") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "皮下脂肪率" || item.title === "SubQ Fat%") {
-									this.processGenericData(res.data, item.title, "weight");
-								} else if (item.title === "身体年龄" || item.title === "Body Age") {
-									this.processGenericData(res.data, item.title, "weight");
+									this.processGenericData(res.data,
+										"BMI", "weight");
+								} else if (item.title === "骨含量" || item
+									.title === "Bone Mass") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "肌肉量" || item
+									.title === "Muscle Mass") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "蛋白率" || item
+									.title === "Protein%") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "水分" || item
+									.title === "Water%") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "内脏脂肪指数" ||
+									item.title === "VFI") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "脂肪率" || item
+									.title === "Fat%") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "基础代谢率" ||
+									item.title === "BMR") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "皮下脂肪率" ||
+									item.title === "SubQ Fat%") {
+									this.processGenericData(res.data,
+										item.title, "weight");
+								} else if (item.title === "身体年龄" ||
+									item.title === "Body Age") {
+									this.processGenericData(res.data,
+										item.title, "weight");
 								}
 							}
-						} else if (this.currentIndex === 2) {
+						} else if (this.currentIndex === 3) {
 							uni.getStorageInfo({
 								success: (ress) => {
-									this.yali = uni.getStorageSync("yali") || "0";
-									this.yali_time = uni.getStorageSync("yalitimes") || "--/--";
+									this.yali = uni
+										.getStorageSync(
+											"yali") || "0";
+									this.yali_time = uni
+										.getStorageSync(
+											"yalitimes") ||
+										"--/--";
 								},
 							});
-							this.sleep = this.getRegisterVal(res.data, 'register', 'sleep');
-							this.sleep_time = this.getUpdateTime(res.data, 'register', 'sleep')
-							if (this.getRegisterVal(res.data, 'register', 'sleep') === null || this.getRegisterVal(
-									res.data, 'register', 'sleep') === "-/-") {
+							this.sleep = this.getRegisterVal(res.data,
+								'register', 'sleep');
+							this.sleep_time = this.getUpdateTime(res
+								.data, 'register', 'sleep')
+							if (this.getRegisterVal(res.data,
+									'register', 'sleep') === null ||
+								this.getRegisterVal(
+									res.data, 'register', 'sleep') ===
+								"-/-") {
 								this.totalLight = "--/--"
 								this.totalDeep = "--/--"
 								this.totalRem = "--/--"
 								this.sleep_point = "--/--"
 								this.sleep = "--/--"
 								this.sleep_time = "--/--"
-							} else if (this.getRegisterVal(res.data, 'register', 'sleep') === '0H0M') {
+							} else if (this.getRegisterVal(res.data,
+									'register', 'sleep') === '0H0M') {
 								this.totalLight = "0H0M"
 								this.totalDeep = "0H0M"
 								this.totalRem = "0H0M"
 								this.sleep_point = "--/--"
 								this.sleep = "0H0M"
-								this.sleep_time = this.getUpdateTime(res.data, 'register', 'sleep')
+								this.sleep_time = this.getUpdateTime(
+									res.data, 'register', 'sleep')
 							} else {
-								this.totalLight = uni.getStorageSync("totalLight")
-								this.totalDeep = uni.getStorageSync("totalDeep")
-								this.totalRem = uni.getStorageSync("totalRem")
+								this.totalLight = uni.getStorageSync(
+									"totalLight")
+								this.totalDeep = uni.getStorageSync(
+									"totalDeep")
+								this.totalRem = uni.getStorageSync(
+									"totalRem")
 								// 1. 总睡眠小时数（ 保留 1 位小数）
-								const totalAll = this.timeStrToMinutes(this.sleep); // 436
-								const totalH = (totalAll / 60).toFixed(1)
-								const deepMin = (this.timeStrToMinutes(this.totalDeep) / 60).toFixed(1);
-								const remMin = (this.timeStrToMinutes(this.totalRem) / 60).toFixed(1);
-								const lightMin = (this.timeStrToMinutes(this.totalLight) / 60).toFixed(1)
-								this.sleep_point = this.overallSleepScore(totalAll, totalH, deepMin, remMin,
-									lightMin)
-								uni.setStorageSync("sleep_point", this.sleep_point)
+								const totalAll = this.timeStrToMinutes(
+									this.sleep); // 436
+								const totalH = (totalAll / 60).toFixed(
+									1)
+								const deepMin = (this.timeStrToMinutes(
+									this.totalDeep) / 60).toFixed(
+									1);
+								const remMin = (this.timeStrToMinutes(
+									this.totalRem) / 60).toFixed(1);
+								const lightMin = (this
+									.timeStrToMinutes(this
+										.totalLight) / 60).toFixed(
+									1)
+								this.sleep_point = this
+									.overallSleepScore(totalAll,
+										totalH, deepMin, remMin,
+										lightMin)
+								uni.setStorageSync("sleep_point", this
+									.sleep_point)
 							}
-						} else if (this.currentIndex === 3) {
+						} else if (this.currentIndex === 4) {
 							this.bushu = this.getRegisterVal(
 								res.data, 'register',
 								'steps');
@@ -4959,6 +7399,61 @@
 					}
 				}
 				return null
+			},
+			robustParseData(dataStr) {
+				if (dataStr === "bloodData") {
+					uni.setStorageSync("kapianlist", "")
+					return
+				}
+				if (dataStr === "WeightData") {
+					uni.setStorageSync("kapianlist2", "")
+					return
+				}
+				try {
+					// 分割每个对象
+					const objects = dataStr.split('},{');
+					const result = [];
+					for (let i = 0; i < objects.length; i++) {
+						let objStr = objects[i];
+						// 修复首尾对象的花括号
+						if (i === 0) objStr = objStr + '}';
+						else if (i === objects.length - 1) objStr = '{' +
+							objStr;
+						else objStr = '{' + objStr + '}';
+						// 移除可能的多余花括号
+						objStr = objStr.replace(/^{{/, '{').replace(/}}$/,
+							'}');
+						// 修复键值对
+						const fixedObjStr = objStr.replace(
+							/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (match,
+								key, value) => {
+								value = value.trim();
+
+								// 处理布尔值
+								if (value === 'true' || value ===
+									'false') {
+									return `"${key}":${value}`;
+								}
+								// 处理数字
+								if (!isNaN(value) && value !== '' && !value
+									.includes('/')) {
+									return `"${key}":${value}`;
+								}
+								// 处理字符串
+								return `"${key}":"${value}"`;
+							});
+						try {
+							const obj = JSON.parse(fixedObjStr);
+							result.push(obj);
+						} catch (e) {
+							console.warn('解析单个对象失败:', fixedObjStr, e);
+						}
+					}
+					return result;
+				} catch (error) {
+					console.error('解析失败:', error);
+					return [];
+				}
 			},
 
 			timeStrToMinutes(str) {
@@ -5080,11 +7575,10 @@
 				const data = {
 					deviceSn: deviceSn
 				}
-				this.$post(this.$url_get_device_data,
+				this.$post(this.$url_APP_IP + this.$url_get_device_data,
 					data, {
-						'Authorization': 'Bearer ' +
-							uni
-							.getStorageSync("token"),
+						'Authorization': 'Bearer ' + uni.getStorageSync(
+							"token"),
 						'content-type': 'application/x-www-form-urlencoded'
 					}).then(res => {
 					if (res.code === 200) {
@@ -5201,9 +7695,7 @@
 							}
 							itelistasd2.push(item)
 						}
-						uni.setStorageSync(
-							"kapianlist2",
-							itelistasd2)
+						this.cardeditData(itelistasd2, "WeightData")
 					}
 				})
 			},
@@ -5229,12 +7721,14 @@
 				uni.navigateTo({
 					url: "../main/card1"
 				})
+				this.cardeditData(this.list, "bloodData")
 			},
 
 			add_bt2() {
 				uni.navigateTo({
 					url: '../main/card'
 				})
+				this.cardeditData(this.list2, "WeightData")
 			},
 
 			ture_bt() {
@@ -5244,7 +7738,7 @@
 				this.delate_icon = false
 				this.disabledsaaa = true
 				this.disabletouch = false
-				uni.setStorageSync("kapianlist", this.list)
+				this.cardeditData(this.list, "bloodData")
 			},
 
 			ture_bt2() {
@@ -5254,8 +7748,7 @@
 				this.delate_icon2 = false
 				this.disabledsaaa2 = true
 				this.disabletouch = false
-				uni.setStorageSync("kapianlist2", this
-					.list2)
+				this.cardeditData(this.list2, "WeightData")
 			},
 
 			xw_handleChange(e) {
@@ -5436,7 +7929,7 @@
 						.birthday2).getTime() /
 					1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
-					url: that.$url_fat_scale,
+					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
 					data: {
 						deviceSn: uni
@@ -5500,7 +7993,7 @@
 					},
 					time: timestamp
 				}
-				this.$post(this.$url_fat_scale, data, {
+				this.$post(this.$url_APP_IP + this.$url_fat_scale, data, {
 					'Authorization': 'Bearer ' +
 						uni
 						.getStorageSync("token"),
@@ -5535,7 +8028,7 @@
 						that.birthday).getTime() /
 					1000); // 将时间转换成时间戳（以秒为单位）
 				uni.request({
-					url: that.$url_fat_scale,
+					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
 					data: {
 						slaveSn: "1",
@@ -5644,7 +8137,7 @@
 					},
 					time: timestamp
 				}
-				this.$post(this.$url_fat_scale, data, {
+				this.$post(this.$url_APP_IP + this.$url_fat_scale, data, {
 					'Authorization': 'Bearer ' + uni
 						.getStorageSync("token"),
 					'content-type': 'application/json'
@@ -5667,9 +8160,7 @@
 			},
 
 			// 子按钮点击事件处理
-			onSubButtonClick(item) {
-				console.log('📱 页面接收到子按钮点击:', item.text)
-			},
+			onSubButtonClick(item) {},
 
 			// 菜单打开事件
 			onMenuOpen() {
@@ -5677,6 +8168,305 @@
 				// 	url: "/pages/tabBar/main/iphone_health"
 				// })
 			},
+			//读取ota配置文件 uni-app 读取本地文件内容
+			async loadFiles(bytes, deviceId, serviceId) {
+				let that = this
+				try {
+					const filePath = '_www/static/OTA/unique_code.txt';
+					const buf = await that.readFileWithBase64(filePath);
+					// 2. 统一成字符串
+					let rawText;
+					if (typeof buf === 'string') {
+						rawText = buf; // H5 环境
+					} else {
+						rawText = [].map.call(new Uint8Array(buf), b =>
+							String.fromCharCode(b)).join(''); // App 环境
+					}
+					// 3. 提取唯一码 - 改进正则表达式
+					const uniqueCode = rawText.match(
+							/unique_code\s*[=:]\s*([0-9A-Fa-f]+)/)?.[1] ||
+						rawText.match(/unique_code\s*([0-9A-Fa-f]+)/)?.[
+							1
+						] ||
+						rawText.match(/([0-9A-Fa-f]{16,})/)?.[
+							1
+						];
+					if (uniqueCode) {
+						if (bytes === uniqueCode.trim()) {
+							uni.hideLoading()
+							uni.showModal({
+								content: that.$t("手表固件已经是最新版本"),
+								confirmText: that.$t('确定'),
+								showCancel: false,
+								success(modal) {
+									if (modal.confirm) {}
+								}
+							});
+							that.resetDataState()
+							return
+						} else {
+							uni.showLoading({
+								title: that.$t("正在请求升级")
+							})
+							uni.$emit('updateIdChanged', 1)
+							const ackConfigByteset = new Uint8Array(9);
+							ackConfigByteset[0] = 0xE0;
+							ackConfigByteset[1] = 0x00;
+							ackConfigByteset[2] = 0x06;
+							ackConfigByteset[3] = 0x20;
+							ackConfigByteset[4] = 0x01;
+							ackConfigByteset[5] = 0x02;
+							ackConfigByteset[6] = 0x00;
+							ackConfigByteset[7] = 0x01;
+							ackConfigByteset[8] =
+								0x01; //0x01是OTA升级，0x02是升级狗
+							let ackConfigBytesum2 = 0;
+							for (let i = 0; i < ackConfigByteset
+								.length; i++) {
+								ackConfigBytesum2 += ackConfigByteset[i];
+							}
+							ackConfigBytesum2 = ackConfigBytesum2 % 256;
+							const modifiedCommand2 = new Uint8Array(
+								ackConfigByteset.length + 1);
+							modifiedCommand2.set(ackConfigByteset.subarray(
+								0, 3), 0);
+							modifiedCommand2[3] = ackConfigBytesum2;
+							modifiedCommand2.set(ackConfigByteset.subarray(
+								3), 4);
+							const hexCommand2 = Array.from(
+								modifiedCommand2).map(byte => byte
+								.toString(
+									16).padStart(2, '0')).join('');
+							const buffer2 = that.toArrayBuffer(
+								hexCommand2);
+							console.log("hexCommand2", hexCommand2)
+							console.log("deviceId", deviceId)
+							console.log("serviceId", serviceId)
+							console.log("that.writeuuid", that.writeuuid)
+							setTimeout(() => {
+								uni.writeBLECharacteristicValue({
+									deviceId: deviceId,
+									serviceId: serviceId,
+									characteristicId: that
+										.writeuuid,
+									writeType: 'write',
+									value: buffer2,
+									complete(res) {
+										uni.hideLoading()
+										console.log(res)
+										uni.$emit('updateIdChanged', 1)
+										that.resetDataState()
+									}
+								})
+							}, 3000)
+						}
+					} else {
+						uni.hideLoading()
+						that.resetDataState()
+						console.log("设备唯一码文件为空")
+					}
+				} catch (e) {
+					uni.hideLoading()
+					that.resetDataState()
+					if (e.message && e.message.includes('不存在')) {
+						console.log("设备唯一码文件不存在")
+					} else {
+						console.log("读取设备唯一码文件失败", e)
+					}
+				}
+			},
+			// 读取设备唯一码文件
+			async readFileWithBase64(filePath) {
+				return new Promise((resolve, reject) => {
+					plus.io.resolveLocalFileSystemURL(filePath,
+						(entry) => {
+							entry.file((file) => {
+								const reader =
+									new plus.io
+									.FileReader();
+
+								reader.onloadend =
+									(e) => {
+										try {
+											// 读取为 Base64
+											const
+												base64 =
+												e
+												.target
+												.result;
+											// console.log('Base64内容:', base64);
+											// 将 Base64 转为文本
+											// 方法1：对于纯文本，可以直接解码
+											const
+												text =
+												this
+												.decodeBase64(
+													base64
+												);
+											console
+												.log(
+													'解码后文本:',
+													text
+												);
+											resolve
+												(text
+													.trim()
+												);
+										} catch (
+											error
+										) {
+											reject(
+												error);
+										}
+									};
+
+								reader.onerror = (
+									e) => {
+									console
+										.error(
+											'读取错误:',
+											e
+											.target
+											.error
+										);
+									reject(e.target
+										.error
+									);
+								};
+
+								// 关键：使用 readAsDataURL 获取 Base64
+								reader
+									.readAsDataURL(
+										file);
+							}, reject);
+						}, reject);
+				});
+			},
+
+			// 正确的 Base64 解码方法
+			decodeBase64(base64String) {
+				// 1. 移除 data:text/plain;base64, 前缀
+				const base64Data = base64String.replace(
+					/^data:text\/plain;base64,/, '');
+
+				// 2. 使用 atob 解码（浏览器环境）
+				try {
+					// 方法1：使用 atob（适用于简单文本）
+					const binaryString = atob(base64Data);
+
+					// 将二进制字符串转换为 UTF-8
+					const bytes = new Uint8Array(binaryString.length);
+					for (let i = 0; i < binaryString.length; i++) {
+						bytes[i] = binaryString.charCodeAt(i);
+					}
+
+					// 尝试不同的编码
+					const decoders = [{
+							name: 'gbk',
+							test: this.decodeGBK
+						},
+						{
+							name: 'utf-8',
+							test: this.decodeUTF8
+						},
+						{
+							name: 'gb2312',
+							test: this.decodeGB2312
+						}
+					];
+
+					for (const decoder of decoders) {
+						try {
+							const result = decoder.test(bytes);
+							// console.log(`${decoder.name} 解码成功:`, result);
+							return result;
+						} catch (e) {
+							console.warn(`${decoder.name} 解码失败`);
+						}
+					}
+
+					// 如果都不行，使用原始字节
+					return binaryString;
+
+				} catch (error) {
+					console.error('Base64 解码失败:', error);
+					throw error;
+				}
+			},
+
+			// GBK 解码
+			decodeGBK(bytes) {
+				// 由于浏览器不支持直接 GBK 解码，可以使用以下方法
+				// 方法1：使用 TextDecoder（如果浏览器支持）
+				try {
+					const decoder = new TextDecoder('gbk');
+					return decoder.decode(bytes);
+				} catch (e) {
+					// 方法2：手动处理常见中文字符
+					return this.manualDecodeGBK(bytes);
+				}
+			},
+
+			// 手动 GBK 解码
+			manualDecodeGBK(bytes) {
+				let result = '';
+				let i = 0;
+
+				while (i < bytes.length) {
+					const byte = bytes[i];
+
+					// 如果是 ASCII 字符
+					if (byte < 128) {
+						result += String.fromCharCode(byte);
+						i++;
+					} else {
+						// 可能是 GBK 双字节字符
+						if (i + 1 < bytes.length) {
+							const byte2 = bytes[i + 1];
+							// 这里可以添加 GBK 到 Unicode 的映射表
+							// 对于简单情况，直接跳过或转换为占位符
+							result +=
+								`[${byte.toString(16)}${byte2.toString(16)}]`;
+							i += 2;
+						} else {
+							i++;
+						}
+					}
+				}
+
+				return result;
+			},
+
+			// UTF-8 解码
+			decodeUTF8(bytes) {
+				const decoder = new TextDecoder('utf-8');
+				return decoder.decode(bytes);
+			},
+
+			// GB2312 解码
+			decodeGB2312(bytes) {
+				try {
+					const decoder = new TextDecoder('gb2312');
+					return decoder.decode(bytes);
+				} catch (e) {
+					return this.decodeGBK(bytes); // 回退到 GBK
+				}
+			},
+
+			// 综合健康指数说明
+			health_Explanation() {
+				this.$refs.health_Explanationpopu.open("center")
+			},
+			health_Explanationpopuclose() {
+				this.$refs.health_Explanationpopu.close()
+			}
+
+
+
+
+
+
+
 
 		},
 	}
@@ -6154,6 +8944,14 @@
 		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
+	.charts-box-ppg {
+		padding: 5px;
+		background: white;
+		border-radius: 20px;
+		height: auto;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+	}
+
 	.delete-button {
 		position: absolute;
 		top: 0;
@@ -6203,6 +9001,30 @@
 		font-size: 12px;
 	}
 
+	.title_zs_ppg {
+		display: flex;
+		justify-content: flex-end;
+		margin-right: 20px;
+		margin-left: 20px;
+		text-align: right;
+		padding-top: 60px;
+		color: black;
+		padding-bottom: 5px;
+		font-weight: 400;
+		font-size: 12px;
+	}
+
+	.title_zs_ppg_2 {
+		display: flex;
+		justify-content: flex-end;
+		margin-right: 20px;
+		margin-left: 20px;
+		text-align: right;
+		color: black;
+		padding-bottom: 5px;
+		font-weight: 400;
+		font-size: 12px;
+	}
 
 	.header {
 		text-align: center;
@@ -6251,5 +9073,174 @@
 		padding: 10px;
 		justify-content: center;
 		align-items: center;
+	}
+
+
+	.toggle-button1 {
+		font-size: 10px;
+		color: #007aff;
+		margin-left: 5px;
+		text-align: left;
+	}
+
+	.text-content {
+		font-size: 10px;
+		color: #333;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		/* 默认显示3行 */
+		-webkit-box-orient: vertical;
+	}
+
+	.text-content.expanded {
+		-webkit-line-clamp: unset;
+		padding: 0 20px 80px 20px;
+		/* 展开时显示全部内容 */
+	}
+
+	.data_bg_ppg_set {
+		border-top-left-radius: 20px;
+		border-top-right-radius: 20px;
+		background: #EFEFF4;
+		padding: 20px 0 20px 0;
+	}
+
+	.log {
+		height: 500px;
+		background: #f5f5f5;
+		font-size: 24rpx;
+		padding: 20px;
+		box-sizing: border-box;
+	}
+
+	.log-item {
+		line-height: 1.5;
+		margin-bottom: 10rpx;
+		word-break: break-all;
+		white-space: pre-wrap;
+	}
+
+	.btnstyle {
+		margin-top: 20px;
+		border-radius: 20px;
+		background: #3298F7;
+		color: white;
+	}
+
+	.pagedsismj_4 {
+		background: #3298F7;
+		margin: 20px 0;
+		flex: 1;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		padding: 15px;
+		border-radius: 20px;
+	}
+
+	.page {
+		background-color: #ffffff;
+		min-height: 100vh;
+	}
+
+
+
+	.table {
+		display: table;
+		width: 100%;
+		border-collapse: collapse;
+		border: 2rpx solid #e0e0e0;
+	}
+
+	.tr {
+		display: table-row;
+	}
+
+	.head {
+		background-color: #f5f5f5;
+	}
+
+	.th,
+	.td {
+		display: table-cell;
+		padding: 16rpx 12rpx;
+		border: 2rpx solid #e0e0e0;
+		font-size: 28rpx;
+		line-height: 1.4;
+		vertical-align: middle;
+	}
+
+	.th {
+		font-weight: bold;
+		text-align: center;
+	}
+
+	.td:first-child {
+		text-align: center;
+		font-weight: 500;
+	}
+
+
+	/* 整个页面透明 */
+	.page-transparent {
+		background: transparent;
+		padding: 20rpx;
+	}
+
+	/* 表格容器 */
+	.table-box {
+		display: flex;
+		flex-direction: column;
+		border: 1rpx solid rgba(0, 0, 0, 0.15);
+		border-radius: 8rpx;
+		overflow: hidden;
+	}
+
+	/* 表头 */
+	.thead {
+		display: flex;
+		background: rgba(0, 0, 0, 0.03);
+	}
+
+	.th {
+		flex: 1;
+		padding: 14rpx 10rpx;
+		font-size: 26rpx;
+		color: #333;
+		text-align: center;
+		border-right: 1rpx solid rgba(0, 0, 0, 0.08);
+	}
+
+	.th:last-child {
+		border-right: 0;
+	}
+
+	/* 行 */
+	.tbody {
+		display: flex;
+		border-top: 1rpx solid rgba(0, 0, 0, 0.08);
+	}
+
+	.td {
+		flex: 1;
+		padding: 12rpx 10rpx;
+		font-size: 26rpx;
+		color: #444;
+		text-align: center;
+		border-right: 1rpx solid rgba(0, 0, 0, 0.08);
+	}
+
+	.td:last-child {
+		border-right: 0;
+	}
+
+	/* 红色高亮 */
+	.red {
+		color: #e60012;
+		font-weight: 500;
 	}
 </style>

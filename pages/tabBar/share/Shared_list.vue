@@ -101,7 +101,7 @@
 				let that = this
 				console.log(that.info.userId)
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/share/data/share_list",
+					url: that.$url_APP_IP + "/prod-api/share/data/share_list",
 					method: 'POST',
 					data: {
 						shareId: that.info.userId
@@ -126,7 +126,7 @@
 				let that = this
 				console.log(that.info.userId)
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/share/data/receiver_list",
+					url: that.$url_APP_IP + "/prod-api/share/data/receiver_list",
 					method: 'POST',
 					data: {
 						receiverId: that.info.userId

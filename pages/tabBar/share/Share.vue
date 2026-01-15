@@ -132,7 +132,7 @@
 				const data = {
 					shareId: uni.getStorageSync("userid")
 				}
-				this.$post(this.$url_share_list, data, {
+				this.$post(this.$url_APP_IP + this.$url_share_list, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {
@@ -148,7 +148,7 @@
 				const data = {
 					receiverId: uni.getStorageSync("userid")
 				}
-				this.$post(this.$url_receiver_list, data, {
+				this.$post(this.$url_APP_IP + this.$url_receiver_list, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {
@@ -196,7 +196,7 @@
 					success: (modalres) => {
 						if (modalres.confirm) {
 							uni.request({
-								url: `https://jakoblife.jakob-techs.com/prod-api/share/data/${id}`,
+								url: `${this.$url_APP_IP}/prod-api/share/data/${id}`,
 								method: 'DELETE',
 								header: {
 									'Authorization': `Bearer ${uni.getStorageSync("token")}`,
@@ -328,6 +328,7 @@
 		height: 48px;
 		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
+
 	.buttonstylesss_1 {
 		font-size: 16px;
 		font-weight: 600;

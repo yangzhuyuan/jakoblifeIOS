@@ -30,6 +30,7 @@
             "bundleId" : "io.dcloud.jakob",
             "certificateFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife.p12",
             "certificateProfileFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife_new.mobileprovision",
+            "customPlaygroundType" : "local",
             "playground" : "custom",
             "runSignStatus" : 1,
             "type" : "uni-app:app-ios"

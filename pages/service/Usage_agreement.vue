@@ -34,7 +34,7 @@
 					title: this.$t('JakobLife隐私政策1')
 				})
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1150)
 				} else {
 					this.article(1130)
@@ -54,7 +54,7 @@
 					title: this.$t('服务协议1')
 				})
 				const lan = uni.getLocale();
-				if (lan == 'zh-Hans'|| lan == 'zh-Hant') {
+				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 					this.article(1149)
 				} else {
 					this.article(1)
@@ -65,7 +65,7 @@
 			article(id) {
 				let that = this
 				uni.request({
-					url: that.$url_article,
+					url: that.$url_APP_IP + that.$url_article,
 					method: 'GET',
 					data: {
 						articleId: id

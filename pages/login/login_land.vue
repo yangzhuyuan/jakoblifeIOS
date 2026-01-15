@@ -61,20 +61,26 @@
 					{{$t('新用户去注册')}}
 				</view>
 			</view>
-			<view class="otherstyle" v-show="otherloginssd">
+			<view class="otherstyle">
 				<view class="otherstyle_1">
 					<view class="otherstyle_2"></view>
 					<view style="font-size: 12px; color: grey;">{{$t("其它登录方式")}}</view>
 					<view class="otherstyle_3"></view>
 				</view>
-				<view style="display:flex;justify-content: center;margin-top: 40px;">
-					<!-- 	<image v-show="xinghao == false" @click="other_sbuitm('apple')" class="img_dsf"
-							src="../../static/pingguodenglu.png" /> -->
-					<image @click="other_sbuitm('weixin')" class="img_dsf1" src="../../static/weixin.png" />
-					<image @click="other_sbuitm('qq')" class="img_dsf" src="../../static/qq.png" />
+				<view v-show="otherloginssd" style="display:flex;justify-content: center;margin-top: 40px;">
+					<image v-show="otherloginssd" @click="other_sbuitm('weixin')" class="img_dsf1"
+						src="../../static/weixin.png" />
+					<image v-show="otherloginssd" @click="other_sbuitm('qq')" class="img_dsf"
+						src="../../static/qq.png" />
+					<!-- 	<image v-show="!xinghao" @click="other_sbuitm('apple')" class="img_dsf"
+						src="../../static/pingguodenglu.png" />
+					<image v-show="!otherloginssd" @click="other_sbuitm('google')" class="img_dsf"
+						src="../../static/guge.png" /> -->
 				</view>
 			</view>
 		</view>
+
+
 		<view class="container_bg" v-show="tanchuang">
 			<view class="modalss">
 				<view class="tanchuangstyle">
@@ -181,6 +187,8 @@
 
 
 		methods: {
+
+
 			...mapMutations(['getImgID', 'other_sign_access_token', 'other_sign_openid', 'other_sign_other_types']),
 			getback(name, mm, yzm, cb) {
 				if (this.mm_yzm == true) {
@@ -238,7 +246,7 @@
 						code: this.yzm,
 						uuid: this.uuid
 					}
-					this.$post(this.$url_check_code, data, {
+					this.$post(this.$url_APP_IP + this.$url_check_code, data, {
 						'content-type': 'application/x-www-form-urlencoded'
 					}).then(res => {
 						if (res.code == 200) {
@@ -282,15 +290,21 @@
 					})
 					return
 				} else {
-					this.tanchuang = true
-					this.yzm = ''
-					this.captchaImage();
+					// this.tanchuang = true
+					// this.yzm = ''
+					// this.captchaImage();
+					if (!this.validateEmail(this.unername)) {
+						this.send_login_code()
+					} else {
+						this.send_login_code1()
+					}
+
 				}
 			},
 
 			//获取验证码图片
 			captchaImage() {
-				this.$get(this.$url_captchaImage, {}, {
+				this.$get(this.$url_APP_IP + this.$url_captchaImage, {}, {
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(res => {
 					if (res.code == 200) {
@@ -305,7 +319,7 @@
 				const data = {
 					phone: this.unername
 				}
-				this.$post(this.$url_send_login_code, data, {
+				this.$post(this.$url_APP_IP + this.$url_send_login_code, data, {
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					if (res.code == 200) {
@@ -341,7 +355,7 @@
 				const data = {
 					email: this.unername
 				}
-				this.$post(this.$url_send_login_code, data, {
+				this.$post(this.$url_APP_IP + this.$url_send_login_code, data, {
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					if (res.code == 200) {
@@ -427,7 +441,7 @@
 					username: this.unername,
 					password: this.passwrod,
 				}
-				this.$post(this.$url_user_login, data, {
+				this.$post(this.$url_APP_IP + this.$url_user_login, data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
 					console.log(res)
@@ -484,7 +498,7 @@
 					smsCode: this.yanzhengma,
 					phoneNum: this.unername
 				}
-				this.$post(this.$url_app_login, data, {
+				this.$post(this.$url_APP_IP + this.$url_app_login, data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
 					if (res.code == 200) {
@@ -526,7 +540,7 @@
 					smsCode: this.yanzhengma,
 					email: this.unername
 				}
-				this.$post("https://jakoblife.jakob-techs.com/prod-api/app/app_email_login", data, {
+				this.$post(this.$url_APP_IP + "/prod-api/app/app_email_login", data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
 					if (res.code == 200) {
@@ -644,7 +658,7 @@
 							"suffix": "并使用本机号码登录", // 条款后的文案 默认值：“并使用本机号码登录”
 							"privacyItems": [ // 自定义协议条款，最大支持2个，需要同时设置url和title. 否则不生效
 								{
-									"url": "https://jakoblife.jakob-techs.com/privacy.html", // 点击跳转的协议详情页面
+									"url": this_.$url_APP_IP + "/privacy.html", // 点击跳转的协议详情页面
 									"title": "用户服务协议" // 协议名称
 								}
 							]
@@ -700,7 +714,6 @@
 						case "weixin":
 							uni.login({
 								provider: 'weixin',
-								// onlyAuthorize: true, // 微信登录仅请求授权认证
 								success: function(res) {
 									that.check_auth(res.authResult.access_token, res.authResult.openid,
 										"weixin")
@@ -742,12 +755,26 @@
 										"apple")
 								},
 								fail: function(err) {
-									// 登录授权失败
-									// err.code是错误码
-									uni.showToast({
-										title: err,
-										icon: 'none'
+									console.log(err);
+								}
+							});
+							break
+						case "google":
+							uni.login({
+								provider: 'google',
+								success: function(loginRes) {
+									// 登录成功
+									let access_token = loginRes.authResult.access_token
+									uni.getUserInfo({
+										provider: 'google',
+										success: function(info) {
+											that.check_auth(access_token, info.userInfo.openid,
+												"google")
+										}
 									})
+								},
+								fail: function(err) {
+									console.log("google", err)
 								}
 							});
 							break
@@ -757,7 +784,7 @@
 
 			//校验第三方账号是否已注册
 			check_auth(access_token, openid, othersss_types) {
-				this.$post(this.$url_check_auth, {
+				this.$post(this.$url_APP_IP + this.$url_check_auth, {
 					openId: openid
 				}, {
 					'content-type': 'application/x-www-form-urlencoded'
@@ -784,12 +811,33 @@
 						// 	case "apple":
 						// 		break
 						// }
-						uni.reLaunch({
-							url: "/pages/login/Force_binding_phone_frist"
-						})
-						// uni.reLaunch({
-						// 	url: "/pages/login/Force_binding_email_frist"
-						// })
+
+						switch (othersss_types) {
+							case "qq":
+							case "weixin":
+								uni.reLaunch({
+									url: "/pages/login/Force_binding_phone_frist"
+								})
+								break
+							case "google":
+								// this.third_loginregister(access_token, openid, othersss_types)
+								uni.reLaunch({
+									url: "/pages/login/Force_binding_email_frist"
+								})
+								break
+							case "apple":
+								// this.third_loginregister(access_token, openid, othersss_types)
+								if (this.otherloginssd === true) {
+									uni.reLaunch({
+										url: "/pages/login/Force_binding_phone_frist"
+									})
+								} else {
+									uni.reLaunch({
+										url: "/pages/login/Force_binding_email_frist"
+									})
+								}
+								break
+						}
 					}
 				}).catch(erro => {
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
@@ -805,15 +853,37 @@
 					}
 				})
 			},
+
+			// apple和安卓的google注册登录
+			third_loginregister(access_token, openid, othersss_types) {
+				let data = {
+					openId: openid,
+					userThirdPart: othersss_types
+				}
+				console.log("传参：", data)
+				this.$post(this.$url_APP_IP + "/prod-api/app/third_parts/oauth/third_login/register", data, {
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then((third_loginregisterres) => {
+					console.log("third_loginregisterres", third_loginregisterres)
+					// if (this.otherloginssd === true) {
+					// 	uni.reLaunch({
+					// 		url: "/pages/login/Force_binding_phone_frist"
+					// 	})
+					// } else {
+					// 	uni.reLaunch({
+					// 		url: "/pages/login/Force_binding_email_frist"
+					// 	})
+					// }
+				})
+			},
+
 			//微信使用accessToken和openId登录
 			getweixincode(access_token, openid) {
 				const data = {
 					accessToken: access_token,
 					openId: openid,
-					// code: this.yanzhengma,
-					// phoneNum: this.unername_phone
 				}
-				this.$post(this.$url_wechat_login, data, {
+				this.$post(this.$url_APP_IP + this.$url_wechat_login, data, {
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					console.log(res)
@@ -856,7 +926,7 @@
 					// code: this.yanzhengma,
 					// phoneNum: this.unername_phone
 				}
-				this.$post(this.$url_qq_login, data, {
+				this.$post(this.$url_APP_IP + this.$url_qq_login, data, {
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					if (res.code == 200) {

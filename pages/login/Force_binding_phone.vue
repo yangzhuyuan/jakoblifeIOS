@@ -111,9 +111,10 @@
 					})
 					return
 				} else {
-					this.tanchuang = true
-					this.yzm = ''
-					this.captchaImage();
+					// this.tanchuang = true
+					// this.yzm = ''
+					// this.captchaImage();
+					this.send_phone_register_code()
 				}
 			},
 
@@ -121,7 +122,7 @@
 			captchaImage() {
 				let that = this
 				uni.request({
-					url: that.$url_captchaImage,
+					url: that.$url_APP_IP + that.$url_captchaImage,
 					method: 'GET',
 					header: {
 						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
@@ -168,7 +169,7 @@
 				} else {
 					let that = this
 					uni.request({
-						url: that.$url_check_code,
+						url: that.$url_APP_IP + that.$url_check_code,
 						method: 'POST',
 						data: {
 							code: that.yzm,
@@ -226,7 +227,7 @@
 			send_phone_register_code() {
 				let that = this
 				uni.request({
-					url: that.$url_send_phone_register_code,
+					url: that.$url_APP_IP + that.$url_send_phone_register_code,
 					method: 'POST',
 					data: {
 						phone: that.unername_phone
@@ -235,34 +236,32 @@
 						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
 					},
 					success(res) {
-						if (res.statusCode == 200) {
-							console.log("发送手机绑定验证码:", res)
-							if (res.data.code == 200) {
-								that.yanzheng = 0
-								if (that.codetime > 0) {
-									uni.showToast({
-										title: that.$t('不能重复获取'),
-										icon: "none"
-									})
-									return
-								} else {
-									that.codetime = 60
-									that.msg = that.$t('s后可重发')
-									let timer = setInterval(() => {
-										that.codetime-- + that.msg;
-										if (that.codetime < 1) {
-											clearInterval(timer);
-											that.msg = ''
-											that.codetime = that.$t('重新获取')
-										}
-									}, 1000)
-								}
-							} else {
+						console.log("发送手机绑定验证码:", res)
+						if (res.data.code == 200) {
+							that.yanzheng = 0
+							if (that.codetime > 0) {
 								uni.showToast({
-									title: that.$t("该手机号已被绑定"),
-									icon: 'none'
+									title: that.$t('不能重复获取'),
+									icon: "none"
 								})
+								return
+							} else {
+								that.codetime = 60
+								that.msg = that.$t('s后可重发')
+								let timer = setInterval(() => {
+									that.codetime-- + that.msg;
+									if (that.codetime < 1) {
+										clearInterval(timer);
+										that.msg = ''
+										that.codetime = that.$t('重新获取')
+									}
+								}, 1000)
 							}
+						} else {
+							uni.showToast({
+								title: that.$t("该手机号已被绑定"),
+								icon: 'none'
+							})
 						}
 					},
 					fail(res) {
@@ -275,7 +274,7 @@
 			getweixincode() {
 				let that = this
 				uni.request({
-					url: that.$url_wechat_login,
+					url: that.$url_APP_IP + that.$url_wechat_login,
 					method: 'POST',
 					data: {
 						accessToken: that.access_token,
@@ -309,7 +308,7 @@
 			getqqcode() {
 				let that = this
 				uni.request({
-					url: that.$url_qq_login,
+					url: that.$url_APP_IP + that.$url_qq_login,
 					method: 'POST',
 					data: {
 						accessToken: that.access_token,
@@ -343,7 +342,7 @@
 				console.log("token", uni.getStorageSync("token"))
 				let that = this
 				uni.request({
-					url: that.$url_bind_phone,
+					url: that.$url_APP_IP + that.$url_bind_phone,
 					method: 'PUT',
 					data: {
 						code: that.yanzhengma,

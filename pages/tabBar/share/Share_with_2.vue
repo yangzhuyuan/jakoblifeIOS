@@ -445,7 +445,7 @@
 			zanbugongxiang() {
 				let that = this
 				uni.request({
-					url: `https://jakoblife.jakob-techs.com/prod-api/share/data/${that.id}`, // 替换为你的删除接口，其中 {id} 是资源的唯一标识
+					url: `${that.$url_APP_IP}/prod-api/share/data/${that.id}`, // 替换为你的删除接口，其中 {id} 是资源的唯一标识
 					method: 'DELETE', // 指定请求方法为 DELETE
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
@@ -477,7 +477,7 @@
 				console.log("dasjkhadhjak", that.id)
 				console.log("dasjkhadhjak", [dataPointIds])
 				uni.request({
-					url: "https://jakoblife.jakob-techs.com/prod-api/share/data/change",
+					url: that.$url_APP_IP + "/prod-api/share/data/change",
 					method: "POST",
 					data: {
 						id: that.id,
