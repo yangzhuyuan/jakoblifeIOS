@@ -31,10 +31,10 @@ Vue.prototype.$globalTimers = {
 };
 
 //测试域名QA环境
-const APP_IP_OA = 'https://jakoblife-qa.jakob-techs.com' //中国测试服务器域名
+// const APP_IP_OA = 'https://jakoblife-qa.jakob-techs.com' //中国测试服务器域名
 // const APP_IP_OA_EN = 'https://jakoblife-qa.jakob-techs.com' //美国测试服务器域名
 //正式域名
-// const APP_IP_OA = 'https://jakoblife.jakob-techs.com' //中国正式服务器域名
+const APP_IP_OA = 'https://jakoblife.jakob-techs.com' //中国正式服务器域名
 // const APP_IP_OA_EN = 'https://jakoblife.jakob-techs.com'//美国正式服务器域名
 
 Vue.prototype.$url_APP_IP = APP_IP_OA

@@ -2,8 +2,8 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "2.0.4055",
-    "versionCode" : 265,
+    "versionName" : "2.0.4094",
+    "versionCode" : 304,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
@@ -22,7 +22,7 @@
                 "AudioToolbox.framework",
                 "HealthKit.framework"
             ],
-            "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
+            "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
             "UIBackgroundModes" : [
                 "location",
                 "processing",
@@ -85,7 +85,7 @@
                         "AudioToolbox.framework",
                         "HealthKit.framework"
                     ],
-                    "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
+                    "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
                         "location",
                         "processing",
@@ -148,7 +148,7 @@
                         "AudioToolbox.framework",
                         "HealthKit.framework"
                     ],
-                    "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
+                    "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
                         "location",
                         "processing",
@@ -289,7 +289,7 @@
                     "AudioToolbox.framework",
                     "HealthKit.framework"
                 ],
-                "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
+                "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
                 "UIBackgroundModes" : [
                     "location",
                     "processing",

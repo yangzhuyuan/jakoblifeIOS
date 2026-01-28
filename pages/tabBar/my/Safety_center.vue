@@ -102,6 +102,10 @@
 	import {
 		isInChinaByIP
 	} from '../../api/isInChinaByIP.js';
+	import {
+		mapState,
+		mapMutations
+	} from 'vuex'
 	export default {
 		data() {
 			return {
@@ -141,7 +145,7 @@
 		},
 
 		methods: {
-
+			...mapMutations(['setacktypes']),
 			getinfor() {
 				let that = this
 				uni.request({
@@ -247,6 +251,7 @@
 				uni.removeStorageSync("kapianlist")
 				uni.removeStorageSync("kapianlist2")
 				uni.removeStorageSync("listdadsa")
+				this.setacktypes("0")
 				uni.clearStorageSync()
 				uni.reLaunch({
 					url: '/pages/login/login_land'

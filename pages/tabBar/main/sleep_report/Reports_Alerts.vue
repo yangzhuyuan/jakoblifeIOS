@@ -396,9 +396,15 @@
 						},
 						fail(res) {
 							uni.showToast({
-								title: that.$t("请检查设备连接"),
-								icon: 'none'
+								title: that.$t("连接中稍后再试"),
+								icon: 'none',
+								duration: 1500
 							})
+							setTimeout(() => {
+								uni.switchTab({
+									url: '/pages/tabBar/main/Main'
+								})
+							}, 1000)
 						}
 					})
 				}
@@ -615,9 +621,15 @@
 					},
 					fail(res) {
 						uni.showToast({
-							title: that.$t("请检查设备连接"),
-							icon: 'none'
+							title: that.$t("连接中稍后再试"),
+							icon: 'none',
+							duration: 1500
 						})
+						setTimeout(() => {
+							uni.switchTab({
+								url: '/pages/tabBar/main/Main'
+							})
+						}, 1000)
 						setTimeout(() => {
 							that.$forceUpdate()
 							that.switchHER = true
@@ -649,9 +661,15 @@
 					},
 					fail(res) {
 						uni.showToast({
-							title: that.$t("请检查设备连接"),
-							icon: 'none'
+							title: that.$t("连接中稍后再试"),
+							icon: 'none',
+							duration: 1500
 						})
+						setTimeout(() => {
+							uni.switchTab({
+								url: '/pages/tabBar/main/Main'
+							})
+						}, 1000)
 						setTimeout(() => {
 							that.$forceUpdate()
 							that.switchHER = false

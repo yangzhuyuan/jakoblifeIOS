@@ -225,18 +225,18 @@
 			console.log(that.otaState)
 			if (that.otaState === "GETTING_INFO" || that.otaState === "UPGRADING") {
 				console.log("哈哈哈哈哈111")
-				uni.showModal({
-					content: that.$t("当前OTA正在升级"),
-					confirmText: that.$t('确定'),
-					cancelText: that.$t('取消'),
-					success(modal) {
-						if (modal.confirm) {
-							that.endOta()
-						} else {
-							return true
-						}
-					}
-				});
+				// uni.showModal({
+				// 	content: that.$t("当前OTA正在升级"),
+				// 	confirmText: that.$t('确定'),
+				// 	cancelText: that.$t('取消'),
+				// 	success(modal) {
+				// 		if (modal.confirm) {
+				// 			that.endOta()
+				// 		} else {
+				// 			return true
+				// 		}
+				// 	}
+				// });
 				return true
 			} else {
 				console.log("哈哈哈哈哈222")
@@ -260,12 +260,10 @@
 				uni.closeBLEConnection({
 					deviceId: this.deviceIdss,
 					complete(complete) {
-						console.log("hhhhhh", complete)
 					}
 				});
 			}, 5000)
 			this.disconnect()
-
 		},
 
 		beforeDestroy() {
@@ -337,8 +335,6 @@
 						}
 					})
 				}, 100)
-				console.log("hhhhhkkkk", that.wactchtimerid)
-
 			},
 
 			toArrayBuffer(data) {
@@ -381,7 +377,9 @@
 			watcahupdate() {
 				let that = this
 				uni.showLoading({
-					title: that.$t("正在请求升级")
+					title: that.$t("正在请求升级"),
+					mask: true
+
 				})
 				// that.log("正在请求升级")
 				setTimeout(() => {
@@ -741,14 +739,14 @@
 						uni.startBluetoothDevicesDiscovery({
 							allowDuplicatesKey: true,
 							success: (startBluetoothDevicesDiscovery) => {
-								// that.log('开始扫描…');
-								// uni.showLoading({
-								// 	title: that.$t("搜索蓝牙设备中")
-								// })
+								that.log('开始扫描…');
+								uni.showLoading({
+									title: that.$t("搜索蓝牙设备中"),
+									mask: true,
+								})
 								that.scanTimer = setTimeout(() => {
 									if (!that.foundDevice) {
 										uni.hideLoading();
-										// that.log('未找到设备…');
 										that.stopScan();
 										uni.showModal({
 											content: that.$t("未找到设备"),
@@ -803,7 +801,7 @@
 			onBluetoothDeviceFound() {
 				let that = this
 				that.foundDevice = false
-				that.targetDeviceId = ""
+				// that.targetDeviceId = ""
 				uni.onBluetoothDeviceFound((onBluetoothDeviceFoundres) => {
 					const deviceArray = onBluetoothDeviceFoundres.devices;
 					for (const item of deviceArray) {
@@ -848,10 +846,10 @@
 											if (modal.confirm) {
 												uni.openBluetoothAdapter({
 													success() {
-														// that.log("初始化蓝牙成功")
 														uni.showLoading({
 															title: that.$t(
-																"连接中")
+																"连接中"),
+															mask: true
 														})
 														setTimeout(() => {
 															console.log(
@@ -912,6 +910,7 @@
 						deviceId: deviceId,
 						timeout: 8000,
 						success(res) {
+							that.foundDevice = true;
 							// that.log("createBLEConnection", res);
 							console.log("createBLEConnection", res);
 							// that.log("createBLEConnection", deviceId);
@@ -969,11 +968,20 @@
 				if (!this.targetDeviceId) return;
 				/* App 端调试时也不要关闭适配器，防止僵尸句柄 */
 				uni.closeBLEConnection({
-					deviceId: this.targetDeviceId
+					deviceId: this.targetDeviceId,
+					complete(complete) {
+						console.log(this.targetDeviceId, complete)
+					}
+				});
+				uni.closeBLEConnection({
+					deviceId: this.deviceIdss,
+					complete(complete) {
+						console.log(this.deviceIdss, complete)
+					}
 				});
 				this.connected = false;
 				this.otaState = 'IDLE';
-				console.log("hhhhhh")
+
 			},
 
 			/* ========================= 6. 获取服务（你原有逻辑） =========== */

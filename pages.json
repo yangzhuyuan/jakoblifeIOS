@@ -247,15 +247,15 @@
 			"path": "pages/tabBar/tendency/Historical_record",
 			"style": {
 				// "enablePullDownRefresh": true,
-				"onReachBottomDistance": 120,
-				"navigationStyle": "custom",
-				"app-plus": {
-					"pullToRefresh": {
-						"support": true,
-						"color": "#000000", //小圈圈的颜色
-						"style": "circle" //小圈圈的样式
-					}
-				}
+				// "onReachBottomDistance": 120,
+				"navigationStyle": "custom"
+				// "app-plus": {
+				// 	"pullToRefresh": {
+				// 		"support": true,
+				// 		"color": "#000000", //小圈圈的颜色
+				// 		"style": "circle" //小圈圈的样式
+				// 	}
+				// }
 			}
 		},
 		{

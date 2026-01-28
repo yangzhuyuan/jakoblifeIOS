@@ -104,7 +104,7 @@
 					})
 					return
 				} else {
-					console.log("0-扫码  1-蓝牙 2-WiFi设备类型：" + this.modelConnectType)
+					// console.log("0-扫码  1-蓝牙 2-WiFi设备类型：" + this.modelConnectType)
 					uni.navigateTo({
 						url: "../Bing_page/Bind_page_2?modelConnectType=" + this.modelConnectType +
 							"&SELECT_TYPE=" + this.SELECT_TYPE + "&name=" + this.name

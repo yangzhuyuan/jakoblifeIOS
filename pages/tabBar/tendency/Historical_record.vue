@@ -1031,7 +1031,7 @@
 			},
 
 			handleToggleExpand(index) {
-				console.log("切换展开状态:", index);
+				// console.log("切换展开状态:", index);
 				// 实现展开逻辑
 			},
 

@@ -423,7 +423,7 @@
 					deviceId: deviceId,
 					timeout: 5000,
 					success(res) {
-						console.log(res)
+						// console.log(res)
 						that.$refs.popup.close();
 						that.$refs.popup1.open("bottom");
 						that.MACdeviceID = deviceId;
@@ -622,7 +622,7 @@
 					deviceId: deviceId,
 					serviceId: serviceId,
 					success: (res) => {
-						console.log('获取蓝牙设备某个服务中所有特征值(characteristic)3', res.characteristics)
+						// console.log('获取蓝牙设备某个服务中所有特征值(characteristic)3', res.characteristics)
 						let platformres = uni.getSystemInfoSync();
 						for (let i = 0; res.characteristics.length > i; i++) {
 							let item = res.characteristics[i]
@@ -854,7 +854,7 @@
 				const formattedBytes2 = Array.from(bytesnew2).map(byte =>
 					`0x${byte.toString(16).padStart(2, '0')}`);
 
-				console.log(formattedBytes2);
+				// console.log(formattedBytes2);
 				// 将十六进制字符串转换为十进制数值
 				const bytes3332 = formattedBytes2.map(byte => parseInt(byte, 16));
 				// 计算累加和
@@ -880,11 +880,8 @@
 					serviceId: serviceId,
 					characteristicId: this.writeuuid,
 					value: buffer,
-					success(res) {
-						console.log("时间命令数据回复成功：", res)
-					},
-					fail(err) {
-						console.log("时间命令数据回复失败：", err)
+					complete() {
+						console.log("发送同步时间命令：", hexCommand22)
 					}
 				})
 			},
@@ -893,7 +890,7 @@
 				let that = this
 				uni.onBLECharacteristicValueChange((res) => {
 					const dataList = that.ab2hex(res.value) //将蓝牙发送过来的数据转16进制
-					console.log("dataList", dataList)
+					// console.log("dataList", dataList)
 					that.dataBuffer.push(dataList) //组合16进制数据包
 					//第一次绑定发送写入绑定命令返回的数据
 					if (that.dataBuffer.length === 2 && that.dataBuffer[1].slice(0, 2) === "0e") {
@@ -968,7 +965,7 @@
 									console.log("ack数据回复成功：", res)
 								},
 								fail(err) {
-									console.log("ack数据回复失败：", err)
+									// console.log("ack数据回复失败：", err)
 									that.dataBuffer = []
 									that.calculateChecksumsss(hexString, deviceId,
 										serviceId, that

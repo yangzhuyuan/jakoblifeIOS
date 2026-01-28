@@ -183,13 +183,16 @@
 					}
 				}
 			});
+			that.setacktypes("0")
 		},
 
 
 		methods: {
 
 
-			...mapMutations(['getImgID', 'other_sign_access_token', 'other_sign_openid', 'other_sign_other_types']),
+			...mapMutations(['getImgID', 'other_sign_access_token', 'other_sign_openid', 'other_sign_other_types',
+				'setacktypes'
+			]),
 			getback(name, mm, yzm, cb) {
 				if (this.mm_yzm == true) {
 					return {
@@ -444,7 +447,7 @@
 				this.$post(this.$url_APP_IP + this.$url_user_login, data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
-					console.log(res)
+					// console.log(res)
 					switch (res.code) {
 						case 200:
 							uni.showToast({

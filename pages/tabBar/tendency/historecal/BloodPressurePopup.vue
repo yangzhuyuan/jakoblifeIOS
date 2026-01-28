@@ -11,7 +11,6 @@
 					<text class="header-cell">{{$t("和或")}}</text>
 					<text class="header-cell">{{$t("舒张压")}}</text>
 				</view>
-
 				<view class="table-row normal">
 					<text class="cell">{{$t("正常血压")}}</text>
 					<text class="cell">91-120</text>

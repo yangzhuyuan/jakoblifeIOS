@@ -11,7 +11,7 @@ export const clearDailyGoalData = () => {
 	if (lastClearDate !== today) {
 		uni.removeStorageSync("today_Daily_Goal");
 		uni.setStorageSync('lastClearDate', today);
-		console.log('✅ 今日目标数据已清除');
+		// console.log('✅ 今日目标数据已清除');
 		return true;
 	}
 
