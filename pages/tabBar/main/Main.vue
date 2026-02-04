@@ -2192,35 +2192,34 @@
 			},
 			//立即测量
 			sleep_alert() {
-				if (this.blewatch_id === "1" || this.acktypes === "0") {
-					console.log("同步数据中")
+				let that = this
+				if (that.blewatch_id === "1" || that.acktypes === "0") {
 					uni.showLoading({
-						title: this.$t("数据同步中请稍后"),
+						title: that.$t("数据同步中请稍后"),
 						mask: true,
 					})
 					let aaawatchetime = 0
-					this.watchtimer3 = setInterval(() => {
+					that.watchtimer3 = setInterval(() => {
 						aaawatchetime++
-						if (this.blewatch_id === "0") {
-							console.log("同步数据中222")
+						if (that.blewatch_id === "0") {
 							uni.hideLoading()
-							clearInterval(this.watchtimer3)
-							this.watchtimer3 = null
+							clearInterval(that.watchtimer3)
+							that.watchtimer3 = null
 							setTimeout(() => {
-								this.sendstartheartwatch(this.writeuuid, 1)
+								that.sendstartheartwatch(that.writeuuid, 1)
 								uni.showLoading({
-									title: this.$t("请稍后"),
+									title: that.$t("请稍后"),
 									mask: true,
 								})
 								uni.setStorageSync("sleep_alert", 1)
-							}, 1500)
+							}, 1000)
 						} else {
-							if (aaawatchetime === 20) {
+							if (aaawatchetime === 25) {
 								uni.hideLoading()
-								clearInterval(this.watchtimer3)
-								this.watchtimer3 = null
+								clearInterval(that.watchtimer3)
+								that.watchtimer3 = null
 								uni.showToast({
-									title: this.$t("请检查设备连接"),
+									title: that.$t("请检查设备连接"),
 									icon: 'none',
 									duration: 2000
 								})
@@ -2228,10 +2227,9 @@
 						}
 					}, 1000)
 				} else {
-					console.log("立即测量")
-					this.sendstartheartwatch(this.writeuuid, 1)
+					that.sendstartheartwatch(that.writeuuid, 1)
 					uni.showLoading({
-						title: this.$t("请稍后"),
+						title: that.$t("请稍后"),
 						mask: true,
 					})
 					uni.setStorageSync("sleep_alert", 1)
@@ -3284,6 +3282,8 @@
 												const sleepObj = receive5610SleepData(bytes);
 												const stats = that.calcSleepMinutes(sleepObj);
 												console.log('解析睡眠数据：', stats);
+												// that.log('1解析睡眠数据：', that.blewatch_id)
+												// that.log('2解析睡眠数据：', stats)
 												that.sleeepalldata = stats
 												uni.setStorageSync("totalLight", stats.totalLight)
 												uni.setStorageSync("totalDeep", stats.totalDeep)
@@ -3317,7 +3317,13 @@
 													deepMin === uni.getStorageSync("deepMin2") &&
 													remMin === uni.getStorageSync("remMin2") &&
 													lightMin === uni.getStorageSync("lightMin2")) {
-													// console.log("当天手表上相同的睡眠数据已经上传过")
+													if (uni.getStorageSync("sleep_time") === "00/00" && that
+														.getCurrentTimesleep() !== that.sleep_time) {
+														that.jakoblife_fat_scale3(that.shoubiaomac, stats
+															.formalReadable,
+															that.shoubiaosn, "睡眠");
+													}
+													console.log("2当天手表上相同的睡眠数据已经上传过")
 												} else {
 													uni.setStorageSync("totalAll2", totalAll)
 													uni.setStorageSync("totalH2", totalH)
@@ -3458,6 +3464,21 @@
 					}
 				});
 			},
+
+			getCurrentTimesleep() {
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = String(now.getMonth() + 1).padStart(
+					2, '0');
+				const day = String(now.getDate()).padStart(2, '0');
+				const hours = String(now.getHours()).padStart(2,
+					'0');
+				const minutes = String(now.getMinutes()).padStart(
+					2, '0');
+				const seconds = String(now.getSeconds()).padStart(
+					2, '0');
+				return `${month}/${day}`;
+			},
 			calcSleepMinutes(sleepObj) {
 				// 正式睡眠：浅睡 + 深睡 + 眼动
 				const formalMinutes = sleepObj.totalLight + sleepObj.totalDeep + sleepObj.totalRem;
@@ -3531,67 +3552,70 @@
 			},
 			// 处理完整的数据集
 			processCompleteDataSets(deviceId, deviceSn, serviceId, writeuuid) {
-				// if (this.quotient > 0 && this.quotient === this.dataBuffer.length) {
+				let that = this
+				// if (that.quotient > 0 && that.quotient === that.dataBuffer.length) {
 				// 	setTimeout(() => {
-				// 		this.sendack2(this.formatData(this.dataBuffer), deviceId, serviceId, this.writeuuid);
+				// 		that.sendack2(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
 				// 	}, 500)
 				// // 合并数据
-				// const allData = this.formatData(this.dataBuffer);
-				// const parseBlood = this.parseProtocolData(allData);
+				// const allData = that.formatData(that.dataBuffer);
+				// const parseBlood = that.parseProtocolData(allData);
 				// // // 解析协议数据
-				// const parseBloodData = this.parseHeartRateData(parseBlood.Covmamlueand);
+				// const parseBloodData = that.parseHeartRateData(parseBlood.Covmamlueand);
 				// console.log("parseBloodData", parseBloodData)
 				// if (parseBloodData.time !== uni.getStorageSync("parseBloodDatatime")) {
 				// 	uni.setStorageSync("parseBloodDatatime", parseBloodData.time)
-				// 	this.lowPressure = this.Blood === "mmHg" ? parseBloodData.diastolic : (Number(parseBloodData
+				// 	that.lowPressure = that.Blood === "mmHg" ? parseBloodData.diastolic : (Number(parseBloodData
 				// 		.diastolic) * 0.133).toFixed(1);
-				// 	this.highPressure = this.Blood === "mmHg" ? parseBloodData.systolic : (Number(parseBloodData
+				// 	that.highPressure = that.Blood === "mmHg" ? parseBloodData.systolic : (Number(parseBloodData
 				// 		.systolic) * 0.133).toFixed(1);
 				// 	uni.setStorageSync("lowPressure", parseBloodData.diastolic)
 				// 	uni.setStorageSync("highPressure", parseBloodData.systolic)
-				// 	this.updateBloodPressureStatus(parseBloodData.diastolic, parseBloodData.systolic);
+				// 	that.updateBloodPressureStatus(parseBloodData.diastolic, parseBloodData.systolic);
 				// 	uni.getNetworkType({
 				// 		success: function(res) {
 				// 			if (res.networkType === 'none') {
-				// 				this.bgaaa(parseBloodData.diastolic, parseBloodData.systolic)
+				// 				that.bgaaa(parseBloodData.diastolic, parseBloodData.systolic)
 				// 			}
 				// 		},
 				// 		fail: function(err) {
 				// 			console.error('获取网络类型失败：', err);
 				// 		}
 				// 	});
-				// 	this.xeuyabiaoshi = "1"
-				// 	this.jakoblife_fat_scale22(
+				// 	that.xeuyabiaoshi = "1"
+				// 	that.jakoblife_fat_scale22(
 				// 		deviceId,
 				// 		parseBloodData.systolic,
 				// 		parseBloodData.diastolic,
-				// 		parseInt(this.pulse),
+				// 		parseInt(that.pulse),
 				// 		deviceSn
 				// 	);
 				// }
 				// }
-				if (this.quotient2 > 0 && this.dataBuffer.length === this.quotient2) {
-					const bytes = hexStringToBytes(this.formatData(this.dataBuffer).slice(18, this.formatData(this
+				if (that.quotient2 > 0 && that.dataBuffer.length === that.quotient2) {
+					const bytes = hexStringToBytes(that.formatData(that.dataBuffer).slice(18, that.formatData(that
 						.dataBuffer).length));
 					const sleepObj = receive5610SleepData(bytes);
-					const stats = this.calcSleepMinutes(sleepObj);
-					this.sleeepalldata = stats
+					const stats = that.calcSleepMinutes(sleepObj);
+					that.sleeepalldata = stats
 					console.log('解析睡眠数据：', stats);
+					// that.log('1解析睡眠数据：', that.blewatch_id)
+					// that.log('2解析睡眠数据：', stats)
 					uni.setStorageSync("totalLight", stats.totalLight)
 					uni.setStorageSync("totalDeep", stats.totalDeep)
 					uni.setStorageSync("totalRem", stats.totalRem)
 					uni.setStorageSync("sleep", stats.formalReadable)
-					this.sleep = stats.formalReadable
-					this.totalLight = stats.totalLight
-					this.totalDeep = stats.totalDeep
-					this.totalRem = stats.totalRem
+					that.sleep = stats.formalReadable
+					that.totalLight = stats.totalLight
+					that.totalDeep = stats.totalDeep
+					that.totalRem = stats.totalRem
 					// 1. 总睡眠小时数（ 保留 1 位小数）
-					const totalAll = this.timeStrToMinutes(this.sleep); // 436
+					const totalAll = that.timeStrToMinutes(that.sleep); // 436
 					const totalH = (totalAll / 60).toFixed(1)
-					const deepMin = (this.timeStrToMinutes(this.totalDeep) / 60).toFixed(1);
-					const remMin = (this.timeStrToMinutes(this.totalRem) / 60).toFixed(1);
-					const lightMin = (this.timeStrToMinutes(this.totalLight) / 60).toFixed(1)
-					this.sleep_point = this.overallSleepScore(totalAll, totalH, deepMin,
+					const deepMin = (that.timeStrToMinutes(that.totalDeep) / 60).toFixed(1);
+					const remMin = (that.timeStrToMinutes(that.totalRem) / 60).toFixed(1);
+					const lightMin = (that.timeStrToMinutes(that.totalLight) / 60).toFixed(1)
+					that.sleep_point = that.overallSleepScore(totalAll, totalH, deepMin,
 						remMin, lightMin)
 					uni.setStorageSync("sleep_time", sleepObj.date.slice(6, sleepObj.date
 						.length).replace("-", "/"))
@@ -3600,32 +3624,39 @@
 						deepMin === uni.getStorageSync("deepMin2") &&
 						remMin === uni.getStorageSync("remMin2") &&
 						lightMin === uni.getStorageSync("lightMin2")) {
-						// console.log("2当天手表上相同的睡眠数据已经上传过")
+						if (uni.getStorageSync("sleep_time") === "00/00" && that
+							.getCurrentTimesleep() !== that.sleep_time) {
+							that.jakoblife_fat_scale3(that.shoubiaomac, stats
+								.formalReadable,
+								that.shoubiaosn, "睡眠");
+						}
+						console.log("2当天手表上相同的睡眠数据已经上传过")
 					} else {
 						uni.setStorageSync("totalAll2", totalAll)
 						uni.setStorageSync("totalH2", totalH)
 						uni.setStorageSync("deepMin2", deepMin)
 						uni.setStorageSync("remMin2", remMin)
 						uni.setStorageSync("lightMin2", lightMin)
-						this.jakoblife_fat_scale3(this.shoubiaomac, stats.formalReadable, this
+						that.jakoblife_fat_scale3(that.shoubiaomac, stats.formalReadable, that
 							.shoubiaosn, "睡眠");
 					}
-					// this.sendack(this.formatData(this.dataBuffer), deviceId, serviceId, this.writeuuid);
-					this.resetDataState("12")
-					this.blewatch_id2 = "1"
-				} else if (this.quotient3 > 0 && this.dataBuffer.length === this.quotient3) {
-					this.sendack(this.formatData(this.dataBuffer), deviceId, serviceId, this.writeuuid);
-					this.resetDataState("11")
-				} else if (this.quotient > 0 && this.quotient1 > 0 &&
-					this.dataBuffer.length === this.quotient + this.quotient1) {
+					// that.sendack(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
+					that.resetDataState("12")
+					that.blewatch_id2 = "1"
+				} else if (that.quotient3 > 0 && that.dataBuffer.length === that.quotient3) {
+					that.sendack(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
+					that.resetDataState("11")
+				} else if (that.quotient > 0 && that.quotient1 > 0 &&
+					that.dataBuffer.length === that.quotient + that.quotient1) {
 					// 情况1：同时有血压和心率数据
-					this.processCombinedBloodPressureAndHeartRate(deviceId, deviceSn, serviceId);
-				} else if (this.quotient === 0 && this.quotient1 > 0 &&
-					this.dataBuffer.length === this.quotient1) {
+					that.processCombinedBloodPressureAndHeartRate(deviceId, deviceSn, serviceId);
+				} else if (that.quotient === 0 && that.quotient1 > 0 &&
+					that.dataBuffer.length === that.quotient1) {
 					// 情况2：只有心率/血氧数据77
-					this.processSingleDataType(deviceId, deviceSn);
-				} else if (this.quotientACC > 0 && this.dataBuffer.length === this.quotientACC) {
-					const allDataACC = this.formatData(this.dataBuffer);
+					// that.sendack2(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
+					that.processSingleDataType(deviceId, deviceSn);
+				} else if (that.quotientACC > 0 && that.dataBuffer.length === that.quotientACC) {
+					const allDataACC = that.formatData(that.dataBuffer);
 					const ACCdata = allDataACC.slice(18, allDataACC.length)
 					// console.log("ACC蓝牙数据包：" + allDataACC)
 					const result = AccDataParser.debugParseExample(ACCdata);
@@ -3639,35 +3670,35 @@
 						console.error('解析失败:', result.error);
 					}
 					setTimeout(() => {
-						this.resetDataState("10");
-						this.sendack(allDataACC, deviceId, serviceId, writeuuid);
+						that.resetDataState("10");
+						that.sendack(allDataACC, deviceId, serviceId, writeuuid);
 					}, 10)
-				} else if (this.quotientPPG > 0 && this.dataBuffer.length === this.quotientPPG) {
-					const allDataPPG = this.formatData(this.dataBuffer);
+				} else if (that.quotientPPG > 0 && that.dataBuffer.length === that.quotientPPG) {
+					const allDataPPG = that.formatData(that.dataBuffer);
 					// console.log("PPG蓝牙数据包：" + allDataPPG)
 					const PPGdata = allDataPPG.slice(18, allDataPPG.length)
-					const result = PPGParser.parsePPGData(PPGdata, `0x${this.PPGdataarray}`);
+					const result = PPGParser.parsePPGData(PPGdata, `0x${that.PPGdataarray}`);
 					// console.log("PPG解析之后的数据包：" + JSON.stringify(result))
 					for (let i = 0; i < result.data.length; i++) {
 						let jsonppglist = {
-							// heartRate: this.pulse,
+							// heartRate: that.pulse,
 							// seqNumber: result.seqNumber,
 							// seconds: result.data[i].seconds,
 							// time: result.data[i].time,
 							greenValue: result.data[i].greenValue,
 							irValue: result.data[i].irValue,
-							// greenValueirValue: this.toHex(result.data[i].greenValue, result.data[i]
+							// greenValueirValue: that.toHex(result.data[i].greenValue, result.data[i]
 							// 	.irValue)
-							// greenValueirValue: `${this.intToHex(result.data[i].greenValue, true, 4)}${this.intToHex(result.data[i].irValue, true, 4)}`,
-							// greenValue16: this.intToHex(result.data[i].greenValue, true, 4) //负数自动使用补码
+							// greenValueirValue: `${that.intToHex(result.data[i].greenValue, true, 4)}${that.intToHex(result.data[i].irValue, true, 4)}`,
+							// greenValue16: that.intToHex(result.data[i].greenValue, true, 4) //负数自动使用补码
 							// index: result.data[i].index
 						}
 						// console.log("PPG解析之后的数据：", JSON.stringify(result.data[i].greenValue))
-						this.bufferPPG.push(result.data[i].greenValue)
+						that.bufferPPG.push(result.data[i].greenValue)
 					}
 					setTimeout(() => {
-						this.resetDataState("9");
-						this.sendack(allDataPPG, deviceId, serviceId, this.writeuuid);
+						that.resetDataState("9");
+						that.sendack(allDataPPG, deviceId, serviceId, that.writeuuid);
 					}, 10)
 				}
 			},
@@ -3675,30 +3706,21 @@
 			getCurrentTime() {
 				const now = new Date();
 				const year = now.getFullYear();
-				const month = String(now.getMonth() + 1).padStart(
-					2, '0');
+				const month = String(now.getMonth() + 1).padStart(2, '0');
 				const day = String(now.getDate()).padStart(2, '0');
-				const hours = String(now.getHours()).padStart(2,
-					'0');
-				const minutes = String(now.getMinutes()).padStart(
-					2, '0');
-				const seconds = String(now.getSeconds()).padStart(
-					2, '0');
-
+				const hours = String(now.getHours()).padStart(2, '0');
+				const minutes = String(now.getMinutes()).padStart(2, '0');
+				const seconds = String(now.getSeconds()).padStart(2, '0');
 				return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 			},
 			getCurrentTimePPG() {
 				const now = new Date();
 				const year = now.getFullYear();
-				const month = String(now.getMonth() + 1).padStart(
-					2, '0');
+				const month = String(now.getMonth() + 1).padStart(2, '0');
 				const day = String(now.getDate()).padStart(2, '0');
-				const hours = String(now.getHours()).padStart(2,
-					'0');
-				const minutes = String(now.getMinutes()).padStart(
-					2, '0');
-				const seconds = String(now.getSeconds()).padStart(
-					2, '0');
+				const hours = String(now.getHours()).padStart(2, '0');
+				const minutes = String(now.getMinutes()).padStart(2, '0');
+				const seconds = String(now.getSeconds()).padStart(2, '0');
 				return `${year}-${month}-${day}`;
 			},
 			// PPG原始波形数据存储 
@@ -5092,46 +5114,51 @@
 
 			// 处理CMD00命令
 			async handleCMD00(hexData, deviceId, serviceId) {
+				const that = this
 				setTimeout(() => {
-					this.calculateChecksumsss(hexData, deviceId, serviceId, this.writeuuid);
+					that.calculateChecksumsss(hexData, deviceId, serviceId, that.writeuuid);
 				}, 3000)
-				this.resetDataState("1");
+				that.resetDataState("1");
 			},
 			// 处理CMD04命令（步数）
 			async handleCMD04(hexData, deviceId, serviceId, deviceSn) {
-				await this.sendack(hexData, deviceId, serviceId, this.writeuuid);
+				const that = this
+				await that.sendack(hexData, deviceId, serviceId, that.writeuuid);
 				const step = hexData.slice(18, 26); // 步数数据位置
 				const stepCount = parseInt(step, 16);
 				uni.setStorageSync("settept1", stepCount);
-				await this.jakoblife_fat_scale3(deviceId, stepCount, deviceSn, "步数");
-				this.resetDataState("7");
+				await that.jakoblife_fat_scale3(deviceId, stepCount, deviceSn, "步数");
+				that.resetDataState("7");
 			},
 
 			async handleCMD0401(hexData, deviceId, serviceId, deviceSn) {
+				const that = this
 				const key = hexData.slice(12, 14);
 				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16) + 4;
 				// 根据子命令类型计算分包数量
 				switch (key) {
 					case "01": // 睡眠01数据
-						this.quotient3 = this.calculateQuotient(dataLength, 80);
+						that.quotient3 = that.calculateQuotient(dataLength, 80);
 						break;
 				}
 			},
 			// 处理CMD03命令
 			async handleCMD01(hexData, deviceId, serviceId, deviceSn) {
+				const that = this
 				const key = hexData.slice(12, 14);
 				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16) + 4;
 				// 根据子命令类型计算分包数量
 				switch (key) {
 					case "10": // 睡眠
-						this.quotient2 = this.calculateQuotient(dataLength, 80);
+						that.quotient2 = that.calculateQuotient(dataLength, 80);
 						break;
 				}
 			},
 			// 处理CMD03命令
 			async handleCMD03(hexData, deviceId, serviceId, writeuuid, deviceSn) {
+				const that = this
 				const subCmd = hexData.slice(12, 14);
 				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16);
@@ -5139,11 +5166,11 @@
 				// 根据子命令类型计算分包数量
 				switch (subCmd) {
 					case "01": // 血压
-						this.quotient = this.calculateQuotient(fullPacketLength, 80);
+						that.quotient = that.calculateQuotient(fullPacketLength, 80);
 						break;
 					case "1d":
-						clearInterval(this.watchtimer);
-						this.watchtimer = null
+						clearInterval(that.watchtimer);
+						that.watchtimer = null
 						uni.removeStorageSync("sleep_alert")
 						const ACCPPG = hexData.slice(hexData.length - 12, hexData.length)
 						const heartTime = ACCPPG.slice(0, 4); // 时间部分（2个字节）
@@ -5151,79 +5178,79 @@
 							year,
 							month,
 							day
-						} = this.parseBinaryTime(heartTime);
-						this.PPGdataarray = ACCPPG.slice(4, 6)
+						} = that.parseBinaryTime(heartTime);
+						that.PPGdataarray = ACCPPG.slice(4, 6)
 						const ACCdataarrayall = ACCPPG.slice(6, 8)
 						const PPGdataarrayall = ACCPPG.slice(8, 10)
 						const Status = ACCPPG.slice(10, ACCPPG.length)
-						const parsePPGConfigdata = this.parsePPGConfigDescOrder(this.PPGdataarray)
+						const parsePPGConfigdata = that.parsePPGConfigDescOrder(that.PPGdataarray)
 						const dataall = {
 							hexData: 'hexData' + hexData,
 							ACCPPG: 'ACCPPG' + ACCPPG,
 							date: "日期" + `${year}年${month}月${day}日`,
-							PPGdataarray: 'PPG数据项定义:' + this.PPGdataarray,
+							PPGdataarray: 'PPG数据项定义:' + that.PPGdataarray,
 							ACCdataarrayall: 'ACC数据总组数:' + ACCdataarrayall,
 							PPGdataarrayall: 'PPG数据总组数:' + PPGdataarrayall,
 							Status: '传输状态:' + Status,
 							parsePPGConfigdata: '解析PPG数据配置字节:' + JSON.stringify(parsePPGConfigdata)
 						}
 						console.log("dataall", dataall)
-						if (this.watchtimer2) {
-							clearInterval(this.watchtimer2);
-							this.watchtimer2 = null;
+						if (that.watchtimer2) {
+							clearInterval(that.watchtimer2);
+							that.watchtimer2 = null;
 						}
 						let watchtime2 = 20
-						this.watchtimer2 = setInterval(() => {
+						that.watchtimer2 = setInterval(() => {
 							watchtime2--;
 							if (watchtime2 <= 0) {
-								clearInterval(this.watchtimer2);
-								this.watchtimer2 = null;
-								this.sleep_alertdisabled = false
+								clearInterval(that.watchtimer2);
+								that.watchtimer2 = null;
+								that.sleep_alertdisabled = false
 								uni.hideLoading();
 								uni.removeStorageSync("sleep_alert")
-								this.resetDataState("6");
+								that.resetDataState("6");
 							}
 						}, 1000)
 						switch (Status) {
 							case "01":
-								this.bufferPPG = []
-								clearInterval(this.watchtimer);
-								this.watchtimer = null
+								that.bufferPPG = []
+								clearInterval(that.watchtimer);
+								that.watchtimer = null
 								uni.removeStorageSync("sleep_alert")
 								setTimeout(() => {
 									// if (uni.getStorageSync("sleep_alert") === 1 || uni.getStorageSync("sendwatch") === 1) {
-									this.sendack(hexData, deviceId, serviceId, writeuuid);
+									that.sendack(hexData, deviceId, serviceId, writeuuid);
 									// }
 								}, 500)
-								this.resetDataState("5");
+								that.resetDataState("5");
 								break
 							case "02":
 								uni.hideLoading()
-								clearInterval(this.watchtimer);
-								this.watchtimer = null
-								clearInterval(this.watchtimer2);
-								this.watchtimer2 = null;
+								clearInterval(that.watchtimer);
+								that.watchtimer = null
+								clearInterval(that.watchtimer2);
+								that.watchtimer2 = null;
 								uni.removeStorageSync("sleep_alert")
-								const binary = this.packInt16(this.bufferPPG)
-								this.ppgdata(binary, deviceSn)
-								this.bufferPPG = []
+								const binary = that.packInt16(that.bufferPPG)
+								that.ppgdata(binary, deviceSn)
+								that.bufferPPG = []
 								setTimeout(() => {
-									this.sendack(hexData, deviceId, serviceId, writeuuid);
+									that.sendack(hexData, deviceId, serviceId, writeuuid);
 								}, 500)
-								this.resetDataState("4");
+								that.resetDataState("4");
 								break
 						}
 						break
 					case "1e":
-						this.quotientACC = this.calculateQuotient(fullPacketLength, 80);
+						that.quotientACC = that.calculateQuotient(fullPacketLength, 80);
 						break
 					case "1f":
-						this.quotientPPG = this.calculateQuotient(fullPacketLength, 80);
+						that.quotientPPG = that.calculateQuotient(fullPacketLength, 80);
 						break
 					case "19": // 血压
 					case "00": // 心率
 					case "02": // 血氧
-						this.quotient1 = this.calculateQuotient(fullPacketLength, 80);
+						that.quotient1 = that.calculateQuotient(fullPacketLength, 80);
 						break;
 				}
 			},
@@ -5346,7 +5373,7 @@
 
 			// 处理合并的血压和心率数据
 			processCombinedBloodPressureAndHeartRate(deviceId, deviceSn, serviceId) {
-				let that = this
+				const that = this
 				// 分离血压和心率数据包
 				const [bpPackets, hrPackets] = that.splitPacketsByHeader();
 				// 格式化数据
@@ -5557,14 +5584,14 @@
 						serviceId: serviceId,
 						characteristicId: writeuuid,
 						value: buffer,
-						complete() {
+						complete(complete) {
 							// console.log("回复ack", hexCommand)
 						},
 					})
 				}
 			},
 			async sendack2(dataList, deviceId, serviceId, writeuuid) {
-				let that = this
+				const that = this
 				const hexString = dataList
 				// 将十六进制字符串转换为字节数组
 				const bytes = [];
@@ -5629,7 +5656,7 @@
 						serviceId: serviceId,
 						characteristicId: writeuuid,
 						value: buffer,
-						complete() {
+						complete(complete) {
 							// console.log("2回复ack", hexCommand)
 						},
 					})
@@ -5667,6 +5694,7 @@
 
 			// 提取血压数据解析函数
 			parseBloodPressureData(stringdata) {
+				const that = this
 				const Covmamlueand = stringdata.slice(18, stringdata.length);
 				const data = stringdata.slice(stringdata.length - 16, stringdata
 					.length);
@@ -5680,16 +5708,17 @@
 				const reserved = parseInt(reservedHex, 16);
 				const systolic = parseInt(systolicHex, 16);
 				const diastolic = parseInt(diastolicHex, 16);
-				const time = this.formatTime(seconds);
+				const time = that.formatTime(seconds);
 				return {
 					systolic,
 					diastolic
 				};
-				this.resetDataState("37");
+				that.resetDataState("37");
 			},
 
 			// 提取心率数据解析函数
 			parseHeartRateData(stringdata) {
+				const that = this
 				const Covmamlueand = stringdata.slice(18, stringdata.length);
 				const hexData = stringdata.slice(stringdata.length - 16, stringdata
 					.length);
@@ -5704,13 +5733,13 @@
 				const systolic = parseInt(systolicHex, 16);
 				const diastolic = parseInt(diastolicHex, 16);
 				return {
-					time: this.formatTime(seconds),
+					time: that.formatTime(seconds),
 					bloodPressureType,
 					reserved,
 					systolic,
 					diastolic
 				};
-				this.resetDataState("36");
+				that.resetDataState("36");
 			},
 
 			// 辅助函数：解析数值
@@ -5740,7 +5769,7 @@
 
 			// 定义一个函数来计算校验和
 			calculateChecksumsss(hexString, deviceId, serviceId, writeuuid) {
-				let that = this
+				const that = this
 				// 将十六进制字符串转换为字节数组
 				const bytes = [];
 				for (let i = 0; i < hexString.length; i += 2) {
@@ -5858,7 +5887,7 @@
 
 			getsetp(deviceId, serviceId, writeuuid, PROTOCOL_VERSION) {
 				// 运动命令
-				let that = this
+				const that = this
 				const ackConfigByteset = new Uint8Array(9);
 				ackConfigByteset[0] = 0xE0;
 				ackConfigByteset[1] = 0x00;
@@ -5901,7 +5930,7 @@
 
 			//获取蓝牙外围设备的特征值
 			getBLEDeviceCharacteristics2(deviceId, serviceId, deviceSn) {
-				let that = this
+				const that = this
 				uni.getBLEDeviceCharacteristics({
 					deviceId: deviceId,
 					serviceId: serviceId,
@@ -5991,7 +6020,7 @@
 
 
 			onBLECharacteristicValueChange2(deviceId, serviceId, deviceSn) {
-				let that = this
+				const that = this
 				uni.onBLECharacteristicValueChange((res) => {
 					const dataList = that.ab2hex(res.value)
 					if (dataList.length === 10) {
@@ -6100,7 +6129,7 @@
 			},
 
 			bgaaa(lowPressure, highPressure) {
-				let that = this;
+				const that = this;
 				if ((lowPressure >= 81 && lowPressure <= 90) || (highPressure >= 121 &&
 						highPressure <= 140)) {
 					uni.showModal({
@@ -6751,7 +6780,7 @@
 					'content-type': 'application/json'
 				}).then((listres) => {
 					if (listres.code === 200) {
-						if (listres.rows[0].data === "") {
+						if (listres.total === 0) {
 							uni.setStorageSync("kapianlist", this.list)
 						} else {
 							let dataArray = this.robustParseData(listres.rows[0].data);
@@ -6772,7 +6801,7 @@
 					'content-type': 'application/json'
 				}).then((listres) => {
 					if (listres.code === 200) {
-						if (listres.rows[0].data === "") {
+						if (listres.total === 0) {
 							uni.setStorageSync("kapianlist2", this.list2)
 						} else {
 							let dataArray = this.robustParseData(listres.rows[0].data);
@@ -7096,8 +7125,8 @@
 			//时间戳转时间
 			formatDate(value) {
 				const data = new Date(value);
-				const month = data.getMonth() + 1;
-				const day = data.getDate();
+				const month = String(data.getMonth() + 1).padStart(2, '0');
+				const day = String(data.getDate()).padStart(2, '0');
 				const year = data.getFullYear();
 				const hours = data.getHours();
 				const minutes = data.getMinutes();
@@ -7309,28 +7338,28 @@
 				}).then(res => {
 					// console.log("list_recipe", res)
 					if (res.code === 200) {
-						this.sleep_time = this.getUpdateTime(
-							res.data, 'register', 'sleep')
+						this.sleep_time = this.getUpdateTime(res.data, 'register', 'sleep')
 						if (this.currentIndex === 0) {
-							// 获取血压值
-							// 使用对象存储最新数据，便于响应式更新
-							const slaveSn2Data = res.data.filter(
-								item => item.slaveSn === "2");
-							const slaveSn3Data = res.data.filter(
-								item => item.slaveSn === "3");
-							// 获取各项数据
-							const getLatestData = (data1, data2,
-								type) => {
-								const time1 = this.findValue(data1,
-										"register", type)
-									?.updateTime || 0;
-								const time2 = this.findValue(data2,
-										"register", type)
-									?.updateTime || 0;
-								const val1 = this.getRegisterVal(
-									data1, 'register', type);
-								const val2 = this.getRegisterVal(
-									data2, 'register', type);
+							const slaveSn2Data = res.data.filter(item => item.slaveSn === "2");
+							const slaveSn3Data = res.data.filter(item => item.slaveSn === "3");
+							uni.setStorageSync("parseBloodDatatime", (this.findValue(slaveSn3Data, "register",
+								"lowPressure")?.updateTime) / 1000)
+							uni.setStorageSync("oxygenDatatime", (this.findValue(slaveSn3Data, "register",
+								"oxygen")?.updateTime) / 1000)
+							uni.setStorageSync("heartRateDatatime", (this.findValue(slaveSn3Data, "register",
+								"heartrate")?.updateTime) / 1000)
+
+							console.log("lowPressure", (this.findValue(slaveSn3Data, "register",
+								"lowPressure")?.updateTime) / 1000)
+							console.log("oxygen", (this.findValue(slaveSn3Data, "register",
+								"oxygen")?.updateTime) / 1000)
+							console.log("heartrate", (this.findValue(slaveSn3Data, "register",
+								"heartrate")?.updateTime) / 1000)
+							const getLatestData = (data1, data2, type) => {
+								const time1 = this.findValue(data1, "register", type)?.updateTime || 0;
+								const time2 = this.findValue(data2, "register", type)?.updateTime || 0;
+								const val1 = this.getRegisterVal(data1, 'register', type);
+								const val2 = this.getRegisterVal(data2, 'register', type);
 								return time1 > time2 ? {
 									value: val1,
 									time: time1
@@ -7342,38 +7371,16 @@
 							if (this.xeuyabiaoshi === "" && !uni
 								.getStorageSync('xueyadata')) {
 								// 血压数据
-								const lowPressureData = getLatestData(
-									slaveSn2Data, slaveSn3Data,
-									"lowPressure");
-								const highPressureData = getLatestData(
-									slaveSn2Data, slaveSn3Data,
-									"highPressure");
-								const pulseData = getLatestData(
-									slaveSn2Data, slaveSn3Data,
-									"heartrate");
-								// 响应式更新血压数据
-								this.$set(this, 'lowPressure', this
-									.Blood === "mmHg" ?
-									lowPressureData.value : (
-										Number(lowPressureData
-											.value) * 0.133)
-									.toFixed(1));
-								this.$set(this, 'highPressure', this
-									.Blood === "mmHg" ?
-									highPressureData.value : (
-										Number(highPressureData
-											.value) * 0.133)
-									.toFixed(1));
-								this.$set(this, 'pulse', pulseData
-									.value);
-								this.$set(this, 'pulsetime', this
-									.formatDate(pulseData.time));
-								// 更新血压状态
-								this.updateBloodPressureStatus(
-									lowPressureData
-									.value,
-									highPressureData
-									.value);
+								const lowPressureData = getLatestData(slaveSn2Data, slaveSn3Data, "lowPressure");
+								const highPressureData = getLatestData(slaveSn2Data, slaveSn3Data, "highPressure");
+								const pulseData = getLatestData(slaveSn2Data, slaveSn3Data, "heartrate");
+								this.$set(this, 'lowPressure', this.Blood === "mmHg" ? lowPressureData.value : (
+									Number(lowPressureData.value) * 0.133).toFixed(1));
+								this.$set(this, 'highPressure', this.Blood === "mmHg" ? highPressureData.value : (
+									Number(highPressureData.value) * 0.133).toFixed(1));
+								this.$set(this, 'pulse', pulseData.value);
+								this.$set(this, 'pulsetime', this.formatDate(pulseData.time));
+								this.updateBloodPressureStatus(lowPressureData.value, highPressureData.value);
 							}
 							const pulseData = getLatestData(
 								slaveSn2Data, slaveSn3Data,
@@ -8454,7 +8461,7 @@
 									characteristicId: that.writeuuid,
 									writeType: 'write',
 									value: buffer2,
-									complete(res) {
+									complete(complete) {
 										if (complete.code === 10007) {
 											uni.hideLoading()
 											console.log(res)

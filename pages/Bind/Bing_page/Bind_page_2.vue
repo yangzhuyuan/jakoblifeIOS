@@ -42,11 +42,29 @@
 					@click="shoudongbtncancle()">{{$t("取消")}}</button>
 			</view>
 		</uni-popup>
+
+		<view>
+			<uni-popup ref="popup1" :mask-click="true">
+				<view class="popupstusdsd_2">
+					<view style="padding: 10px 0 40px 0">
+						<view class="popupstusdsditem">{{$t("配对成功")}}</view>
+						<view class="popupstusdsditem_1">{{$t("蓝牙已连接成功")}}</view>
+						<view>{{$t("标准蓝牙提示")}}</view>
+					</view>
+					<button @tap="turesss()" class="butonstsd">{{$t("确定")}}</button>
+				</view>
+			</uni-popup>
+		</view>
+
 	</view>
 </template>
 
 <script>
+	import {
+		mapMutations
+	} from 'vuex'
 	import permision from "@/js_sdk/wa-permission/permission.js"
+	const platform = uni.getSystemInfoSync().platform;
 	import appScan from "../../../uni_modules/simbalkj-scan/components/simbalkj-scan/appScan.vue"
 	const lan = uni.getLocale();
 	const modelIdToImagePathzh = {
@@ -91,6 +109,10 @@
 				context_msg1: "",
 				modelId: '',
 				inputcontext: '',
+				BPW1deviceId: "",
+				BPW1model: '30000',
+				stoponble: false,
+				BPW1UUID: "",
 
 			};
 		},
@@ -103,47 +125,10 @@
 			uni.setNavigationBarTitle({
 				title: this.$t("绑定设备")
 			})
-
-			// let location = permision.judgeIosPermission("location");
-			// console.log("location", location)
-			// if (!location) {
-			// 	uni.showModal({
-			// 		title: this.$t("提示"),
-			// 		content: this.$t("您的手机定位服务未开启"),
-			// 		success: (res) => {
-			// 			if (res.confirm) {
-			// 				permision.gotoAppPermissionSetting();
-			// 			} else {
-			// 				uni.navigateBack()
-			// 			}
-			// 		}
-			// 	});
-			// }
 		},
 
 		onShow() {
 			this.resetState();
-			// setTimeout(() => {
-			// let camera = permision.judgeIosPermission("camera");
-			// console.log("camera", camera)
-			// if (!camera) {
-			// 	this.$nextTick(() => {
-			// 		this.$refs.popupquanxian.open('bottom')
-			// 	})
-
-			// uni.showModal({
-			// 	title: this.$t("提示"),
-			// 	content: this.$t("扫码需要相机权限"),
-			// 	success: (res) => {
-			// 		// if (res.confirm) {
-			// 		// 	plus.runtime.launchApplication({
-			// 		// 		action: 'App-Prefs:root=BLE'
-			// 		// 	}, function(e) {});
-			// 		// }
-			// 	}
-			// });
-			// }
-			// }, 3000)
 		},
 
 		mounted() {
@@ -156,22 +141,7 @@
 		},
 
 		methods: {
-			// xingjiclickcan() {
-			// 	let camera = permision.judgeIosPermission("camera");
-			// 	console.log("camera", camera)
-			// 	if (!camera) {
-			// 		uni.navigateBack()
-			// 	} else {
-			// 		this.$refs.popupquanxian?.close()
-			// 	}
-			// },
-			// xingjiclick() {
-			// 	this.$refs.popupquanxian?.close()
-			// 	plus.runtime.launchApplication({
-			// 		action: 'App-Prefs:root=BLE'
-			// 	}, function(e) {});
-			// },
-
+			...mapMutations(['setlanyaId', 'setacktypes']),
 			ButtonTap() {
 				this.img_scan = false
 				this.$refs.qiehuanpopup.open("center")
@@ -188,6 +158,14 @@
 			onClosePopup() {
 				this.resetState()
 			},
+
+			formatMacAddress(mac) {
+				// 移除可能存在的分隔符
+				mac = mac.replace(/[^a-fA-F0-9]/g, '');
+				// 每2个字符添加冒号
+				return mac.match(/.{1,2}/g).join(':').toUpperCase();
+			},
+
 			shoudongbtn() {
 				if (!this.inputcontext) {
 					uni.showToast({
@@ -201,6 +179,7 @@
 						const resultStr1 = this.inputcontext.slice(0, 4)
 						if (resultStr1 === "4142") {
 							this.context_msg = "300000" + this.inputcontext
+							this.BPW1deviceId = this.formatMacAddress(this.inputcontext)
 							this.get_device_info()
 							this.$refs.qiehuanpopup.close()
 						} else {
@@ -227,6 +206,7 @@
 					const regex = /para=([^&]+)/;
 					const match = barNumber.match(regex);
 					if (match && match[1]) {
+						this.BPW1deviceId = match[1]
 						const resultStr = match[1].replace(/:/g, '');
 						const resultStr1 = resultStr.slice(0, 4)
 						if (resultStr1 === "4142") {
@@ -408,10 +388,17 @@
 				if (this.modelConnectType == 0) {
 					this.bind_device(this.context_msg1, "", modelId);
 				} else if (this.modelConnectType == 1) {
-					uni.navigateTo({
-						url: "../../Bind/Bing_xueya/Bing_xueya_LY?SELECT_TYPE=" + this.SELECT_TYPE + "&sn=" + this
-							.context_msg1 + "&modelname=" + this.modelname + "&modelId=" + modelId
-					})
+					if (this.modelname === "BPW1") {
+						console.log("手表连接修改")
+						this.BPW1model = modelId
+						this.stoponble = true
+						this.initBluetooth()
+					} else {
+						uni.navigateTo({
+							url: "../../Bind/Bing_xueya/Bing_xueya_LY?SELECT_TYPE=" + this.SELECT_TYPE + "&sn=" +
+								this.context_msg1 + "&modelname=" + this.modelname + "&modelId=" + modelId
+						})
+					}
 				} else if (this.modelConnectType == 2) {
 					uni.navigateTo({
 						url: "../../Bind/Bing_xueya/Bing_xueya?SELECT_TYPE=" + this.SELECT_TYPE + "&sn=" + this
@@ -419,6 +406,235 @@
 					})
 				}
 			},
+			//确认按钮
+			turesss() {
+				uni.hideLoading()
+				let that = this
+				that.$refs.popup1.close();
+				that.setacktypes("0")
+				uni.reLaunch({
+					url: "../../Bind/Bing_page/Bind_success?modelId=" + that
+						.BPW1model
+				})
+			},
+
+			getunbind(deviceSn) {
+				uni.request({
+					url: this.$url_APP_IP + this.$url_getunbind,
+					method: 'POST',
+					data: {
+						deviceSn
+					},
+					header: {
+						'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+						'content-type': 'application/x-www-form-urlencoded'
+					},
+				});
+			},
+
+			openBLE() {
+				const platform = uni.getSystemInfoSync().platform;
+				if (platform === "android") {
+					var main = plus.android.runtimeMainActivity();
+					var Intent = plus.android.importClass("android.content.Intent");
+					var mIntent = new Intent('android.settings.BLUETOOTH_SETTINGS');
+					main.startActivity(mIntent);
+				} else if (platform === "ios") {
+					plus.runtime.launchApplication({
+						action: 'App-Prefs:root=BLE'
+					}, function(e) {
+						console.log(JSON.stringify(e));
+					});
+				}
+			},
+			// 绑定BPW1手表初始化低功耗蓝牙
+			initBluetooth() {
+				let that = this;
+				uni.openBluetoothAdapter({
+					success: res => {
+						console.log("初始化低功耗蓝牙成功")
+						that.connectBluetooth()
+					},
+					fail: function(err) {
+						this.stoponble = false
+						console.log('蓝牙模块初始化失败', err);
+						// 处理蓝牙模块初始化失败的情况，例如提示用户打开蓝牙
+						if (err.errCode === 10001) {
+							uni.showModal({
+								content: that.$t("当前蓝牙未开启是否去设置打开"),
+								showCancel: true,
+								success: modalres => {
+									if (modalres.confirm) {
+										that.openBLE()
+									}
+								}
+							});
+						}
+					}
+				});
+			},
+			//搜索手表蓝牙转换mac
+			connectBluetooth() {
+				uni.startBluetoothDevicesDiscovery({
+					allowDuplicatesKey: true,
+					success: (startBluetoothDevicesDiscovery) => {
+						console.log("开始搜索低功耗蓝牙手表")
+						this.onBluetoothDeviceFound();
+					}
+				});
+			},
+			onBluetoothDeviceFound() {
+				let BPW1timeer = null
+				let BPW1time = 0
+				uni.showLoading({
+					title: this.$t("搜索中"),
+					mask: true
+				})
+				uni.onBluetoothDeviceFound((res) => {
+					const deviceArray = res.devices;
+					for (const item of deviceArray) {
+						if (item.name === "BPW1") {
+							if (this.Adverti(item.advertisData) === this.BPW1deviceId) {
+								this.stoponble = false
+								uni.hideLoading()
+								uni.stopBluetoothDevicesDiscovery();
+								this.BPW1UUID = item.deviceId
+								this.BPW1binddevice(this.context_msg1, item.deviceId, this.BPW1model);
+							}
+						}
+					}
+				});
+				BPW1timeer = setInterval(() => {
+					BPW1time++
+					if (!this.stoponble) {
+						uni.stopBluetoothDevicesDiscovery()
+						clearInterval(BPW1timeer)
+						BPW1timeer = null
+					} else {
+						console.log("2搜索到的低功耗蓝牙", BPW1time)
+						if (BPW1time === 15) {
+							uni.hideLoading()
+							uni.stopBluetoothDevicesDiscovery()
+							clearInterval(BPW1timeer)
+							BPW1timeer = null
+							uni.showModal({
+								title: this.$t("提示"),
+								content: "未检测到附近蓝牙手表设备，请检查设备",
+								showCancel: false,
+								success: function(res) {
+									if (res.confirm) {
+										this.stoponble = false
+									}
+								}
+							});
+						}
+					}
+				}, 1000)
+			},
+
+			// ArrayBuffer转16进度字符串示例
+			ab2hex(buffer) {
+				var hexArr = Array.prototype.map.call(
+					new Uint8Array(buffer),
+					function(bit) {
+						return ('00' + bit.toString(16)).slice(-2)
+					}
+				)
+				return hexArr.join('');
+			},
+
+			//获取蓝牙广播解析mac
+			Adverti(advertisData) {
+				if (advertisData === "" || advertisData === undefined) {
+					return '无数据'
+				} else {
+					const str = this.ab2hex(advertisData).slice(4, this.ab2hex(advertisData).length - 4)
+					const formattedStr = str.replace(/(.{2})(?=.)/g, '$1:').toUpperCase().slice(0, 20)
+					return formattedStr;
+				}
+			},
+			// BPW1手表设备绑定
+			BPW1binddevice(sn, MACdeviceID, modelId) {
+				let data = {
+					deviceSn: sn,
+					mac: MACdeviceID.trim()
+				};
+				this.$post(this.$url_APP_IP + this.$url_bind_device, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then(res => {
+					console.log(res)
+					if (res.code === 200) {
+						uni.setStorageSync("appQX", "1")
+						uni.setStorageSync("deviceSn", sn);
+						uni.showLoading({
+							title: this.$t("连接中"),
+							mask: true
+						})
+						this.createBLEConnection(MACdeviceID, sn)
+						this.setacktypes("0")
+					} else if (res.code === 401) {
+						uni.showToast({
+							title: this.$t("此设备已被其他账号绑定"),
+							icon: 'none'
+						})
+						return
+					} else {
+						uni.reLaunch({
+							url: "../Bing_page/Bind_fail"
+						});
+					}
+				}).catch(erro => {
+					console.error(erro)
+					uni.reLaunch({
+						url: "../Bing_page/Bind_fail"
+					});
+				})
+			},
+			createBLEConnection(deviceId, sn) {
+				let that = this;
+				uni.createBLEConnection({
+					deviceId: deviceId,
+					timeout: 5000,
+					success(res) {
+						console.log("BLE连接成功：", JSON.stringify(res));
+						uni.hideLoading()
+						that.$refs.popup1.open("center");
+					},
+					fail(erro) {
+						console.log("BLE连接失败：", JSON.stringify(erro));
+						if (erro.errCode === 10002) {
+							that.getunbind(sn)
+							uni.closeBLEConnection({
+								deviceId: deviceId
+							})
+							uni.hideLoading()
+							return
+						} else {
+							setTimeout(() => {
+								uni.createBLEConnection({
+									deviceId: deviceId,
+									timeout: 4000,
+									success(createBLEConnectionres) {
+										console.log(createBLEConnectionres)
+										uni.hideLoading()
+										that.$refs.popup1.open("center");
+									},
+									fail(createBLEConnectionerro) {
+										that.getunbind(sn)
+										that.disconnectAll(deviceId);
+										uni.closeBLEConnection({
+											deviceId: deviceId
+										})
+										uni.hideLoading()
+									}
+								});
+							}, 1000)
+						}
+					}
+				});
+			},
+
 			bind_device(sn, MACdeviceID, modelId) {
 				const data = {
 					deviceSn: sn,
@@ -572,5 +788,31 @@
 		margin: 20px 20px 80px 20px;
 		text-align: center;
 		box-sizing: border-box;
+	}
+
+
+
+
+	// BPW1绑定弹窗样式
+	.popupstusdsd_2 {
+		border-radius: 20px;
+		background: #fff;
+		text-align: center;
+		padding: 20px;
+		margin: 60px 20px 60px 20px;
+		z-index: 999999;
+	}
+
+
+	.popupstusdsditem_1 {
+		font-size: 18px;
+		font-weight: bold;
+	}
+
+	.butonstsd {
+		margin: 10px 50px 20px 50px;
+		border-radius: 20px;
+		background: #3298F7;
+		color: white;
 	}
 </style>

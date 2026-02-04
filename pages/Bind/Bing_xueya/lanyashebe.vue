@@ -481,7 +481,7 @@
 											}
 										});
 										that.getunbind(that.sn)
-										that.disconnectAll(mac);
+										that.disconnectAll(deviceId);
 										uni.closeBLEConnection({
 											deviceId: deviceId
 										})
