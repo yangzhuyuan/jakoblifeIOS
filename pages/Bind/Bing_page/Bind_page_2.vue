@@ -128,7 +128,29 @@
 		},
 
 		onShow() {
-			this.resetState();
+			const that = this
+			that.resetState();
+			uni.openBluetoothAdapter({
+				success: res => {
+					console.log("初始化低功耗蓝牙成功")
+				},
+				fail: function(err) {
+					console.log('蓝牙模块初始化失败', err);
+					// 处理蓝牙模块初始化失败的情况，例如提示用户打开蓝牙
+					uni.hideLoading()
+					if (err.errCode === 10001) {
+						uni.showModal({
+							content: that.$t("当前蓝牙未开启是否去设置打开"),
+							showCancel: false,
+							success: modalres => {
+								if (modalres.confirm) {
+									that.openBLE()
+								}
+							}
+						});
+					}
+				}
+			});
 		},
 
 		mounted() {
@@ -458,11 +480,12 @@
 					fail: function(err) {
 						this.stoponble = false
 						console.log('蓝牙模块初始化失败', err);
+						uni.hideLoading()
 						// 处理蓝牙模块初始化失败的情况，例如提示用户打开蓝牙
 						if (err.errCode === 10001) {
 							uni.showModal({
 								content: that.$t("当前蓝牙未开启是否去设置打开"),
-								showCancel: true,
+								showCancel: false,
 								success: modalres => {
 									if (modalres.confirm) {
 										that.openBLE()
@@ -595,7 +618,7 @@
 				let that = this;
 				uni.createBLEConnection({
 					deviceId: deviceId,
-					timeout: 5000,
+					timeout: 8000,
 					success(res) {
 						console.log("BLE连接成功：", JSON.stringify(res));
 						uni.hideLoading()

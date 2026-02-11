@@ -1295,6 +1295,7 @@
 				logs: [],
 				scrollTop: 0,
 				sleep_alertdisabled: false,
+				sleep_alertid: 0,
 				healthlist: [{
 						name: this.$t("压力指数"),
 						desc: this.$t("神经系统"),
@@ -1987,13 +1988,11 @@
 			// 在数据操作前检查清除
 			clearDailyGoalData();
 			that.today_Daily_Goal = uni.getStorageSync("today_Daily_Goal") || "0"
-			setTimeout(() => {
-				if (that.getCurrentTime() === that.getCurrentTimePPG() + " 00:00:00") {
-					that.hasSynced = true;
-				} else {
-					that.hasSynced = false;
-				}
-			}, 2000)
+			if (that.acktypes === "0") {
+				that.hasSynced = true;
+			} else {
+				that.hasSynced = false;
+			}
 			uni.getNetworkType({
 				success: function(res) {
 					if (res.networkType === 'none') {
@@ -2211,7 +2210,7 @@
 									title: that.$t("请稍后"),
 									mask: true,
 								})
-								uni.setStorageSync("sleep_alert", 1)
+								that.sleep_alertid = 1
 							}, 1000)
 						} else {
 							if (aaawatchetime === 25) {
@@ -2232,7 +2231,7 @@
 						title: that.$t("请稍后"),
 						mask: true,
 					})
-					uni.setStorageSync("sleep_alert", 1)
+					that.sleep_alertid = 1
 				}
 			},
 			sendstartheartwatch(writeuuid, type) {
@@ -2917,47 +2916,27 @@
 									// 在这里处理设备断开后的逻辑，例如尝试重新连接等
 								} else {
 									if (!that.hasSynced) { // 确保只执行一次
-										if (that.getCurrentTime() === that.getCurrentTimePPG() +
-											" 00:00:00") {
-											that.hasSynced = true
-											if (that.acktypes === "1" && that.blewatch_id2 === "1") {
-												uni.writeBLECharacteristicValue({
-													deviceId: deviceId,
-													serviceId: serviceId,
-													characteristicId: that.writeuuid,
-													writeType: 'write',
-													value: that.toArrayBuffer(
-														'e00006eb010101000101'),
-													complete(complete) {
+										that.hasSynced = true
+										if (that.acktypes === "1" && that.blewatch_id2 === "1") {
+											uni.writeBLECharacteristicValue({
+												deviceId: deviceId,
+												serviceId: serviceId,
+												characteristicId: that.writeuuid,
+												writeType: 'write',
+												value: that.toArrayBuffer(
+													'e00006eb010101000101'),
+												complete(complete) {
+													if (complete.code === 10007) {
 														that.blewatch_id = "1"
-														// console.log(
-														// 	"1发送同步所有数据命令：e00006eb010101000101"
-														// )
+														that.blewatch_id2 = "0"
+														console.log(
+															"发送同步所有数据命令：e00006eb010101000101"
+														)
+													} else {
+														that.blewatch_id = "0"
 													}
-												})
-											} else {
-												// console.log("1未达到条件不发送同步命令")
-											}
-										} else {
-											that.hasSynced = true; // 标记已同步
-											if (that.acktypes === "1" && that.blewatch_id2 === "1") {
-												uni.writeBLECharacteristicValue({
-													deviceId: deviceId,
-													serviceId: serviceId,
-													characteristicId: that.writeuuid,
-													writeType: 'write',
-													value: that.toArrayBuffer(
-														'e00006eb010101000101'),
-													complete(complete) {
-														that.blewatch_id = "1"
-														// console.log(
-														// 	"2发送同步所有数据命令：e00006eb010101000101"
-														// )
-													}
-												})
-											} else {
-												// console.log("2未达到条件不发送同步命令")
-											}
+												}
+											})
 										}
 									}
 								}
@@ -3236,7 +3215,6 @@
 							that.xueyehuilian &&
 							that.xeuyejisn !== "0" &&
 							that.xeuyejimac !== "0") {
-
 							await that.handleHuiLianDeviceData(res.value, that.xeuyejisn, that
 								.xeuyejimac);
 							uni.getNetworkType({
@@ -3359,8 +3337,7 @@
 										case "00":
 										case "01":
 										case "02":
-											that.sendack(hexData, deviceId, serviceId, that
-												.writeuuid);
+											that.sendack(hexData, deviceId, serviceId, that.writeuuid);
 											that.resetDataState("23");
 											break
 										case "03":
@@ -3422,8 +3399,7 @@
 							}
 						} else if (protocolId === "0e") {
 							if (cmd === "06") {
-								if (uni.getStorageSync("sleep_alert") === 1 || uni.getStorageSync(
-										"sendwatch") === 1) {
+								if (that.sleep_alertid === 1 || uni.getStorageSync("sendwatch") === 1) {
 									if (that.watchtimer) {
 										clearInterval(that.watchtimer);
 										that.watchtimer = null;
@@ -3442,8 +3418,7 @@
 												showCancel: false,
 												success(modal) {
 													if (modal.confirm) {
-														uni.removeStorageSync(
-															"sleep_alert")
+														that.sleep_alertid = 0
 														that.sleep_alertdisabled = false
 													}
 												}
@@ -3553,45 +3528,6 @@
 			// 处理完整的数据集
 			processCompleteDataSets(deviceId, deviceSn, serviceId, writeuuid) {
 				let that = this
-				// if (that.quotient > 0 && that.quotient === that.dataBuffer.length) {
-				// 	setTimeout(() => {
-				// 		that.sendack2(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
-				// 	}, 500)
-				// // 合并数据
-				// const allData = that.formatData(that.dataBuffer);
-				// const parseBlood = that.parseProtocolData(allData);
-				// // // 解析协议数据
-				// const parseBloodData = that.parseHeartRateData(parseBlood.Covmamlueand);
-				// console.log("parseBloodData", parseBloodData)
-				// if (parseBloodData.time !== uni.getStorageSync("parseBloodDatatime")) {
-				// 	uni.setStorageSync("parseBloodDatatime", parseBloodData.time)
-				// 	that.lowPressure = that.Blood === "mmHg" ? parseBloodData.diastolic : (Number(parseBloodData
-				// 		.diastolic) * 0.133).toFixed(1);
-				// 	that.highPressure = that.Blood === "mmHg" ? parseBloodData.systolic : (Number(parseBloodData
-				// 		.systolic) * 0.133).toFixed(1);
-				// 	uni.setStorageSync("lowPressure", parseBloodData.diastolic)
-				// 	uni.setStorageSync("highPressure", parseBloodData.systolic)
-				// 	that.updateBloodPressureStatus(parseBloodData.diastolic, parseBloodData.systolic);
-				// 	uni.getNetworkType({
-				// 		success: function(res) {
-				// 			if (res.networkType === 'none') {
-				// 				that.bgaaa(parseBloodData.diastolic, parseBloodData.systolic)
-				// 			}
-				// 		},
-				// 		fail: function(err) {
-				// 			console.error('获取网络类型失败：', err);
-				// 		}
-				// 	});
-				// 	that.xeuyabiaoshi = "1"
-				// 	that.jakoblife_fat_scale22(
-				// 		deviceId,
-				// 		parseBloodData.systolic,
-				// 		parseBloodData.diastolic,
-				// 		parseInt(that.pulse),
-				// 		deviceSn
-				// 	);
-				// }
-				// }
 				if (that.quotient2 > 0 && that.dataBuffer.length === that.quotient2) {
 					const bytes = hexStringToBytes(that.formatData(that.dataBuffer).slice(18, that.formatData(that
 						.dataBuffer).length));
@@ -3642,6 +3578,7 @@
 					}
 					// that.sendack(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
 					that.resetDataState("12")
+					that.blewatch_id = "0"
 					that.blewatch_id2 = "1"
 				} else if (that.quotient3 > 0 && that.dataBuffer.length === that.quotient3) {
 					that.sendack(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
@@ -5171,7 +5108,7 @@
 					case "1d":
 						clearInterval(that.watchtimer);
 						that.watchtimer = null
-						uni.removeStorageSync("sleep_alert")
+						that.sleep_alertid = 0
 						const ACCPPG = hexData.slice(hexData.length - 12, hexData.length)
 						const heartTime = ACCPPG.slice(0, 4); // 时间部分（2个字节）
 						const {
@@ -5207,20 +5144,19 @@
 								that.watchtimer2 = null;
 								that.sleep_alertdisabled = false
 								uni.hideLoading();
-								uni.removeStorageSync("sleep_alert")
+								that.sleep_alertid = 0
 								that.resetDataState("6");
 							}
 						}, 1000)
+						that.blewatch_id2 = "1"
 						switch (Status) {
 							case "01":
 								that.bufferPPG = []
 								clearInterval(that.watchtimer);
 								that.watchtimer = null
-								uni.removeStorageSync("sleep_alert")
+								that.sleep_alertid = 0
 								setTimeout(() => {
-									// if (uni.getStorageSync("sleep_alert") === 1 || uni.getStorageSync("sendwatch") === 1) {
 									that.sendack(hexData, deviceId, serviceId, writeuuid);
-									// }
 								}, 500)
 								that.resetDataState("5");
 								break
@@ -5230,7 +5166,7 @@
 								that.watchtimer = null
 								clearInterval(that.watchtimer2);
 								that.watchtimer2 = null;
-								uni.removeStorageSync("sleep_alert")
+								that.sleep_alertid = 0
 								const binary = that.packInt16(that.bufferPPG)
 								that.ppgdata(binary, deviceSn)
 								that.bufferPPG = []
@@ -5878,11 +5814,18 @@
 						writeType: 'write',
 						value: that.toArrayBuffer('e00006eb010101000101'),
 						complete(complete) {
-							that.blewatch_id = "1"
-							console.log("3发送同步所有数据命令：e00006eb010101000101")
+							if (complete.code === 10007) {
+								that.blewatch_id = "1"
+								that.blewatch_id2 = "0"
+								console.log(
+									"发送同步所有数据命令：e00006eb010101000101"
+								)
+							} else {
+								that.blewatch_id = "0"
+							}
 						}
 					})
-				}, 4000)
+				}, 5000)
 			},
 
 			getsetp(deviceId, serviceId, writeuuid, PROTOCOL_VERSION) {
@@ -7342,19 +7285,6 @@
 						if (this.currentIndex === 0) {
 							const slaveSn2Data = res.data.filter(item => item.slaveSn === "2");
 							const slaveSn3Data = res.data.filter(item => item.slaveSn === "3");
-							uni.setStorageSync("parseBloodDatatime", (this.findValue(slaveSn3Data, "register",
-								"lowPressure")?.updateTime) / 1000)
-							uni.setStorageSync("oxygenDatatime", (this.findValue(slaveSn3Data, "register",
-								"oxygen")?.updateTime) / 1000)
-							uni.setStorageSync("heartRateDatatime", (this.findValue(slaveSn3Data, "register",
-								"heartrate")?.updateTime) / 1000)
-
-							console.log("lowPressure", (this.findValue(slaveSn3Data, "register",
-								"lowPressure")?.updateTime) / 1000)
-							console.log("oxygen", (this.findValue(slaveSn3Data, "register",
-								"oxygen")?.updateTime) / 1000)
-							console.log("heartrate", (this.findValue(slaveSn3Data, "register",
-								"heartrate")?.updateTime) / 1000)
 							const getLatestData = (data1, data2, type) => {
 								const time1 = this.findValue(data1, "register", type)?.updateTime || 0;
 								const time2 = this.findValue(data2, "register", type)?.updateTime || 0;
