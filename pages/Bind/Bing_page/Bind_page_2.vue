@@ -545,7 +545,7 @@
 							BPW1timeer = null
 							uni.showModal({
 								title: this.$t("提示"),
-								content: "未检测到附近蓝牙手表设备，请检查设备",
+								content: this.$t("未检测到附近蓝牙手表设备"),
 								showCancel: false,
 								success: function(res) {
 									if (res.confirm) {

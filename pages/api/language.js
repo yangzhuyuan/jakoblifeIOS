@@ -1,5 +1,6 @@
 export default {
 	'zh-CN': {
+		未检测到附近蓝牙手表设备: "未检测到附近蓝牙手表设备，请检查设备",
 		搜索中: '搜索中...',
 		连接中稍后再试: '连接中，稍后再试',
 		怎么测试情绪: '怎么测试情绪',
@@ -1107,6 +1108,7 @@ export default {
 
 	},
 	'en-US': {
+		未检测到附近蓝牙手表设备: "No nearby Bluetooth watch devices were detected. Please check your device.",
 		搜索中: 'Searching...',
 		连接中稍后再试: 'Connecting, please try again later',
 		怎么测试情绪: 'How to measure your mental health',
