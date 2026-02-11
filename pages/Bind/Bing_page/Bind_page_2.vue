@@ -99,7 +99,7 @@
 		},
 		data() {
 			return {
-				img_scan: true,
+				img_scan: false,
 				scan_img: "../../../static/image-active.png",
 				xinghao: '',
 				context_msg: this.$t('请将条码放入扫码框内即可自动扫描'),
@@ -129,28 +129,31 @@
 
 		onShow() {
 			const that = this
-			that.resetState();
+
 			uni.openBluetoothAdapter({
 				success: res => {
 					console.log("初始化低功耗蓝牙成功")
+					that.resetState();
 				},
 				fail: function(err) {
 					console.log('蓝牙模块初始化失败', err);
 					// 处理蓝牙模块初始化失败的情况，例如提示用户打开蓝牙
+					that.img_scan = false
 					uni.hideLoading()
 					if (err.errCode === 10001) {
-						uni.showModal({
-							content: that.$t("当前蓝牙未开启是否去设置打开"),
-							showCancel: false,
-							success: modalres => {
-								if (modalres.confirm) {
-									that.openBLE()
-								}
-							}
-						});
+						// uni.showModal({
+						// 	content: that.$t("当前蓝牙未开启是否去设置打开"),
+						// 	showCancel: false,
+						// 	success: modalres => {
+						// 		if (modalres.confirm) {
+						// 			that.openBLE()
+						// 		}
+						// 	}
+						// });
 					}
 				}
 			});
+
 		},
 
 		mounted() {

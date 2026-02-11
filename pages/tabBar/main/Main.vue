@@ -2197,33 +2197,35 @@
 						title: that.$t("数据同步中请稍后"),
 						mask: true,
 					})
-					let aaawatchetime = 0
-					that.watchtimer3 = setInterval(() => {
-						aaawatchetime++
-						if (that.blewatch_id === "0") {
-							uni.hideLoading()
-							clearInterval(that.watchtimer3)
-							that.watchtimer3 = null
-							setTimeout(() => {
-								that.sendstartheartwatch(that.writeuuid, 1)
-								uni.showLoading({
-									title: that.$t("请稍后"),
-									mask: true,
-								})
-								that.sleep_alertid = 1
-							}, 1000)
-						} else {
-							if (aaawatchetime === 25) {
+					setTimeout(() => {
+						let aaawatchetime = 0
+						that.watchtimer3 = setInterval(() => {
+							aaawatchetime++
+							if (that.blewatch_id === "0") {
 								uni.hideLoading()
 								clearInterval(that.watchtimer3)
 								that.watchtimer3 = null
-								uni.showToast({
-									title: that.$t("请检查设备连接"),
-									icon: 'none',
-									duration: 2000
-								})
+								setTimeout(() => {
+									that.sendstartheartwatch(that.writeuuid, 1)
+									uni.showLoading({
+										title: that.$t("请稍后"),
+										mask: true,
+									})
+									that.sleep_alertid = 1
+								}, 1000)
+							} else {
+								if (aaawatchetime === 25) {
+									uni.hideLoading()
+									clearInterval(that.watchtimer3)
+									that.watchtimer3 = null
+									uni.showToast({
+										title: that.$t("请检查设备连接"),
+										icon: 'none',
+										duration: 2000
+									})
+								}
 							}
-						}
+						}, 1000)
 					}, 1000)
 				} else {
 					that.sendstartheartwatch(that.writeuuid, 1)
@@ -2486,10 +2488,8 @@
 						// 移除可能的多余花括号
 						objStr = objStr.replace(/^{{/, '{').replace(/}}$/, '}');
 						// 修复键值对
-						const fixedObjStr = objStr.replace(/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (match, key,
-							value) => {
+						const fixedObjStr = objStr.replace(/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (match, key, value) => {
 							value = value.trim();
-
 							// 处理布尔值
 							if (value === 'true' || value === 'false') {
 								return `"${key}":${value}`;
@@ -2578,20 +2578,12 @@
 					success: function(res) {
 						if (res.networkType === 'none') {
 							console.log('无网络连接');
-							let uniqueArr = uni.getStorageSync("deviceList").filter((item,
-									index) => uni
-								.getStorageSync("deviceList").indexOf(item) ===
-								index);
-							let uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item,
-									index) => uni
-								.getStorageSync("devicdsdmac")
-								.indexOf(item) ===
-								index);
-							let uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item,
-									index) => uni
-								.getStorageSync("devicdsdmac1")
-								.indexOf(item) ===
-								index);
+							let uniqueArr = uni.getStorageSync("deviceList").filter((item, index) => uni
+								.getStorageSync("deviceList").indexOf(item) === index);
+							let uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item, index) => uni
+								.getStorageSync("devicdsdmac").indexOf(item) === index);
+							let uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item, index) => uni
+								.getStorageSync("devicdsdmac1").indexOf(item) === index);
 							if (uniqueArr1) {
 								that.connectMultipleDevices(uniqueArr1)
 							}
@@ -2605,41 +2597,26 @@
 							let uniqueArr1
 							let uniqueArr2
 							if (that.deviceList === undefined) {
-								uniqueArr = uni.getStorageSync("deviceList").filter((item,
-										index) =>
-									uni
-									.getStorageSync("deviceList").indexOf(item) ===
-									index);
+								uniqueArr = uni.getStorageSync("deviceList").filter((item, index) => uni
+									.getStorageSync("deviceList").indexOf(item) === index);
 							} else {
 								uniqueArr = that.deviceList.filter((item, index) => that.deviceList
-									.indexOf(item) ===
-									index);
+									.indexOf(item) === index);
 							}
 							if (that.devicdsdmac === undefined) {
-								uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item,
-										index) =>
-									uni
-									.getStorageSync("devicdsdmac").indexOf(item) ===
-									index);
+								uniqueArr1 = uni.getStorageSync("devicdsdmac").filter((item, index) => uni
+									.getStorageSync("devicdsdmac").indexOf(item) === index);
 							} else {
-								uniqueArr1 = that.devicdsdmac.filter((item, index) => that
-									.devicdsdmac
-									.indexOf(item) ===
-									index);
+								uniqueArr1 = that.devicdsdmac.filter((item, index) => that.devicdsdmac
+									.indexOf(item) === index);
 							}
 							if (that.devicdsdmac1 === undefined) {
-								uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item,
-										index) =>
-									uni
-									.getStorageSync("devicdsdmac1").indexOf(item) ===
-									index);
+								uniqueArr2 = uni.getStorageSync("devicdsdmac1").filter((item, index) => uni
+									.getStorageSync("devicdsdmac1").indexOf(item) === index);
 							} else {
-								uniqueArr2 = that.devicdsdmac1.filter((item, index) => that
-									.devicdsdmac1
-									.indexOf(item) ===
-									index);
+								uniqueArr2 = that.devicdsdmac1.filter((item, index) => that.devicdsdmac1
+									.indexOf(item) === index);
 							}
-
 							if (uniqueArr1) {
 								that.connectMultipleDevices(uniqueArr1)
 							}
@@ -3253,7 +3230,6 @@
 											await that.handleCMD04(hexData, deviceId, serviceId, deviceSn);
 											break
 										case "10":
-											that.blewatch_id = "0"
 											if (hexData.length < 160) {
 												const bytes = hexStringToBytes(hexData.slice(18, hexData
 													.length));
@@ -3309,11 +3285,10 @@
 													uni.setStorageSync("remMin2", remMin)
 													uni.setStorageSync("lightMin2", lightMin)
 													that.jakoblife_fat_scale3(that.shoubiaomac, stats
-														.formalReadable, that.shoubiaosn,
-														"睡眠");
+														.formalReadable, that.shoubiaosn, "睡眠");
 												}
-												// that.sendack(hexData, deviceId, serviceId, deviceSn);
 												that.resetDataState("25")
+												that.blewatch_id = "0"
 												that.blewatch_id2 = "1"
 											} else {
 												await that.handleCMD01(hexData, deviceId,
@@ -3327,12 +3302,11 @@
 									}
 									break;
 								case "03":
-									that.blewatch_id2 = "0"
+									// that.blewatch_id2 = "0"
 									await that.handleCMD03(hexData, deviceId, serviceId, that.writeuuid,
 										deviceSn);
 									break;
 								case "01":
-									that.blewatch_id2 = "0"
 									switch (hexData.slice(12, 14)) {
 										case "00":
 										case "01":
@@ -3342,9 +3316,11 @@
 											break
 										case "03":
 											setTimeout(() => {
+												that.blewatch_id2 = "0"
 												that.sendack(hexData, deviceId, serviceId, that
 													.writeuuid);
 												that.resetDataState("22");
+
 											}, 2000)
 											break
 									}
@@ -3404,7 +3380,7 @@
 										clearInterval(that.watchtimer);
 										that.watchtimer = null;
 									}
-									let watchtime = 20
+									let watchtime = 25
 									that.watchtimer = setInterval(() => {
 										watchtime--;
 										if (watchtime < 1) {
@@ -3576,7 +3552,6 @@
 						that.jakoblife_fat_scale3(that.shoubiaomac, stats.formalReadable, that
 							.shoubiaosn, "睡眠");
 					}
-					// that.sendack(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
 					that.resetDataState("12")
 					that.blewatch_id = "0"
 					that.blewatch_id2 = "1"
@@ -3590,14 +3565,11 @@
 				} else if (that.quotient === 0 && that.quotient1 > 0 &&
 					that.dataBuffer.length === that.quotient1) {
 					// 情况2：只有心率/血氧数据77
-					// that.sendack2(that.formatData(that.dataBuffer), deviceId, serviceId, that.writeuuid);
 					that.processSingleDataType(deviceId, deviceSn);
 				} else if (that.quotientACC > 0 && that.dataBuffer.length === that.quotientACC) {
 					const allDataACC = that.formatData(that.dataBuffer);
 					const ACCdata = allDataACC.slice(18, allDataACC.length)
-					// console.log("ACC蓝牙数据包：" + allDataACC)
 					const result = AccDataParser.debugParseExample(ACCdata);
-					// console.log('ACC解析之后的数据列表:' + JSON.stringify(result));
 					if (result.success) {
 						// 获取所有X轴数据
 						const xData = result.data.map(item => item.x);
@@ -3835,8 +3807,7 @@
 								this.optsPPG.extra.markLine.data[0].labelText = this.$t("积极愉悦2")
 								this.optsPPG.extra.markLine.data[0].labelAlign = "left"
 								this.optsPPG.extra.markLine.data[0].labelOffsetX = Language == 'zh-Hans' ||
-									Language ==
-									'zh-Hant' ? 60 : 145
+									Language == 'zh-Hant' ? 60 : 145
 								this.optsPPG.extra.markLine.data[0].labelFontColor = "#D8D8D6"
 								this.optsPPG.extra.markLine.data[0].labelOffsetY = -15
 								this.optsPPG.extra.markLine.data[0].labelBgOpacity = -0.8
@@ -5051,7 +5022,7 @@
 
 			// 处理CMD00命令
 			async handleCMD00(hexData, deviceId, serviceId) {
-				const that = this
+				let that = this
 				setTimeout(() => {
 					that.calculateChecksumsss(hexData, deviceId, serviceId, that.writeuuid);
 				}, 3000)
@@ -5059,7 +5030,7 @@
 			},
 			// 处理CMD04命令（步数）
 			async handleCMD04(hexData, deviceId, serviceId, deviceSn) {
-				const that = this
+				let that = this
 				await that.sendack(hexData, deviceId, serviceId, that.writeuuid);
 				const step = hexData.slice(18, 26); // 步数数据位置
 				const stepCount = parseInt(step, 16);
@@ -5069,7 +5040,7 @@
 			},
 
 			async handleCMD0401(hexData, deviceId, serviceId, deviceSn) {
-				const that = this
+				let that = this
 				const key = hexData.slice(12, 14);
 				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16) + 4;
@@ -5082,7 +5053,7 @@
 			},
 			// 处理CMD03命令
 			async handleCMD01(hexData, deviceId, serviceId, deviceSn) {
-				const that = this
+				let that = this
 				const key = hexData.slice(12, 14);
 				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16) + 4;
@@ -5095,7 +5066,7 @@
 			},
 			// 处理CMD03命令
 			async handleCMD03(hexData, deviceId, serviceId, writeuuid, deviceSn) {
-				const that = this
+				let that = this
 				const subCmd = hexData.slice(12, 14);
 				const lengthHex = hexData.slice(2, 6);
 				const dataLength = parseInt(lengthHex, 16);
@@ -5108,7 +5079,6 @@
 					case "1d":
 						clearInterval(that.watchtimer);
 						that.watchtimer = null
-						that.sleep_alertid = 0
 						const ACCPPG = hexData.slice(hexData.length - 12, hexData.length)
 						const heartTime = ACCPPG.slice(0, 4); // 时间部分（2个字节）
 						const {
@@ -5132,32 +5102,35 @@
 							parsePPGConfigdata: '解析PPG数据配置字节:' + JSON.stringify(parsePPGConfigdata)
 						}
 						console.log("dataall", dataall)
-						if (that.watchtimer2) {
-							clearInterval(that.watchtimer2);
-							that.watchtimer2 = null;
-						}
-						let watchtime2 = 20
-						that.watchtimer2 = setInterval(() => {
-							watchtime2--;
-							if (watchtime2 <= 0) {
+						if (that.sleep_alertid === 1 || uni.getStorageSync("sendwatch") === 1) {
+							if (that.watchtimer2) {
 								clearInterval(that.watchtimer2);
 								that.watchtimer2 = null;
-								that.sleep_alertdisabled = false
-								uni.hideLoading();
-								that.sleep_alertid = 0
-								that.resetDataState("6");
 							}
-						}, 1000)
+							let watchtime2 = 25
+							that.watchtimer2 = setInterval(() => {
+								watchtime2--;
+								if (watchtime2 <= 0) {
+									clearInterval(that.watchtimer2);
+									that.watchtimer2 = null;
+									that.sleep_alertdisabled = false
+									uni.hideLoading();
+									that.resetDataState("6");
+								}
+							}, 1000)
+						}
 						that.blewatch_id2 = "1"
 						switch (Status) {
 							case "01":
 								that.bufferPPG = []
 								clearInterval(that.watchtimer);
 								that.watchtimer = null
+								if (that.sleep_alertid === 1 || uni.getStorageSync("sendwatch") === 1) {
+									setTimeout(() => {
+										that.sendack(hexData, deviceId, serviceId, writeuuid);
+									}, 500)
+								}
 								that.sleep_alertid = 0
-								setTimeout(() => {
-									that.sendack(hexData, deviceId, serviceId, writeuuid);
-								}, 500)
 								that.resetDataState("5");
 								break
 							case "02":
@@ -5309,7 +5282,7 @@
 
 			// 处理合并的血压和心率数据
 			processCombinedBloodPressureAndHeartRate(deviceId, deviceSn, serviceId) {
-				const that = this
+				let that = this
 				// 分离血压和心率数据包
 				const [bpPackets, hrPackets] = that.splitPacketsByHeader();
 				// 格式化数据
@@ -5527,7 +5500,7 @@
 				}
 			},
 			async sendack2(dataList, deviceId, serviceId, writeuuid) {
-				const that = this
+				let that = this
 				const hexString = dataList
 				// 将十六进制字符串转换为字节数组
 				const bytes = [];
@@ -5630,7 +5603,7 @@
 
 			// 提取血压数据解析函数
 			parseBloodPressureData(stringdata) {
-				const that = this
+				let that = this
 				const Covmamlueand = stringdata.slice(18, stringdata.length);
 				const data = stringdata.slice(stringdata.length - 16, stringdata
 					.length);
@@ -5654,7 +5627,7 @@
 
 			// 提取心率数据解析函数
 			parseHeartRateData(stringdata) {
-				const that = this
+				let that = this
 				const Covmamlueand = stringdata.slice(18, stringdata.length);
 				const hexData = stringdata.slice(stringdata.length - 16, stringdata
 					.length);
@@ -5705,7 +5678,7 @@
 
 			// 定义一个函数来计算校验和
 			calculateChecksumsss(hexString, deviceId, serviceId, writeuuid) {
-				const that = this
+				let that = this
 				// 将十六进制字符串转换为字节数组
 				const bytes = [];
 				for (let i = 0; i < hexString.length; i += 2) {
@@ -5830,7 +5803,7 @@
 
 			getsetp(deviceId, serviceId, writeuuid, PROTOCOL_VERSION) {
 				// 运动命令
-				const that = this
+				let that = this
 				const ackConfigByteset = new Uint8Array(9);
 				ackConfigByteset[0] = 0xE0;
 				ackConfigByteset[1] = 0x00;
@@ -5873,7 +5846,7 @@
 
 			//获取蓝牙外围设备的特征值
 			getBLEDeviceCharacteristics2(deviceId, serviceId, deviceSn) {
-				const that = this
+				let that = this
 				uni.getBLEDeviceCharacteristics({
 					deviceId: deviceId,
 					serviceId: serviceId,
@@ -5963,7 +5936,7 @@
 
 
 			onBLECharacteristicValueChange2(deviceId, serviceId, deviceSn) {
-				const that = this
+				let that = this
 				uni.onBLECharacteristicValueChange((res) => {
 					const dataList = that.ab2hex(res.value)
 					if (dataList.length === 10) {
@@ -6072,7 +6045,7 @@
 			},
 
 			bgaaa(lowPressure, highPressure) {
-				const that = this;
+				let that = this;
 				if ((lowPressure >= 81 && lowPressure <= 90) || (highPressure >= 121 &&
 						highPressure <= 140)) {
 					uni.showModal({
@@ -7248,24 +7221,17 @@
 					bloodOxygenItem.BMI_ys = that.$t('偏高');
 					bloodOxygenItem.BMI_TF = 10;
 				}
-				const xueyangtime = that.formatDate(that.findValue(item,
-					'register', 'oxygen')?.updateTime);
+				const xueyangtime = that.formatDate(that.findValue(item, 'register', 'oxygen')?.updateTime);
 				bloodOxygenItem.Step_count = !xueyangtime ? "-/-" : xueyangtime;
 			},
 
 			// 处理压力卡片
 			async processyali(item, name) {
 				let that = this
-				const temperatureItem = that.findValue(that
-					.list,
-					'title', name);
+				const temperatureItem = that.findValue(that.list, 'title', name);
 				temperatureItem.title = that.$t("压力");
-				temperatureItem.Step_number = uni
-					.getStorageSync(
-						"yali") || "0";
-				temperatureItem.Step_count = uni
-					.getStorageSync(
-						"yalitimes") || "--/--";
+				temperatureItem.Step_number = uni.getStorageSync("yali") || "0";
+				temperatureItem.Step_count = uni.getStorageSync("yalitimes") || "--/--";
 			},
 
 
@@ -8247,12 +8213,8 @@
 
 			//用户在app手动上报六围数据
 			fat_scale_1() {
-				// let that = this
-				let timestamp = Math.floor(new Date(this
-						.birthday1 == this.$t('今天') ?
-						new Date().toISOString().slice(0,
-							10) : this.birthday1)
-					.getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
+				let timestamp = Math.floor(new Date(this.birthday1 == this.$t('今天') ? new Date().toISOString().slice(0,
+					10) : this.birthday1).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
 				let data = {
 					slaveSn: "1",
 					slaveData: {
