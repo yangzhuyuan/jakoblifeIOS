@@ -56,6 +56,17 @@
 			</uni-popup>
 		</view>
 
+		<view>
+			<uni-popup ref="popupblequanixan" :mask-click="true">
+				<view class="popupstusdsd_2">
+					<view style="padding: 10px 0 40px 0">
+						<view class="popupstusdsditem">{{$t("当前蓝牙未开启是否去设置打开")}}</view>
+					</view>
+					<button @tap="blequanxian()" class="butonstsd">{{$t("确定")}}</button>
+				</view>
+			</uni-popup>
+		</view>
+
 	</view>
 </template>
 
@@ -127,29 +138,27 @@
 			})
 		},
 
-		onShow() {
-			const that = this
+		onHide() {
+			console.log("onHide")
+			uni.setStorageSync("openBluebloen", false)
+		},
 
+		onShow() {
+			// uni.removeStorageSync("openBluebloen")
+			let that = this
 			uni.openBluetoothAdapter({
 				success: res => {
 					console.log("初始化低功耗蓝牙成功")
 					that.resetState();
+					that.$refs.popupblequanixan.close()
 				},
 				fail: function(err) {
-					console.log('蓝牙模块初始化失败', err);
+					console.log('蓝牙模块初始化失败', uni.getStorageSync("openBluebloen"));
 					// 处理蓝牙模块初始化失败的情况，例如提示用户打开蓝牙
 					that.img_scan = false
 					uni.hideLoading()
-					if (err.errCode === 10001) {
-						// uni.showModal({
-						// 	content: that.$t("当前蓝牙未开启是否去设置打开"),
-						// 	showCancel: false,
-						// 	success: modalres => {
-						// 		if (modalres.confirm) {
-						// 			that.openBLE()
-						// 		}
-						// 	}
-						// });
+					if (err.errCode === 10001 && uni.getStorageSync("openBluebloen") === false) {
+						that.$refs.popupblequanixan.open("center")
 					}
 				}
 			});
@@ -167,6 +176,13 @@
 
 		methods: {
 			...mapMutations(['setlanyaId', 'setacktypes']),
+
+
+			blequanxian() {
+				this.openBLE()
+				this.$refs.popupblequanixan.close()
+			},
+
 			ButtonTap() {
 				this.img_scan = false
 				this.$refs.qiehuanpopup.open("center")
@@ -829,6 +845,11 @@
 		z-index: 999999;
 	}
 
+	.popupstusdsditem {
+		font-size: 18px;
+		font-weight: bold;
+		margin-bottom: 20px;
+	}
 
 	.popupstusdsditem_1 {
 		font-size: 18px;
