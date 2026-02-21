@@ -51,21 +51,63 @@
 						</view>
 						<uni-icons v-show="xueyang_show" type="checkmarkempty" size="16"></uni-icons>
 					</view>
+
+
 					<view style="background: gainsboro; width: 100%; height: 1px;"></view>
-					<view style="display: flex;flex-direction: row; align-items: center; height: 56px;" @click="yali()">
+					<view style="display: flex;flex-direction: row; align-items: center; height: 56px;"
+						@click="moodIndex()">
+						<view style="width: 90%; margin: 10px;font-size: 16px;font-weight: 400;">
+							{{$t('心情指数')}}
+						</view>
+						<uni-icons v-show="moodIndex_show" type="checkmarkempty" size="16"></uni-icons>
+					</view>
+					<view style="background: gainsboro; width: 100%; height: 1px;"></view>
+					<view style="display: flex;flex-direction: row; align-items: center; height: 56px;"
+						@click="depressionRiskScore()">
+						<view style="width: 90%; margin: 10px;font-size: 16px;font-weight: 400;">
+							{{$t('抑郁风险评分')}}
+						</view>
+						<uni-icons v-show="depressionRiskScore_show" type="checkmarkempty" size="16"></uni-icons>
+					</view>
+					<view style="background: gainsboro; width: 100%; height: 1px;"></view>
+					<view style="display: flex;flex-direction: row; align-items: center; height: 56px;"
+						@click="stressIndex()">
+						<view style="width: 90%; margin: 10px;font-size: 16px;font-weight: 400;">
+							{{$t('压力指数')}}
+						</view>
+						<uni-icons v-show="stressIndex_show" type="checkmarkempty" size="16"></uni-icons>
+					</view>
+					<view style="background: gainsboro; width: 100%; height: 1px;"></view>
+					<view style="display: flex;flex-direction: row; align-items: center; height: 56px;"
+						@click="fatigueIndex()">
+						<view style="width: 90%; margin: 10px;font-size: 16px;font-weight: 400;">
+							{{$t('疲劳指数')}}
+						</view>
+						<uni-icons v-show="fatigueIndex_show" type="checkmarkempty" size="16"></uni-icons>
+					</view>
+					<view style="background: gainsboro; width: 100%; height: 1px;"></view>
+					<view style="display: flex;flex-direction: row; align-items: center; height: 56px;"
+						@click="recoveryIndex()">
+						<view style="width: 90%; margin: 10px;font-size: 16px;font-weight: 400;">
+							{{$t('恢复指数')}}
+						</view>
+						<uni-icons v-show="recoveryIndex_show" type="checkmarkempty" size="16"></uni-icons>
+					</view>
+					<!-- <view style="background: gainsboro; width: 100%; height: 1px;"></view> -->
+					<!-- <view style="display: flex;flex-direction: row; align-items: center; height: 56px;" @click="yali()">
 						<view style="width: 90%; margin: 10px;font-size: 16px;font-weight: 400;">
 							{{$t('压力')}}
 						</view>
 						<uni-icons v-show="yali_show" type="checkmarkempty" size="16"></uni-icons>
-					</view>
-					<view style="background: gainsboro; width: 100%; height: 1px;"></view>
+					</view> -->
+					<!-- <view style="background: gainsboro; width: 100%; height: 1px;"></view>
 					<view style="display: flex;flex-direction: row; align-items: center; height: 56px;"
 						@click="tiwen()">
 						<view style="width: 90%; margin: 10px;font-size: 16px;font-weight: 400;">
 							{{$t('体温')}}
 						</view>
 						<uni-icons v-show="tiwen_show" type="checkmarkempty" size="16"></uni-icons>
-					</view>
+					</view> -->
 
 
 					<view style="background: gainsboro; width: 100%; height: 1px;"></view>
@@ -189,11 +231,14 @@
 				lowPressure_show: false,
 				highPressure_show: false,
 				heartrate_show: false,
-
 				xueyang_show: false,
+				moodIndex_show: false,
+				depressionRiskScore_show: false,
+				stressIndex_show: false,
+				fatigueIndex_show: false,
+				recoveryIndex_show: false,
 				yali_show: false,
 				tiwen_show: false,
-
 				start_weight_show: false,
 				goal_weight_show: false,
 				Width_show: false,
@@ -259,6 +304,56 @@
 				}
 			},
 
+			moodIndex() {
+				if (this.moodIndex_show == true) {
+					this.moodIndex_show = false
+					this.cb = false
+					this.action.pop()
+				} else {
+					this.moodIndex_show = true
+					this.action.push("mood_index")
+				}
+			},
+			depressionRiskScore() {
+				if (this.depressionRiskScore_show == true) {
+					this.depressionRiskScore_show = false
+					this.cb = false
+					this.action.pop()
+				} else {
+					this.depressionRiskScore_show = true
+					this.action.push("depression_risk_score")
+				}
+			},
+			stressIndex() {
+				if (this.stressIndex_show == true) {
+					this.stressIndex_show = false
+					this.cb = false
+					this.action.pop()
+				} else {
+					this.stressIndex_show = true
+					this.action.push("stress_index")
+				}
+			},
+			fatigueIndex() {
+				if (this.fatigueIndex_show == true) {
+					this.fatigueIndex_show = false
+					this.cb = false
+					this.action.pop()
+				} else {
+					this.fatigueIndex_show = true
+					this.action.push("fatigue_index")
+				}
+			},
+			recoveryIndex() {
+				if (this.recoveryIndex_show == true) {
+					this.recoveryIndex_show = false
+					this.cb = false
+					this.action.pop()
+				} else {
+					this.recoveryIndex_show = true
+					this.action.push("recovery_index")
+				}
+			},
 			xueyang() {
 				if (this.xueyang_show == true) {
 					this.xueyang_show = false
@@ -289,8 +384,6 @@
 					this.action.push("temperature")
 				}
 			},
-
-
 			start_weight() {
 				if (this.start_weight_show == true) {
 					this.start_weight_show = false
@@ -409,11 +502,14 @@
 					that.lowPressure_show = false
 					that.highPressure_show = false
 					that.heartrate_show = false
-
+					that.moodIndex_show = false
+					that.depressionRiskScore_show = false
+					that.stressIndex_show = false
+					that.fatigueIndex_show = false
+					that.recoveryIndex_show = false
 					that.xueyang_show = false
 					that.yali_show = false
 					that.tiwen_show = false
-
 					that.start_weight_show = false
 					that.Width_show = false
 					that.goal_weight_show = false
@@ -432,6 +528,11 @@
 					that.highPressure_show = true
 					that.heartrate_show = true
 					that.xueyang_show = true
+					that.moodIndex_show = true
+					that.depressionRiskScore_show = true
+					that.stressIndex_show = true
+					that.fatigueIndex_show = true
+					that.recoveryIndex_show = true
 					that.yali_show = true
 					that.tiwen_show = true
 					that.start_weight_show = true
@@ -448,12 +549,11 @@
 					that.action = ['0', 'lowPressure', 'highPressure', 'heartrate', 'start_weight', 'goal_weight',
 						'weight ', 'height ', 'chest_circumference', 'waistline_show', 'hipline',
 						'biceps_circumference', 'thigh_circumference', 'calf_circumference', 'bmi', 'oxygen',
-						'pressure', 'temperature'
+						'pressure', 'temperature', 'mood_index', 'depression_risk_score', 'stress_index',
+						'fatigue_index', 'recovery_index'
 					]
-
 				}
 			},
-
 
 			getbk(id) {
 				return {
@@ -485,11 +585,12 @@
 					receiverId: this.receiverId,
 					dataPointIds: [dataPointIds]
 				}
+				console.log("dataPointIds", data)
 				this.$post(this.$url_APP_IP + "/prod-api/share/data/req", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then((req) => {
-					console.log("req", req)
+					console.log("dataPointIdsreq", req)
 					switch (req.code) {
 						case 200:
 							uni.navigateTo({

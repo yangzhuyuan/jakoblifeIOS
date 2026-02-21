@@ -144,7 +144,6 @@
 		},
 
 		onShow() {
-			// uni.removeStorageSync("openBluebloen")
 			let that = this
 			uni.openBluetoothAdapter({
 				success: res => {

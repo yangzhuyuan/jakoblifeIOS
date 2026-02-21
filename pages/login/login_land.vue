@@ -447,7 +447,7 @@
 				this.$post(this.$url_APP_IP + this.$url_user_login, data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
-					// console.log(res)
+					console.log(res)
 					switch (res.code) {
 						case 200:
 							uni.showToast({
@@ -482,6 +482,7 @@
 							break
 					}
 				}).catch(erro => {
+					console.log("erro",erro)
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
 						uni.showToast({
 							title: this.$t("网络连接异常"),

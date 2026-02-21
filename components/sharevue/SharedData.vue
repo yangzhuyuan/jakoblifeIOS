@@ -38,6 +38,11 @@
 					highPressure: this.$t('收缩压'),
 					heartrate: this.$t('脉搏'),
 					oxygen: this.$t('血氧'),
+					mood_index: this.$t("心情指数"),
+					depression_risk_score: this.$t("抑郁风险评分"),
+					stress_index: this.$t("压力指数"),
+					fatigue_index: this.$t("疲劳指数"),
+					recovery_index: this.$t("恢复指数"),
 					temperature: this.$t('体温'),
 					pressure: this.$t('压力'),
 					start_weight: this.$t('初始体重'),
@@ -65,7 +70,12 @@
 					bmi: 'kg/m²',
 					oxygen: '%',
 					temperature: '℃',
-					pressure: 'kPa'
+					pressure: 'kPa',
+					mood_index: "/10",
+					depression_risk_score: "/10",
+					stress_index: "/10",
+					fatigue_index: "/10",
+					recovery_index: "/10",
 				};
 				return `${value}${units[register] || ''}`;
 			}

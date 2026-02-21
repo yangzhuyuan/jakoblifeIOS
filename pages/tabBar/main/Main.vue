@@ -2197,6 +2197,10 @@
 						title: that.$t("数据同步中请稍后"),
 						mask: true,
 					})
+					if (that.watchtimer3) {
+						clearInterval(that.watchtimer3);
+						that.watchtimer3 = null;
+					}
 					setTimeout(() => {
 						let aaawatchetime = 0
 						that.watchtimer3 = setInterval(() => {
@@ -2206,11 +2210,11 @@
 								clearInterval(that.watchtimer3)
 								that.watchtimer3 = null
 								setTimeout(() => {
-									that.sendstartheartwatch(that.writeuuid, 1)
 									uni.showLoading({
 										title: that.$t("请稍后"),
 										mask: true,
 									})
+									that.sendstartheartwatch(that.writeuuid, 1)
 									that.sleep_alertid = 1
 								}, 1000)
 							} else {
@@ -2218,6 +2222,7 @@
 									uni.hideLoading()
 									clearInterval(that.watchtimer3)
 									that.watchtimer3 = null
+									that.blewatch_id = "0"
 									uni.showToast({
 										title: that.$t("请检查设备连接"),
 										icon: 'none',
@@ -2226,7 +2231,7 @@
 								}
 							}
 						}, 1000)
-					}, 1000)
+					}, 2000)
 				} else {
 					that.sendstartheartwatch(that.writeuuid, 1)
 					uni.showLoading({
@@ -2236,23 +2241,29 @@
 					that.sleep_alertid = 1
 				}
 			},
+			// 情绪立即测量命令
 			sendstartheartwatch(writeuuid, type) {
 				let that = this
-				let buffer2 = that.toArrayBuffer("e00006f3060104000101")
+				// let buffer2 = that.toArrayBuffer("e0000611030125000101")//5.8.5的版本命令
+				let buffer2 = that.toArrayBuffer("e00006f3060104000101") //5。8.2及以下的命令
+				console.log(uni.getStorageSync("deviceIdwatch"))
+				console.log(uni.getStorageSync("serviceIdwatch"))
+				console.log(uni.getStorageSync("writeuuid"))
 				console.log(that.deviceIdwatch)
 				console.log(that.serviceIdwatch)
 				console.log(writeuuid)
 				setTimeout(() => {
 					uni.writeBLECharacteristicValue({
-						deviceId: that.deviceIdwatch,
-						serviceId: that.serviceIdwatch,
-						characteristicId: writeuuid,
+						deviceId: that.deviceIdwatch ? that.deviceIdwatch : uni.getStorageSync(
+							"deviceIdwatch"),
+						serviceId: that.serviceIdwatch ? that.serviceIdwatch : uni.getStorageSync(
+							"serviceIdwatch"),
+						characteristicId: writeuuid ? writeuuid : uni.getStorageSync("writeuuid"),
 						writeType: 'write',
 						value: buffer2,
 						complete(complete) {
 							if (complete.code === 10007) {
 								uni.hideLoading()
-								// console.log("发送立即测量命令:e00006f3060104000101")
 								uni.showLoading({
 									title: that.$t("测量中"),
 									mask: true,
@@ -2271,8 +2282,7 @@
 					})
 				}, 3000)
 			},
-
-
+			// 步数目标值
 			Daily_Goal_set() {
 				if (!this.Daily_Goal) {
 					uni.showToast({
@@ -2309,11 +2319,9 @@
 					uni.setStorageSync("medication", true)
 				}
 			},
-
 			// 点击顶部tab切换
 			swtichSwiper(index) {
 				this.currentIndex = index
-
 			},
 			swipeIndex(index) {
 				let that = this
@@ -2332,8 +2340,7 @@
 									"xueyadata")) {
 								if (uni.getStorageSync("xueyadatatype") === "1") {
 									that.$post(that.$url_APP_IP + that.$url_jakoblife_fat_scale, uni
-										.getStorageSync(
-											"xueyadata"), {
+										.getStorageSync("xueyadata"), {
 											'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 										}).then(res => {
 										console.log("上报数据手表", res)
@@ -2341,8 +2348,7 @@
 											that.setbanhua(1)
 											let deviceSnlixin = uni.getStorageSync("xueyadata")
 												.deviceSn
-											let slaveDatalixian = uni.getStorageSync(
-													"xueyadata")
+											let slaveDatalixian = uni.getStorageSync("xueyadata")
 												.slaveData
 											uni.removeStorageSync("xueyadatatype")
 											uni.removeStorageSync("xueyadata")
@@ -2365,8 +2371,7 @@
 											that.setbanhua(1)
 											let deviceSnlixin = uni.getStorageSync("xueyadata")
 												.deviceSn
-											let slaveDatalixian = uni.getStorageSync(
-													"xueyadata")
+											let slaveDatalixian = uni.getStorageSync("xueyadata")
 												.slaveData
 											uni.removeStorageSync("xueyadatatype")
 											uni.removeStorageSync("xueyadata")
@@ -2428,7 +2433,7 @@
 				}
 				return true;
 			},
-
+			// 卡片数据重制
 			resetStates() {
 				this.deviceList = [];
 				this.deviceLists = [];
@@ -2443,7 +2448,17 @@
 				this.delate_icon2 = false;
 				this.disabledsaaa2 = true;
 			},
-
+			// 蓝牙数据重置数据状态
+			resetDataState(id) {
+				// console.log("resetDataState", id)
+				this.dataBuffer = [];
+				this.quotient = 0;
+				this.quotient1 = 0;
+				this.quotient2 = 0;
+				this.quotient3 = 0;
+				this.quotientACC = 0;
+				this.quotientPPG = 0;
+			},
 			Unitlist() {
 				const data = {
 					dataType: 'Unitdata'
@@ -2962,6 +2977,9 @@
 											that.deviceIdwatch = deviceId
 											that.serviceIdwatch = serviceId
 											that.writeuuid = item.uuid
+											uni.setStorageSync("deviceIdwatch", deviceId)
+											uni.setStorageSync("serviceIdwatch", serviceId)
+											uni.setStorageSync("writeuuid", item.uuid)
 											const plugin = uni.requireNativePlugin(
 												"CBConnectPlugin-CBCModule");
 											plugin.connectPeripheral({
@@ -3236,14 +3254,12 @@
 												const sleepObj = receive5610SleepData(bytes);
 												const stats = that.calcSleepMinutes(sleepObj);
 												console.log('解析睡眠数据：', stats);
-												// that.log('1解析睡眠数据：', that.blewatch_id)
-												// that.log('2解析睡眠数据：', stats)
 												that.sleeepalldata = stats
 												uni.setStorageSync("totalLight", stats.totalLight)
 												uni.setStorageSync("totalDeep", stats.totalDeep)
 												uni.setStorageSync("totalRem", stats.totalRem)
 												uni.setStorageSync("sleep", stats.formalReadable)
-												uni.setStorageSync("sleep_time", sleepObj.date.slice(6,
+												uni.setStorageSync("sleep_time", sleepObj.date.slice(5,
 													sleepObj.date.length).replace("-", "/"))
 												that.sleep = stats.formalReadable
 												that.totalLight = stats.totalLight
@@ -3253,11 +3269,9 @@
 												const totalAll = that.timeStrToMinutes(that
 													.sleep); // 436
 												const totalH = (totalAll / 60).toFixed(1)
-												const deepMin = (that.timeStrToMinutes(that
-														.totalDeep) / 60)
+												const deepMin = (that.timeStrToMinutes(that.totalDeep) / 60)
 													.toFixed(1);
-												const remMin = (that.timeStrToMinutes(that.totalRem) /
-														60)
+												const remMin = (that.timeStrToMinutes(that.totalRem) / 60)
 													.toFixed(1);
 												const lightMin = (that.timeStrToMinutes(that
 														.totalLight) / 60)
@@ -3274,8 +3288,7 @@
 													if (uni.getStorageSync("sleep_time") === "00/00" && that
 														.getCurrentTimesleep() !== that.sleep_time) {
 														that.jakoblife_fat_scale3(that.shoubiaomac, stats
-															.formalReadable,
-															that.shoubiaosn, "睡眠");
+															.formalReadable, that.shoubiaosn, "睡眠");
 													}
 													console.log("2当天手表上相同的睡眠数据已经上传过")
 												} else {
@@ -3302,7 +3315,6 @@
 									}
 									break;
 								case "03":
-									// that.blewatch_id2 = "0"
 									await that.handleCMD03(hexData, deviceId, serviceId, that.writeuuid,
 										deviceSn);
 									break;
@@ -3511,8 +3523,6 @@
 					const stats = that.calcSleepMinutes(sleepObj);
 					that.sleeepalldata = stats
 					console.log('解析睡眠数据：', stats);
-					// that.log('1解析睡眠数据：', that.blewatch_id)
-					// that.log('2解析睡眠数据：', stats)
 					uni.setStorageSync("totalLight", stats.totalLight)
 					uni.setStorageSync("totalDeep", stats.totalDeep)
 					uni.setStorageSync("totalRem", stats.totalRem)
@@ -3529,7 +3539,7 @@
 					const lightMin = (that.timeStrToMinutes(that.totalLight) / 60).toFixed(1)
 					that.sleep_point = that.overallSleepScore(totalAll, totalH, deepMin,
 						remMin, lightMin)
-					uni.setStorageSync("sleep_time", sleepObj.date.slice(6, sleepObj.date
+					uni.setStorageSync("sleep_time", sleepObj.date.slice(5, sleepObj.date
 						.length).replace("-", "/"))
 					if (totalAll === uni.getStorageSync("totalAll2") &&
 						totalH === uni.getStorageSync("totalH2") &&
@@ -3539,8 +3549,7 @@
 						if (uni.getStorageSync("sleep_time") === "00/00" && that
 							.getCurrentTimesleep() !== that.sleep_time) {
 							that.jakoblife_fat_scale3(that.shoubiaomac, stats
-								.formalReadable,
-								that.shoubiaosn, "睡眠");
+								.formalReadable, that.shoubiaosn, "睡眠");
 						}
 						console.log("2当天手表上相同的睡眠数据已经上传过")
 					} else {
@@ -3633,7 +3642,7 @@
 				return `${year}-${month}-${day}`;
 			},
 			// PPG原始波形数据存储 
-			ppgdata(rawData, deviceSn) {
+			ppgdata(rawData, deviceSn, deviceId) {
 				let data = {
 					patientId: uni.getStorageSync("userid"), //患者id
 					deviceSn: deviceSn, //设备sn
@@ -3663,12 +3672,12 @@
 							title: this.$t("云端数据计算中"),
 							mask: true,
 						})
-						this.deviceppgdatalist()
+						this.deviceppgdatalist(deviceSn, deviceId)
 					}
 				})
 			},
 			//查询PPG原始波形数据存储列表
-			deviceppgdatalist() {
+			deviceppgdatalist(deviceSn, deviceId) {
 				let that = this
 				let dataparin = {
 					patientId: uni.getStorageSync("userid"), //患者id
@@ -3683,7 +3692,7 @@
 							"ANALYZED") {
 							that.sleep_alertdisabled = false
 							uni.hideLoading();
-							that.ppgdatalist()
+							that.ppgdatalist(deviceSn, deviceId)
 						} else if (deviceppgdatalist.rows[deviceppgdatalist.total - 1].processingStatus ===
 							"ERROR") {
 							that.sleep_alertdisabled = false
@@ -3701,18 +3710,18 @@
 							console.log("数据处理有误")
 						} else {
 							setTimeout(() => {
-								that.deviceppgdatalist()
+								that.deviceppgdatalist(deviceSn, deviceId)
 							}, 1000)
 						}
 					} else {
 						setTimeout(() => {
-							that.deviceppgdatalist()
+							that.deviceppgdatalist(deviceSn, deviceId)
 						}, 1000)
 					}
 				})
 			},
 			//根据患者id查询PPG信号最新分析结果
-			ppgdatalist() {
+			ppgdatalist(deviceSn, deviceId) {
 				let that = this
 				let ppgdata = {
 					patientId: uni.getStorageSync("userid"),
@@ -3725,6 +3734,14 @@
 					console.log("ppgdatalist", ppgdatalist)
 					if (ppgdatalist.code === 200) {
 						uni.hideLoading();
+						let aaa = {
+							mood_index: ppgdatalist.data.moodIndex, //心情指数
+							depression_risk_score: ppgdatalist.data.depressionRiskScore, //抑郁风险评分
+							stress_index: ppgdatalist.data.stressIndex, //压力指数
+							fatigue_index: ppgdatalist.data.fatigueIndex, //疲劳指数
+							recovery_index: ppgdatalist.data.recoveryIndex, //恢复指数
+						}
+						this.share_data_fat_scale(deviceSn, deviceId, ppgdatalist.data.analysisTime, aaa)
 						this.ppgresultslist(this.types_index)
 						this.ppgresultslist2(this.types_index)
 						this.ppgresultslist3(this.types_index)
@@ -3748,8 +3765,31 @@
 						uni.hideLoading();
 					}
 				})
-
 			},
+
+			//情绪数据上报
+			share_data_fat_scale(deviceSn, deviceId, fattimes, aaa) {
+				let data = {
+					deviceSn: deviceSn === "undefined" || deviceSn === undefined ? uni
+						.getStorageSync("deviceSn") : deviceSn,
+					mac: deviceId,
+					deviceTypeId: "2",
+					slaveData: aaa,
+					time: this.datatime(fattimes)
+				}
+				console.log("jakoblife_fat_scale22", data)
+				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
+					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+				}).then(sharedatafatscaleres => {
+					console.log("上报手表情绪数据", sharedatafatscaleres)
+					if (sharedatafatscaleres.code === 200) {
+
+					}
+				}).catch(sharedatafatscaleerrro => {
+					console.log("sharedatafatscaleerrro", sharedatafatscaleerrro)
+				})
+			},
+
 			ppgresultslist(recordId) {
 				let ppgdata = {
 					patientId: uni.getStorageSync("userid"),
@@ -5141,7 +5181,7 @@
 								that.watchtimer2 = null;
 								that.sleep_alertid = 0
 								const binary = that.packInt16(that.bufferPPG)
-								that.ppgdata(binary, deviceSn)
+								that.ppgdata(binary, deviceSn, deviceId)
 								that.bufferPPG = []
 								setTimeout(() => {
 									that.sendack(hexData, deviceId, serviceId, writeuuid);
@@ -5365,17 +5405,6 @@
 				uni.setStorageSync("xueyang", value);
 				uni.setStorageSync("xueyangtimes", `${month}/${day}`);
 				this.list_recipe();
-			},
-			// 重置数据状态
-			resetDataState(id) {
-				// console.log("resetDataState", id)
-				this.dataBuffer = [];
-				this.quotient = 0;
-				this.quotient1 = 0;
-				this.quotient2 = 0;
-				this.quotient3 = 0;
-				this.quotientACC = 0;
-				this.quotientPPG = 0;
 			},
 			// 解析血氧数据
 			parseOxygenData(stringdata) {

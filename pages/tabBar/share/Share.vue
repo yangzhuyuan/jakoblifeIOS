@@ -101,7 +101,6 @@
 
 		onShow() {
 			this.startTimer();
-			// this.sethuilian(false)
 		},
 
 		methods: {
@@ -136,6 +135,7 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {
+					console.log("shareList", pending)
 					if (pending.code === 200) {
 						this.shareShow = !pending.data || pending.data.length === 0;
 						if (pending.data && pending.data.length > 0) {
@@ -152,11 +152,12 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {
-					// console.log("hhhah", pending)
+					console.log("receiverList", pending)
 					if (pending.code === 200) {
 						this.shareShow = !pending.data || pending.data.length === 0;
 						if (pending.data && pending.data.length > 0) {
 							this.swiperlist = pending.data;
+							// this.share_query_log();//待完善情绪历史数据
 						}
 					}
 				})
@@ -219,6 +220,78 @@
 					}
 				});
 			},
+			getCurrentTimePPG() {
+				const now = new Date();
+				const year = now.getFullYear();
+				const month = String(now.getMonth() + 1).padStart(2, '0');
+				const day = String(now.getDate()).padStart(2, '0');
+				const hours = String(now.getHours()).padStart(2, '0');
+				const minutes = String(now.getMinutes()).padStart(2, '0');
+				const seconds = String(now.getSeconds()).padStart(2, '0');
+				return `${year}-${month}-${day}`;
+			},
+			//分享情绪数据历史列表
+			share_query_log() {
+				let that = this
+				let endTime = that.getCurrentTimePPG() + " 23:59:59"
+				let initialDate = new Date(endTime)
+				let minusOneWeek = new Date(initialDate)
+				minusOneWeek.setDate(minusOneWeek.getDate() - 13)
+				let startTime = minusOneWeek.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
+				console.log("startTime", startTime)
+				console.log("endTime", endTime)
+				console.log("deviceSn", uni.getStorageSync("userid"))
+				uni.request({
+					url: that.$url_APP_IP + that.$url_query_log,
+					method: 'POST',
+					data: {
+						deviceSn: "981918909974184433",
+						dataType: "1",
+						slaveList: [{
+								slaveSn: "1",
+								register: "mood_index"
+							},
+							{
+								slaveSn: "1",
+								register: "depression_risk_score"
+							},
+							{
+								slaveSn: "1",
+								register: "stress_index"
+							},
+							{
+								slaveSn: "1",
+								register: "fatigue_index"
+							},
+							{
+								slaveSn: "1",
+								register: "recovery_index"
+							}
+						],
+						startTime: startTime,
+						endTime: endTime,
+					},
+					header: {
+						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'content-type': 'application/json'
+					},
+					success(share_query_logres) {
+						console.log("share_query_logres", share_query_logres)
+						if (share_query_logres.data.code == 200) {
+
+						} else {
+							uni.showToast({
+								title: share_query_logres.data.msg,
+								icon: 'none'
+							})
+						}
+					}
+				})
+			},
+
+
+
+
 		}
 	};
 </script>

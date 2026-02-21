@@ -1,5 +1,6 @@
 export default {
 	'zh-CN': {
+		注意如果选择每5分钟测一次: '注意， 如果选择每5分钟测一次，会大大增加电池使用量，也会使其他测试功能没法进行，请适当设置总测试时间',
 		未检测到附近蓝牙手表设备: "未检测到附近蓝牙手表设备，请检查设备",
 		搜索中: '搜索中...',
 		连接中稍后再试: '连接中，稍后再试',
@@ -1108,6 +1109,7 @@ export default {
 
 	},
 	'en-US': {
+		注意如果选择每5分钟测一次: 'Note that if you choose to measure every 5 minutes, it will greatly increase the battery usage and make other test functions inopposed. Please set the total test time appropriately.',
 		未检测到附近蓝牙手表设备: "No nearby Bluetooth watch devices were detected. Please check your device.",
 		搜索中: 'Searching...',
 		连接中稍后再试: 'Connecting, please try again later',
