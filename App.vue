@@ -1,5 +1,22 @@
 <script>
 	const systemInfo = uni.getSystemInfoSync()
+	import {
+		initKeepAlive,
+		startBackgroundTask,
+		endBackgroundTask,
+		scheduleBackgroundRefresh,
+		enableAudioKeepAlive,
+		enableLocationKeepAlive,
+		checkBackgroundRefreshStatus,
+		onBackgroundTaskExpired,
+		offBackgroundTaskExpired
+	} from 'nativeplugins/KeepAlivesdkplugin/ios/keepAlive.js';
+	import {
+		isInChinaByIP,
+		ISgetUserInfoUS,
+		ISgetUserInfoChina,
+	} from './pages/api/isInChinaByIP.js'; //获取定位
+
 	export default {
 		data() {
 			return {
@@ -33,25 +50,142 @@
 			setTimeout(() => {
 				this.startInterval();
 			}, 1000)
+
+			// this.handleInit()
+			// this.handleStartTask()
+			// this.handleScheduleRefresh()
+			// this.handleToggleAudio()
+			// this.handleToggleAudio()
+			// this.handleToggleLocation()
+			// this.handleCheckStatus()
+
 		},
 
 		mounted() {
 			this.notifyTriggered = false
 		},
 
-		onShow: function() {
+		onShow: async function() { // ✅ 添加 async
 			let that = this
+			// 配置域名
+			await that.getBaseUrl();
 			plus.runtime.setBadgeNumber(0)
 			that.setTabBarItems()
 			that.stopInterval();
 			setTimeout(() => {
 				that.startInterval();
 			}, 1000)
-			that.check_new_version("io.dcloud.jakob", "1") //更新
 			// that.accelerometerStart()
 		},
 
 		methods: {
+			async getBaseUrl() {
+				// const ISUserInfoChina = await ISgetUserInfoChina(this.$APP_IP1);
+				// const isUserInfoUS = await ISgetUserInfoUS(this.$APP_IP2);
+				// console.log('ISUserInfoChina', ISUserInfoChina);
+				// console.log('isUserInfoUS', isUserInfoUS);
+				// if (!isUserInfoUS && !ISUserInfoChina) {
+				// 	const isInChina = await isInChinaByIP();
+				// 	console.log('IP定位结果:', isInChina ? '中国' : '国外');
+				// 	if (isInChina) {
+						Vue.prototype.$url_APP_IP = this.$APP_IP1;
+				// 	} else {
+				// 		Vue.prototype.$url_APP_IP = this.$APP_IP2;
+				// 	}
+				// } else if (isUserInfoUS && !ISUserInfoChina) {
+				// 	Vue.prototype.$url_APP_IP = this.$APP_IP2;
+				// } else if (!isUserInfoUS && ISUserInfoChina) {
+				// 	Vue.prototype.$url_APP_IP = this.$APP_IP1;
+				// } else if (isUserInfoUS && ISUserInfoChina) {
+				// 	Vue.prototype.$url_APP_IP = this.$APP_IP2;
+				// }
+				console.log("国内baseUrl", this.$url_APP_IP);
+				this.check_new_version("io.dcloud.jakob", "1") //更新
+			},
+
+			// 初始化
+			async handleInit() {
+				try {
+					const res = await initKeepAlive();
+					this.initStatus = true;
+					// console.log(`初始化成功: ${res.data.platform} ${res.data.version}`, 'success');
+				} catch (error) {
+					// console.log(`初始化失败: ${error.msg || error.message}`, 'error');
+				} finally {
+					uni.hideLoading();
+				}
+			},
+
+			// 开始后台任务
+			async handleStartTask() {
+				try {
+					// 设置10分钟超时
+					const res = await startBackgroundTask(600);
+					this.taskRunning = true;
+					// console.log(`后台任务已启动，TaskID: ${res.taskId}`, 'success');
+				} catch (error) {
+					// console.log(`启动失败: ${error.msg || error.message}`, 'error');
+				} finally {
+					uni.hideLoading();
+				}
+			},
+
+			// 结束后台任务
+			async handleEndTask() {
+				try {
+					await endBackgroundTask();
+					this.taskRunning = false;
+					// console.log('后台任务已结束', 'success');
+				} catch (error) {
+					// console.log(`结束失败: ${error.msg || error.message}`, 'error');
+				} finally {
+					uni.hideLoading();
+				}
+			},
+
+			// 设置后台刷新
+			async handleScheduleRefresh() {
+				try {
+					// 每15分钟刷新一次
+					await scheduleBackgroundRefresh(900);
+					// console.log('后台刷新已设置（15分钟间隔）', 'success');
+				} catch (error) {
+					// console.error('设置后台刷新失败:', error);
+				} finally {
+					uni.hideLoading();
+				}
+			},
+
+			// 切换音频保活
+			handleToggleAudio() {
+				this.audioEnabled = !this.audioEnabled;
+				enableAudioKeepAlive(this.audioEnabled);
+				// console.log(`音频保活已${this.audioEnabled ? '开启' : '关闭'}`, this.audioEnabled ? 'success' : 'warning');
+
+			},
+
+			// 切换定位保活
+			handleToggleLocation() {
+				this.locationEnabled = !this.locationEnabled;
+				enableLocationKeepAlive(this.locationEnabled);
+				// console.log(`定位保活已${this.locationEnabled ? '开启' : '关闭'}`, this.locationEnabled ? 'success' : 'warning');
+			},
+
+			// 检查后台刷新状态
+			async handleCheckStatus() {
+				try {
+					const status = await checkBackgroundRefreshStatus();
+					this.refreshStatus = status.status === 'available' ? '可用' :
+						status.status === 'denied' ? '已拒绝' :
+						status.status === 'restricted' ? '受限' : '未知';
+					// console.log(`后台刷新状态: ${this.refreshStatus} (可用性: ${status.available ? '是' : '否'})`, 'info');
+				} catch (error) {
+					// console.error('检查状态失败:', error);
+				}
+			},
+
+
+
 			// 发送推送消息
 			sendPushMessage(pushClientId) {
 				const now = new Date(); // 获取当前时间

@@ -111,6 +111,9 @@
 					}
 				}
 			})
+			that.clearHeartbeatInterval();
+			uni.closeBluetoothAdapter()
+			uni.openBluetoothAdapter()
 		},
 
 		onLoad(res) {
@@ -163,6 +166,49 @@
 		},
 
 		methods: {
+			//返回按钮
+			back() {
+				uni.navigateBack()
+			},
+			clearHeartbeatInterval() {
+				if (Vue.prototype.$globalTimers.heartbeatInterval) {
+					clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
+					Vue.prototype.$globalTimers.heartbeatInterval = null;
+				}
+			},
+
+
+
+			batch_del() {
+				uni.showLoading({
+					title: this.$t('刷新中'),
+					mask: true,
+				});
+				// 清空列表
+				this.bluetoothList = [];
+				// 关闭弹窗
+				this.$refs.popup1.close();
+				this.$refs.popup.close();
+				// 关闭蓝牙适配器
+				uni.closeBluetoothAdapter({
+					success: () => {
+						// 如果开关是打开的，重新初始化蓝牙
+						if (this.checked) {
+							this.initBluetooth();
+						}
+						uni.hideLoading();
+					},
+					fail: () => {
+						uni.hideLoading();
+						uni.showToast({
+							title: this.$t('刷新失败'),
+							icon: 'none'
+						});
+					}
+				});
+			},
+
+
 
 
 			switch1Change(e) {
@@ -175,9 +221,6 @@
 					this.bluetoothList = []
 				}
 			},
-
-
-
 			goService() {
 				this.tipShow = true;
 			},
@@ -297,21 +340,19 @@
 			},
 
 			createBLEConnection(deviceId, item) {
+				console.log("createBLEConnection", deviceId)
 				let that = this;
 				that.$refs.popup.open("bottom")
 				uni.createBLEConnection({
 					deviceId: deviceId,
 					success: (res) => {
-						that.$refs.popup1.open("bottom")
 						console.log("连接低功耗蓝牙设备成功", res);
-						that.$refs.popup.close()
 						if (item != "") {
 							that.bluetoothList1.push(item)
 							uni.setStorageSync("listdadsa", that.bluetoothList1)
 						}
 						//需延时连接，不然会报错
 						setTimeout(function() {
-							that.getBLEDeviceServices(deviceId)
 							//设置MTU
 							uni.setBLEMTU({
 								deviceId: deviceId,
@@ -320,14 +361,11 @@
 									console.log("设置蓝牙最大传输单元", resMTU);
 								}
 							})
-						}, 1000);
+							that.getBLEDeviceServices(deviceId)
+						}, 2000);
 					},
 					fail(erro) {
 						that.$refs.popup.close()
-						// uni.showToast({
-						// 	title: "连接失败或设备已经连接",
-						// 	icon: 'none'
-						// })
 						console.log("连接低功耗蓝牙设备失败", erro);
 					}
 				});
@@ -341,13 +379,12 @@
 					deviceId: deviceId,
 					success: (res) => {
 						console.log("获取蓝牙外围设备的服务成功", res)
-						that.getBLEDeviceCharacteristics(deviceId, res.services[2].uuid)
+						that.getBLEDeviceCharacteristics(deviceId, res.services[0].uuid)
 					},
 					fail(res) {
 						console.log("获取蓝牙外围设备的服务失败", res)
 					}
 				})
-
 			},
 
 			//获取蓝牙外围设备的特征值
@@ -358,11 +395,17 @@
 					serviceId: serviceId,
 					success: (res) => {
 						console.log('获取蓝牙设备某个服务中所有特征值(characteristic)', res.characteristics)
-
-						that.deviceId = deviceId
-						that.serviceId = serviceId
-						that.uuid = res.characteristics[0].uuid
-
+						for (let i = 0; res.characteristics.length > i; i++) {
+							let item = res.characteristics[i]
+							//蓝牙消息通知
+							if (item.properties.write) {
+								that.deviceId = deviceId
+								that.serviceId = serviceId
+								that.uuid = item.uuid
+							}
+							that.$refs.popup1.open("bottom")
+							that.$refs.popup.close()
+						}
 					},
 					fail(res) {
 						console.error('getBLEDeviceCharacteristics', res)
@@ -374,6 +417,9 @@
 			turesss() {
 				let that = this
 				that.$refs.popup1.close()
+				console.log("发送 _deviceId：" + that.deviceId)
+				console.log("发送_serviceId：" + that.serviceId)
+				console.log("发送_characteristicId：" + that.uuid)
 				uni.navigateTo({
 					url: '../../Bind/Bing_xueya/Bing_xueya_2?deviceId=' + that.deviceId +
 						"&serviceId=" + that.serviceId + "&uuid=" + that.uuid + "&sn=" + that.sn +

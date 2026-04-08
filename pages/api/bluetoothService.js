@@ -6,8 +6,6 @@ export default class BluetoothService {
 		this.services = [];
 		this.characteristics = {};
 	}
-
-
 	// 初始化蓝牙适配器
 	async initBluetooth() {
 		return new Promise((resolve, reject) => {

@@ -182,6 +182,7 @@
 				return buffer;
 			},
 			queryDevices() {
+				console.log('查询设备列表', uni.getStorageSync('token'));
 				uni.request({
 					url: this.$url_APP_IP + this.$url_queryDevices,
 					method: 'POST',
@@ -381,8 +382,10 @@
 					value: bindbuffer,
 					success(res) {
 						console.log("0解绑设备：", res)
+						uni.removeStorageSync("otadatares")
 					},
 					fail(err) {
+						uni.removeStorageSync("otadatares")
 						console.log("1解绑设备：", err)
 					}
 				})

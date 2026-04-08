@@ -49,7 +49,8 @@
 		mapMutations
 	} from 'vuex';
 	import {
-		isInChinaByIP
+		isInChinaByIP,
+		check_email_register,
 	} from '../api/isInChinaByIP.js';
 	export default {
 		computed: {
@@ -102,8 +103,8 @@
 				}
 			},
 
-			huoqu() {
-				if (this.unername_phone == "" || this.unername_phone == undefined) {
+			async huoqu() {
+				if (!this.unername_phone) {
 					uni.showToast({
 						title: this.loact === '境内' ? this.$t('请输入手机号') : this.$t('请输入邮箱'),
 						icon: 'none'
@@ -116,9 +117,30 @@
 					})
 					return
 				} else {
-					// this.tanchuang = true
-					// this.yzm = ''
-					// this.captchaImage();
+					uni.showLoading({
+						title: this.$t('正在发送验证码'),
+						mask: true
+					});
+					// const checkemailregister = await check_email_register(this.unername_phone);
+					// console.log("忘记密码判断当前账号归属哪一个服务器：", checkemailregister);
+					// switch (checkemailregister) {
+					// 	case "Chinese_server":
+					// 		Vue.prototype.$url_APP_IP = this.$APP_IP1;
+					// 		break
+					// 	case "American_server":
+					// 	case "Chinese_American_servers":
+					// 		Vue.prototype.$url_APP_IP = this.$APP_IP2;
+					// 		break
+					// 	default:
+					// 		console.log("忘记密码" + checkemailregister);
+					// 		const isInChina = await isInChinaByIP();
+					// 		if (isInChina) {
+					// 			Vue.prototype.$url_APP_IP = this.$APP_IP1;
+					// 		} else {
+					// 			Vue.prototype.$url_APP_IP = this.$APP_IP2;
+					// 		}
+					// 		break
+					// }
 					if (this.loact === "境内") {
 						this.send_phone_reset_code()
 					} else if (this.loact === "境外") {
@@ -246,91 +268,83 @@
 			//发送重置密码短信
 			send_phone_reset_code() {
 				let that = this
-				uni.request({
-					url: that.$url_APP_IP + that.$url_send_phone_reset_code,
-					method: 'POST',
-					data: {
-						phone: that.unername_phone
-					},
-					header: {
-						'content-type': 'application/x-www-form-urlencoded'
-					},
-					success(res) {
-						console.log("发送重置密码短信", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								that.yanzheng = 0
-								if (that.codetime > 0) {
-									uni.showToast({
-										title: that.$t('不能重复获取'),
-										icon: "none"
-									})
-									return
-								} else {
-									that.codetime = 60
-									that.msg = that.$t('s后可重发')
-									let timer = setInterval(() => {
-										that.codetime-- + that.msg;
-										if (that.codetime < 1) {
-											clearInterval(timer);
-											that.msg = ''
-											that.codetime = that.$t('重新获取')
-										}
-									}, 1000)
+				let data = {
+					phone: that.unername_phone
+				}
+				that.$post(that.$url_APP_IP + that.$url_send_phone_reset_code, data, {
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then((res) => {
+					console.log("发送重置密码短信", res)
+					uni.hideLoading()
+					if (res.code == 200) {
+						that.yanzheng = 0
+						if (that.codetime > 0) {
+							uni.showToast({
+								title: that.$t('不能重复获取'),
+								icon: "none"
+							})
+							return
+						} else {
+							that.codetime = 60
+							that.msg = that.$t('s后可重发')
+							let timer = setInterval(() => {
+								that.codetime-- + that.msg;
+								if (that.codetime < 1) {
+									clearInterval(timer);
+									that.msg = ''
+									that.codetime = that.$t('重新获取')
 								}
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
-							}
+							}, 1000)
 						}
+					} else {
+						uni.showToast({
+							title: res.msg,
+							icon: 'none'
+						})
 					}
+				}).catch((Error) => {
+					uni.hideLoading()
 				})
 			},
 			//发送重置密码邮件
 			send_email_reset_code() {
 				let that = this
-				uni.request({
-					url: that.$url_APP_IP + "/prod-api/app/send_email_reset_code",
-					method: 'POST',
-					data: {
-						email: that.unername_phone
-					},
-					header: {
-						'content-type': 'application/x-www-form-urlencoded'
-					},
-					success(res) {
-						console.log("发送重置密码短信", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								that.yanzheng = 0
-								if (that.codetime > 0) {
-									uni.showToast({
-										title: that.$t('不能重复获取'),
-										icon: "none"
-									})
-									return
-								} else {
-									that.codetime = 60
-									that.msg = that.$t('s后可重发')
-									let timer = setInterval(() => {
-										that.codetime-- + that.msg;
-										if (that.codetime < 1) {
-											clearInterval(timer);
-											that.msg = ''
-											that.codetime = that.$t('重新获取')
-										}
-									}, 1000)
+				let data = {
+					email: that.unername_phone
+				}
+				that.$post(that.$url_APP_IP + "/prod-api/app/send_email_reset_code", data, {
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then((res) => {
+					console.log("发送重置密码短信", res)
+					uni.hideLoading()
+					if (res.code === 200) {
+						that.yanzheng = 0
+						if (that.codetime > 0) {
+							uni.showToast({
+								title: that.$t('不能重复获取'),
+								icon: "none"
+							})
+							return
+						} else {
+							that.codetime = 60
+							that.msg = that.$t('s后可重发')
+							let timer = setInterval(() => {
+								that.codetime-- + that.msg;
+								if (that.codetime < 1) {
+									clearInterval(timer);
+									that.msg = ''
+									that.codetime = that.$t('重新获取')
 								}
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
-								})
-							}
+							}, 1000)
 						}
+					} else {
+						uni.showToast({
+							title: res.msg,
+							icon: 'none'
+						})
 					}
+				}).catch((Error) => {
+					uni.hideLoading()
 				})
 			},
 

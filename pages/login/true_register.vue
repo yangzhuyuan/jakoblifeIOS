@@ -139,7 +139,7 @@
 					this.isPassword2 = true
 				}
 			},
-			True_Register() {
+			async True_Register() {
 				if (this.vip_unername == '' || this.vip_unername == undefined) {
 					uni.showToast({
 						title: this.$t('会员名未设置'),
@@ -179,71 +179,69 @@
 					})
 					return
 				} else {
-					this.register()
+					uni.showLoading({
+						title: this.$t('注册中'),
+						mask: true
+					})
+					// const isInChina = await isInChinaByIP();
+					// console.log("忘记密码判断当前位置：", isInChina);
+					// Vue.prototype.$url_APP_IP = isInChina ? this.$APP_IP1 : this.$APP_IP2;
+					this.register();
 				}
 			},
 			//App用户名密码注册
 			register() {
 				let that = this
-				uni.request({
-					url: that.$url_APP_IP + that.$url_register,
-					method: 'POST',
-					data: {
-						username: that.vip_unername,
-						password: that.vip_password,
-						code: "",
-						uuid: "",
-						smsCode: "",
-						email: '',
-						phone: "",
-						userType: '01', //（00系统用户，01App用户）
-						phoneNum: "",
-						nickName: ''
-					},
-					header: {
-						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-					},
-					success: (res) => {
-						console.log("App用户名密码注册：", res)
-						if (res.statusCode == 200) {
-							if (res.data.code == 200) {
-								that.register_token(res.data.token)
-								that.register_unername(that.vip_unername)
-								uni.showToast({
-									title: that.$t("成功"),
-									icon: 'none'
+				let data = {
+					username: that.vip_unername,
+					password: that.vip_password,
+					code: "",
+					uuid: "",
+					smsCode: "",
+					email: '',
+					phone: "",
+					userType: '01', //（00系统用户，01App用户）
+					phoneNum: "",
+					nickName: ''
+				}
+				that.$post(that.$url_APP_IP + that.$url_register, data, {
+					'content-type': 'application/json;charset=UTF-8'
+				}).then((res) => {
+					console.log("App用户名密码注册：", res)
+					uni.hideLoading()
+					if (res.code == 200) {
+						that.register_token(res.token)
+						that.register_unername(that.vip_unername)
+						uni.showToast({
+							title: that.$t("成功"),
+							icon: 'none'
+						})
+						setTimeout(function() {
+							if (that.loact === "境内") {
+								uni.navigateTo({
+									url: '../login/Bind_phone',
 								})
-								setTimeout(function() {
-									if (that.loact === "境内") {
-										uni.navigateTo({
-											url: '../login/Bind_phone',
-										})
-									} else if (that.loact === "境外") {
-										uni.navigateTo({
-											url: "/pages/login/true_register_email"
-										})
-									}
-								}, 300)
-							} else if (res.data.code == 500) {
-								uni.showToast({
-									title: that.$t("注册账号已存在"),
-									icon: 'none'
-								})
-							} else {
-								uni.showToast({
-									title: res.data.msg,
-									icon: 'none'
+							} else if (that.loact === "境外") {
+								uni.navigateTo({
+									url: "/pages/login/true_register_email"
 								})
 							}
-						}
-					},
-					fail(res) {
-						console.log("失败", res)
+						}, 300)
+					} else if (res.code == 500) {
+						uni.showToast({
+							title: that.$t("注册账号已存在"),
+							icon: 'none'
+						})
+					} else {
+						uni.showToast({
+							title: res.msg,
+							icon: 'none'
+						})
 					}
+				}).catch((Error) => {
+					uni.hideLoading()
 				})
 			}
-
-
 		}
 	}
 </script>

@@ -176,7 +176,6 @@
 		methods: {
 			...mapMutations(['setlanyaId', 'setacktypes']),
 
-
 			blequanxian() {
 				this.openBLE()
 				this.$refs.popupblequanixan.close()
@@ -210,7 +209,8 @@
 				if (!this.inputcontext) {
 					uni.showToast({
 						title: this.$t("输入设备码"),
-						icon: "none"
+						icon: "none",
+						duration: 2000
 					})
 					return
 				} else {
@@ -225,7 +225,8 @@
 						} else {
 							uni.showToast({
 								title: this.$t("选中的设备与扫码设备不匹配"),
-								icon: "none"
+								icon: "none",
+								duration: 2000
 							})
 						}
 					} else {
@@ -268,6 +269,9 @@
 					this.img_scan = false
 					this.get_device_info()
 				}
+
+
+
 			},
 			dundatetime() {
 				const now = new Date();
@@ -313,7 +317,9 @@
 				if (this.context_msg === this.$t('请将条码放入扫码框内即可自动扫描')) {
 					uni.showToast({
 						title: this.$t('请扫描设备的设备码'),
-						icon: 'none'
+						icon: 'none',
+						duration: 2000
+
 					})
 					return
 				}
@@ -333,6 +339,7 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
+					console.log("获取设备基础信息", res)
 					if (res.code == 200) {
 						if (res.data.model === this.modelname) {
 							if (res.data.model === "BPW1" && res.data.deviceSn) {
@@ -348,7 +355,8 @@
 									this.img_scan = true;
 									uni.showToast({
 										title: this.$t("选中的设备与扫码设备不匹配"),
-										icon: "none"
+										icon: "none",
+										duration: 2000
 									});
 									this.context_msg = this.$t('请将条码放入扫码框内即可自动扫描');
 								}
@@ -364,7 +372,8 @@
 							this.img_scan = true;
 							uni.showToast({
 								title: this.$t("选中的设备与扫码设备不匹配"),
-								icon: "none"
+								icon: "none",
+								duration: 2000
 							});
 							this.context_msg = this.$t('请将条码放入扫码框内即可自动扫描');
 						}
@@ -372,7 +381,8 @@
 						this.img_scan = true;
 						uni.showToast({
 							title: res.msg,
-							icon: 'none'
+							icon: 'none',
+							duration: 2000
 						});
 						this.context_msg = this.$t('请将条码放入扫码框内即可自动扫描');
 
@@ -397,6 +407,7 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
+					console.log("查询设备", res)
 					if (res.code == 200) {
 						if (res.rows.length === 0) {
 							this.navigateTo(this.modelId);
@@ -405,7 +416,8 @@
 							if (deviceExists) {
 								uni.showToast({
 									title: this.$t("当前主页面已绑定该设备"),
-									icon: 'none'
+									icon: 'none',
+									duration: 2000
 								});
 								uni.setStorageSync("deviceSn", this.context_msg1);
 								uni.switchTab({
@@ -417,10 +429,14 @@
 						}
 					} else {
 						uni.showToast({
-							title: res.msg,
-							icon: 'none'
+							title: this.$t("失败"),
+							icon: 'none',
+							duration: 2000
+
 						});
 					}
+				}).catch((errr) => {
+					console.error("errr", errr)
 				})
 			},
 
@@ -617,7 +633,8 @@
 					} else if (res.code === 401) {
 						uni.showToast({
 							title: this.$t("此设备已被其他账号绑定"),
-							icon: 'none'
+							icon: 'none',
+							duration: 2000
 						})
 						return
 					} else {

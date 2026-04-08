@@ -2,8 +2,8 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "3.1.0",
-    "versionCode" : 323,
+    "versionName" : "3.2.016",
+    "versionCode" : 368,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
@@ -22,7 +22,7 @@
                 "AudioToolbox.framework",
                 "HealthKit.framework"
             ],
-            "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
+            "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
             "UIBackgroundModes" : [
                 "location",
                 "processing",
@@ -58,13 +58,16 @@
             },
             "UIRequiredDeviceCapabilities" : [ "healthkit" ],
             "entitlements" : {
-                "com.apple.developer.healthkit" : true,
-                "com.apple.developer.healthkit.access" : [
-                    "HKQuantityTypeIdentifierStepCount",
-                    "HKQuantityTypeIdentifierHeartRate",
-                    "HKQuantityTypeIdentifierDistanceWalkingRunning"
-                ]
+                "com.apple.developer.healthkit" : true
             },
+            // "com.apple.developer.healthkit.access" : [
+            //     "health-records" // 改为配置文件支持的类型
+            // ],
+            "com.apple.developer.healthkit.access" : [
+                "HKQuantityTypeIdentifierStepCount",
+                "HKQuantityTypeIdentifierHeartRate",
+                "HKQuantityTypeIdentifierDistanceWalkingRunning"
+            ],
             "idfa" : false
         },
         "locales" : {
@@ -85,7 +88,7 @@
                         "AudioToolbox.framework",
                         "HealthKit.framework"
                     ],
-                    "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
+                    "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
                         "location",
                         "processing",
@@ -148,7 +151,7 @@
                         "AudioToolbox.framework",
                         "HealthKit.framework"
                     ],
-                    "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
+                    "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
                         "location",
                         "processing",
@@ -202,8 +205,8 @@
             }
         },
         "compatible" : {
-            "runtimeVersion" : "4.85", //根据实际情况填写  
-            "compilerVersion" : "4.85", //根据实际情况填写  
+            "runtimeVersion" : "5.06", //根据实际情况填写  
+            "compilerVersion" : "5.06", //根据实际情况填写  
             "ignoreVersion" : true
         },
         "usingComponents" : true,
@@ -219,7 +222,6 @@
         },
         "modules" : {
             "HealthKit" : {},
-            "Speech" : {},
             "Barcode" : {},
             "OAuth" : {},
             "iBeacon" : {},
@@ -228,7 +230,8 @@
             },
             "Camera" : {},
             "Messaging" : {},
-            "Bluetooth" : {}
+            "Bluetooth" : {},
+            "Geolocation" : {}
         },
         "distribute" : {
             "android" : {
@@ -289,7 +292,7 @@
                     "AudioToolbox.framework",
                     "HealthKit.framework"
                 ],
-                "deploymentTarget" : "18.0", //可选，字符串类型，iOS支持的最低版本
+                "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                 "UIBackgroundModes" : [
                     "location",
                     "processing",
@@ -464,6 +467,20 @@
             "enable" : true
         },
         "nativePlugins" : {
+            "CBConnectPlugin" : {
+                "__plugin_info__" : {
+                    "name" : "TestCBCPlugin",
+                    "description" : "uni示例插件",
+                    "platforms" : "iOS",
+                    "url" : "",
+                    "android_package_name" : "",
+                    "ios_bundle_id" : "",
+                    "isCloud" : false,
+                    "bought" : -1,
+                    "pid" : "",
+                    "parameters" : {}
+                }
+            },
             "DCTestUniPlugin" : {
                 "__plugin_info__" : {
                     "name" : "TestUniPlugin",
@@ -478,10 +495,10 @@
                     "parameters" : {}
                 }
             },
-            "CBConnectPlugin" : {
+            "KeepAliveSdkPlugin" : {
                 "__plugin_info__" : {
-                    "name" : "TestCBCPlugin",
-                    "description" : "uni示例插件",
+                    "name" : "KeepAliveSdkPlugin",
+                    "description" : "iOS后台保活插件",
                     "platforms" : "iOS",
                     "url" : "",
                     "android_package_name" : "",

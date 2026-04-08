@@ -272,23 +272,23 @@
 					<view class="listitemall">
 						<view style="width: 12%;"></view>
 						<view class="listitemall_2">
-							<view class="itemall">{{$t("舒张压")}}</view>
+							<view class="itemall">{{$t("收缩压")}}</view>
+							<view class="itemall_1">{{$t("舒张压")}}</view>
+							<view class="itemall_1">{{$t("脉搏")}}</view>
+						</view>
+						<view class="listitemall_2">
+							<view class="itemall">{{$t("收缩压")}}</view>
+							<view class="itemall_1">{{$t("舒张压")}}</view>
+							<view class="itemall_1">{{$t("脉搏")}}</view>
+						</view>
+						<view class="listitemall_2">
+							<view class="itemall">{{$t("收缩压")}}</view>
 							<view class="itemall_1">{{$t("收缩压")}}</view>
 							<view class="itemall_1">{{$t("脉搏")}}</view>
 						</view>
 						<view class="listitemall_2">
-							<view class="itemall">{{$t("舒张压")}}</view>
-							<view class="itemall_1">{{$t("收缩压")}}</view>
-							<view class="itemall_1">{{$t("脉搏")}}</view>
-						</view>
-						<view class="listitemall_2">
-							<view class="itemall">{{$t("舒张压")}}</view>
-							<view class="itemall_1">{{$t("收缩压")}}</view>
-							<view class="itemall_1">{{$t("脉搏")}}</view>
-						</view>
-						<view class="listitemall_2">
-							<view class="itemall">{{$t("舒张压")}}</view>
-							<view class="itemall_1">{{$t("收缩压")}}</view>
+							<view class="itemall">{{$t("收缩压")}}</view>
+							<view class="itemall_1">{{$t("舒张压")}}</view>
 							<view class="itemall_1">{{$t("脉搏")}}</view>
 						</view>
 					</view>
@@ -926,9 +926,28 @@
 			this.finlretVarList1 = res.finlretVarList1
 		},
 
+		onHide() {
+			console.log("onHide")
+		},
+
+		beforeDestroy() {
+			console.log("beforeDestroy")
+		},
+
+		onUnload() {
+			console.log("onUnload")
+		},
+
 		onShow() {
+			console.log("onShow", uni.getStorageSync("pdfreport"))
 			this.getUserInfo()
 			this.queryDevices()
+			setTimeout(() => {
+				if (uni.getStorageSync("pdfreport")) {
+					this.generatePDF()
+				}
+			}, 1000)
+
 		},
 
 		created() {
@@ -992,17 +1011,26 @@
 
 			renderOver(e) {
 				// e为导出的图片（base64）
-				// console.log('==== renderOver :', e)
+				console.log('==== renderOver :')
+				uni.removeStorageSync("pdfreport")
 			},
 			beforeSavePDF(e) {
 				// e为导出的pdf（base64）
-				// console.log('==== beforeSavePDF :', e)
+				console.log('==== beforeSavePDF :')
+				uni.removeStorageSync("pdfreport")
 			},
 			successSavePDF(path) {
+				uni.removeStorageSync("pdfreport")
+				uni.hideLoading()
 				// e为打开的pdf（临时路径）
-				// console.log('==== successSavePDF :', path)
+				console.log('==== successSavePDF :', uni.getStorageSync("pdfreport"))
 			},
 			generatePDF() {
+				uni.setStorageSync("pdfreport", true)
+				uni.showLoading({
+					title: this.$t("生成中"),
+					mask: true
+				})
 				this.$refs.renderRef.h2pRenderDom()
 			},
 			getUserInfo() {

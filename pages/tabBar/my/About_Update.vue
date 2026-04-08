@@ -259,8 +259,7 @@
 			setTimeout(() => {
 				uni.closeBLEConnection({
 					deviceId: this.deviceIdss,
-					complete(complete) {
-					}
+					complete(complete) {}
 				});
 			}, 5000)
 			this.disconnect()
@@ -346,6 +345,7 @@
 				return buffer;
 			},
 
+
 			beiandianji() {
 				uni.navigateTo({
 					url: "/pages/tabBar/my/Webview"
@@ -379,8 +379,8 @@
 				uni.showLoading({
 					title: that.$t("正在请求升级"),
 					mask: true
-
 				})
+				uni.setStorageSync("arguments00", 1)
 				// that.log("正在请求升级")
 				setTimeout(() => {
 					uni.getBLEDeviceCharacteristics({
@@ -1010,30 +1010,9 @@
 								icon: 'none',
 								duration: 2000
 							})
-							// if (that.targetDeviceId === that.deviceIdss) {
-							// uni.showModal({
-							// 	content: that.$t("附近可能有多台BPW1手表"),
-							// 	confirmText: that.$t('确定'),
-							// 	showCancel: false,
-							// 	success(modal) {
-							// 		if (modal.confirm) {
-							// 			that.endOta()
-							// 		}
-							// 	}
-							// });
-							// } else {
-							// 	setTimeout(() => {
-							// 		that.createBLEConnection(
-							// 			that.targetDeviceId
-							// 		);
-							// 	}, 1000)
-							// }
 						}
 					},
-					fail: (e) => {
-						// that.log("获取服务失败", e + "that.targetDeviceId" + that.targetDeviceId + "｜" + that
-						// 	.deviceIdss)
-					},
+					fail: (e) => {},
 				});
 			},
 
@@ -1043,8 +1022,6 @@
 					deviceId: this.targetDeviceId,
 					serviceId: this.serviceId,
 					success: (res) => {
-						// this.log("getCharacteristics", res + "deviceId：" + this.targetDeviceId + "serviceId：" +
-						// 	this.serviceId)
 						// 修复：精确查找特征值
 						let writeChar = res.characteristics.find(c => {
 							const uuid = c.uuid.toUpperCase();
@@ -1068,7 +1045,6 @@
 						if (writeChar && notifyChar) {
 							this.writeId = writeChar.uuid;
 							this.notifyId = notifyChar.uuid;
-							// this.log("准备开始ota")
 							this.startNotify();
 						} else {
 							console.log('错误：未找到需要的特征值');
@@ -1487,14 +1463,7 @@
 						});
 				});
 			},
-			toArrayBuffer(data) {
-				const buffer = new ArrayBuffer(data.length / 2);
-				const dataView = new DataView(buffer);
-				for (let i = 0; i < data.length; i += 2) {
-					dataView.setUint8(i / 2, parseInt(data.substr(i, 2), 16));
-				}
-				return buffer;
-			},
+
 
 
 			async getOtaVersion() {
@@ -2150,10 +2119,8 @@
 						const frame = this.buildFrame(FUNC.BLOCK_CHECK, 0x01, startBlockIndex, 0, checkData);
 						console.log(`发送块 ${startBlockIndex} 到 ${startBlockIndex+blocksToCheck-1} 的校验值`);
 						await this.write(frame);
-
 						// 3. 等待ACK
 						const ack = await ackPromise;
-
 						if (ack.data && ack.data.length > 0) {
 							const result = ack.data[0];
 							if (result === 0xFF) {

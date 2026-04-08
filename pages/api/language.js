@@ -1,5 +1,16 @@
 export default {
 	'zh-CN': {
+		回连超时:"蓝牙连接超时，请检查手机蓝牙/蓝牙设备状态，必要时，请重启手机/设备蓝牙",
+		注册中: '注册中...',
+		数据获取失败: '数据获取失败',
+		正在发送验证码: '正在发送验证码',
+		登录中: '登录中...',
+		测量情绪前: "测量情绪前请确保当前无其它测量，测量过程中，请不勿操作手表",
+		测量中断: "由于您当前手表测量导致情绪测量中断，稍后手表将自动复位",
+		您这次的血压比您平常血压偏高: "您这次的血压比您平常血压偏高，正在测您的压力，看是否由压力引起的，请在测压力期间不要启动其他测量",
+		压力开关: '测血压后自动测量压力',
+		您的血压比平时高但您的心情指数显示拿您可能有点紧张: '您的血压比平时高，但您的心情指数显示拿您可能有点紧张，这次测试有可能不是您真实的血压，请放松心情，稍后再测一次',
+		生成中: '生成中',
 		注意如果选择每5分钟测一次: '注意， 如果选择每5分钟测一次，会大大增加电池使用量，也会使其他测试功能没法进行，请适当设置总测试时间',
 		未检测到附近蓝牙手表设备: "未检测到附近蓝牙手表设备，请检查设备",
 		搜索中: '搜索中...',
@@ -1109,6 +1120,17 @@ export default {
 
 	},
 	'en-US': {
+		回连超时:"The Bluetooth connection has timed out. Please check the status of your phone's Bluetooth or the Bluetooth device. If necessary, please restart the Bluetooth on your phone or device.",
+		注册中: 'Registering...',
+		数据获取失败: 'Data acquisition failed.',
+		正在发送验证码: 'The verification code is being sent.',
+		登录中: 'Logging in...',
+		测量情绪前: "Before measuring your emotions, please ensure that there are no other measurements being conducted at the moment. During the measurement process, please do not operate the watch.",
+		测量中断: "Due to the interruption in the emotion measurement caused by your current watch, the watch will automatically reset later.",
+		压力开关: 'Automatically measure pressure index after measuring blood pressure',
+		您这次的血压比您平常血压偏高: "Your blood pressure is higher than your usual blood pressure this time. Your pressure is being measured to see if it is caused by stress. Please do not start other measurements during the pressure measurement.",
+		您的血压比平时高但您的心情指数显示拿您可能有点紧张: 'Your blood pressure is higher than usual, but your mood index suggests that you may be feeling a little nervous. This reading may not reflect your true blood pressure. Please relax and test again later.',
+		生成中: 'Generating',
 		注意如果选择每5分钟测一次: 'Note that if you choose to measure every 5 minutes, it will greatly increase the battery usage and make other test functions inopposed. Please set the total test time appropriately.',
 		未检测到附近蓝牙手表设备: "No nearby Bluetooth watch devices were detected. Please check your device.",
 		搜索中: 'Searching...',
@@ -1129,7 +1151,6 @@ export default {
 		心率变异性分析: 'Heart rate variability analysis: Indicates that the autonomic nervous system may be in a state of continuous stress.',
 		请注意此趋势: "Please note: This trend is correlated with certain early physiological manifestations of depression, and it is worthy of your close attention.",
 		达标: "(REF: ≥10 days High risk)",
-
 
 
 		分层行动建议: 'Hierarchical Action Recommendations',

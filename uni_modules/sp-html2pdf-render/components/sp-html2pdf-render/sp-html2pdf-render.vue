@@ -91,15 +91,14 @@
 						console.error('base64ToPath error', error)
 					})
 					.finally(() => {
-						if (this.showLoading) uni.hideLoading()
+						// if (this.showLoading) uni.hideLoading()
 					})
 			},
 			// 渲染事件
 			async h2pRenderDom() {
 				uni.showLoading({
-					title: '加载中'
+					title: this.$t("生成中"),
 				})
-
 				// #ifdef H5
 				await this.renderDom()
 				// #endif
@@ -109,7 +108,7 @@
 				// 处理你自己的逻辑.....
 				// #endif
 
-				uni.hideLoading()
+				// uni.hideLoading()
 			}
 		}
 	}

@@ -620,6 +620,23 @@
 	}
 	const platformres = uni.getSystemInfoSync();
 
+
+
+	// 获取本地日期时间
+	const now = new Date();
+	const year = now.getFullYear();
+	const month = (now.getMonth() + 1).toString().padStart(2, '0');
+	const day = now.getDate().toString().padStart(2, '0');
+
+	// 格式：yyyy/mm/dd
+	const dateSlash = `${year}/${month}/${day}`;
+	// 格式：yyyy/mm
+	const monthSlash = `${year}/${month}`;
+	// 格式：yyyy
+	const yearSlash = `${year}`;
+	// 格式：yyyy-mm-dd 23:59:59
+	const dateTimeEnd = `${year}-${month}-${day} 23:59:59`;
+
 	export default {
 		computed: {
 			...mapState(['info', 'bianhuadata', 'TenddeviceSn']),
@@ -628,14 +645,28 @@
 			this.queryDevices()
 		},
 		data() {
+			// 获取本地时间
+			const now = new Date();
+			const year = now.getFullYear();
+			const month = (now.getMonth() + 1).toString().padStart(2, '0');
+			const day = now.getDate().toString().padStart(2, '0');
+			const hours = String(now.getHours()).padStart(2, '0');
+			const minutes = String(now.getMinutes()).padStart(2, '0');
+			const seconds = String(now.getSeconds()).padStart(2, '0');
+			const localDate =
+				`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+			const dateSlash = `${year}/${month}/${day}`;
+			const monthSlash = `${year}/${month}`;
+			const yearSlash = `${year}`;
+			const dateTimeEnd = `${year}-${month}-${day} 23:59:59`;
 			return {
 				Blood: uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa",
 				types_index: uni.getStorageSync("types_index"),
 				types_array: [this.$t("手表"), this.$t("血压计"), this.$t("体重")],
-				endtimesss: new Date().toISOString().slice(0, 10),
-				datass: new Date().toISOString(),
+				endtimesss: localDate,
+				datass: `${year}-${month}-${day}T${hours}:${minutes}:${seconds}`,
+				showTotal_date: `${month}/${day}`,
 				fillOut: false,
-				showTotal_date: new Date().toISOString().slice(5, 7) + "/" + new Date().toISOString().slice(8, 10),
 				tizhong: "",
 				xiongwei: "",
 				yaowei: "",
@@ -656,12 +687,12 @@
 				act1: '',
 				data_type: 0,
 				tendentypes: true,
-				date_0: new Date().toISOString().slice(0, 10).replace("-", "/").replace("-", "/"),
-				date_1: new Date().toISOString().slice(0, 7).replace("-", "/").replace("-", "/"),
-				date_2: new Date().toISOString().slice(0, 4).replace("-", "/").replace("-", "/"),
-				date_00: new Date().toISOString().slice(0, 10) + ' 23:59:59',
-				date_11: new Date().toISOString().slice(0, 10) + ' 23:59:59',
-				date_22: new Date().toISOString().slice(0, 10) + ' 23:59:59',
+				date_0: dateSlash,
+				date_1: monthSlash,
+				date_2: yearSlash,
+				date_00: dateTimeEnd,
+				date_11: dateTimeEnd,
+				date_22: dateTimeEnd,
 				WEEK: true,
 				MON: false,
 				YEAR: false,
@@ -801,8 +832,8 @@
 				maibo: "",
 				aggregateType: 'average',
 				timeLevel: 0,
-				startTime: this.GetTime(7, new Date().toISOString().slice(0, 10) + ' 00:00:00'),
-				endTime: new Date().toISOString().slice(0, 10) + ' 23:59:59',
+				startTime: this.GetTime(7, localDate + ' 00:00:00'),
+				endTime: localDate + ' 23:59:59',
 				loact: '',
 				arrrylist: [],
 				tempBuffer: 0,
@@ -885,20 +916,34 @@
 						const keyMap = {
 							Blood: 'bloodUnit',
 							danwei1: 'heightUnit',
-							danwei2: 'weightUnit'
+							danwei2: 'weightUnit',
+							yaliswitchHER: 'switchHER'
 						};
 						/* ② 统一循环：值 → 索引 → 缓存 */
 						Object.keys(keyMap).forEach(key => {
 							const value = unitData[keyMap[key]];
-							const row = this.rows.find(r => r.key === key);
-							if (!row) return;
-							const idx = row.array.indexOf(value);
-							const safe = idx !== -1 ? idx : 0;
-							this.$set(this.unitMap, key, value);
-							this.$set(this.indexMap, key, safe);
-							uni.setStorageSync(key, safe); // 直接存索引
+							switch (key) {
+								case 'yaliswitchHER':
+									if (value) {
+										uni.setStorageSync(key, value);
+									}
+									break;
+
+								case 'Blood':
+								case 'danwei1':
+								case 'danwei2':
+									if (value) {
+										const matchMap = {
+											Blood: "mmHg",
+											danwei1: "inch",
+											danwei2: "kg"
+										};
+										const idx = value === matchMap[key] ? 0 : 1;
+										uni.setStorageSync(key, idx);
+									}
+									break;
+							}
 						});
-						// console.log('[cardlist] 单位映射完成', this.unitMap, this.indexMap);
 					}
 				});
 			},
@@ -980,7 +1025,11 @@
 				this.types_index = e.detail.value
 				switch (this.types_index) {
 					case 0:
+						this.slaveSn = "3"
+						this.tendentypes = true
+						break
 					case 1:
+						this.slaveSn = "2"
 						this.tendentypes = true
 						break
 					case 2:
@@ -1098,10 +1147,12 @@
 			},
 			//用户在app手动上报重量数据
 			fat_scale_tz() {
-				let that = this
-				let timestamp = Math.floor(new Date(that.birthday2 == that.$t('今天') ?
-					new Date().toISOString().slice(0, 10) + " " + new Date().getHours() + ":" + new Date()
-					.getMinutes() : that.birthday2).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
+				let that = this;
+				const now = new Date();
+				let timestamp = Math.floor(new Date(
+					that.birthday2 == that.$t('今天') ?
+					`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}` :
+					that.birthday2).getTime() / 1000);
 				uni.request({
 					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
@@ -1126,8 +1177,8 @@
 								icon: 'none'
 							})
 							that.$refs.tizhong_popup.close()
-							let str = new Date().toISOString().slice(0, 10) + ' 00:00:00'
-							let end = new Date().toISOString().slice(0, 10) + " 23:59:59"
+							let str = localDate + ' 00:00:00'
+							let end = localDate + " 23:59:59"
 							that.query_weight_day(str, end)
 						} else {
 							uni.showToast({
@@ -1140,10 +1191,11 @@
 			},
 			//用户在app手动上报六围数据
 			fat_scale() {
-				let that = this
+				let that = this;
+				const now = new Date();
 				let timestamp = Math.floor(new Date(that.birthday111 == that.$t('今天') ?
-					new Date()
-					.toISOString().slice(0, 10) : that.birthday111).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
+					`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}` :
+					that.birthday111).getTime() / 1000);
 				uni.request({
 					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
@@ -1204,10 +1256,12 @@
 			},
 			//用户在app手动上报六围数据
 			fat_scale_1() {
-				let that = this
-				let timestamp = Math.floor(new Date(that.birthday1 == that.$t('今天') ?
-					new Date()
-					.toISOString().slice(0, 10) : that.birthday1).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
+				let that = this;
+				const now = new Date();
+				let timestamp = Math.floor(new Date(
+					that.birthday1 == that.$t('今天') ?
+					`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}` :
+					that.birthday1).getTime() / 1000);
 				uni.request({
 					url: that.$url_APP_IP + that.$url_fat_scale,
 					method: 'POST',
@@ -1311,6 +1365,28 @@
 									}
 								}
 							});
+							switch (this.types_index) {
+								case 0:
+									this.slaveSn = "3"
+									this.get_trend_data(this.startTime, this.endTime)
+									this.query_month_avg(this.startTime, this.endTime)
+									this.query_minmax(this.startTime, this.endTime)
+									break
+								case 1:
+									this.slaveSn = "2"
+									this.get_trend_data(this.startTime, this.endTime)
+									this.query_month_avg(this.startTime, this.endTime)
+									this.query_minmax(this.startTime, this.endTime)
+									break
+								case 2:
+									this.get_trend_data(this.startTime, this.endTime)
+									this.query_weight_avg(this.startTime, this.endTime)
+									let str = localDate + ' 00:00:00'
+									let end = localDate + " 23:59:59"
+									this.query_weight_day(str, end)
+									break
+							}
+
 						} else {
 							this.aaaa(res.rows);
 						}
@@ -1623,8 +1699,8 @@
 									this.setTenddeviceSn(deviceSn)
 									this.get_trend_data(this.startTime, this.endTime)
 									this.query_weight_avg(this.startTime, this.endTime)
-									let str = new Date().toISOString().slice(0, 10) + ' 00:00:00'
-									let end = new Date().toISOString().slice(0, 10) + " 23:59:59"
+									let str = localDate + ' 00:00:00'
+									let end = localDate + " 23:59:59"
 									this.query_weight_day(str, end)
 								} else {
 									this.setTenddeviceSn("")
@@ -1680,7 +1756,8 @@
 			//数据趋势
 			get_trend_data(startTime, endTime) {
 				const data = {
-					deviceSn: this.TenddeviceSn,
+					// deviceSn: this.TenddeviceSn,
+					deviceSn: uni.getStorageSync("userid"),
 					timeLevel: this.timeLevel,
 					slaveList: [{
 							slaveSn: this.slaveSn,
@@ -1754,9 +1831,10 @@
 			//血压计统计每日平均值计算总最大最小值
 			query_month_avg(startTime, endTime) {
 				const data = {
-					deviceSn: this.TenddeviceSn,
+					// deviceSn: this.TenddeviceSn,
+					deviceSn: uni.getStorageSync("userid"),
 					slaveList: [{
-						slaveSn: "0",
+						slaveSn: this.slaveSn,
 						register: "highPressure"
 					}, ],
 					startTime: startTime,
@@ -1785,10 +1863,10 @@
 			//血压计最高最低平均数值
 			query_minmax(startTime, endTime) {
 				const data = {
-					deviceSn: this.TenddeviceSn,
+					deviceSn: uni.getStorageSync("userid"),
 					dataType: "min",
 					slaveList: [{
-						slaveSn: "0",
+						slaveSn: this.slaveSn,
 						register: "highPressure"
 					}, ],
 					startTime: startTime,
@@ -1865,7 +1943,8 @@
 			}, //体脂秤统计最近1周/月平均体重、bmi、变化速度
 			query_weight_avg(startTime, endTime) {
 				const data = {
-					deviceSn: this.TenddeviceSn,
+					deviceSn: uni.getStorageSync("userid"),
+					// deviceSn: this.TenddeviceSn,
 					startTime: startTime,
 					endTime: endTime,
 				}
@@ -1889,7 +1968,8 @@
 			//体脂秤计算当天最高/最低/平均体重和肥胖等级
 			query_weight_day(startTime, endTime) {
 				const data = {
-					deviceSn: this.TenddeviceSn,
+					// deviceSn: this.TenddeviceSn,
+					deviceSn: uni.getStorageSync("userid"),
 					startTime: startTime,
 					endTime: endTime,
 				}
@@ -1959,10 +2039,11 @@
 			},
 			//用户在app手动上报血压数据
 			pressure_data() {
-				const timestamp = Math.floor(new Date(this.birthday == this.$t('今天') ? new Date()
-					.toISOString().slice(0, 10) + " " + new Date().getHours() + ":" + new Date()
-					.getMinutes() : this.birthday + " " + new Date().getHours() + ":" + new Date().getMinutes()
-				).getTime() / 1000); // 将时间转换成时间戳（以秒为单位）
+				const now = new Date();
+				const timestamp = Math.floor(new Date(this.birthday == this.$t('今天') ?
+						`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}` :
+						`${this.birthday} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`).getTime() /
+					1000);
 				const data = {
 					deviceSn: this.TenddeviceSn,
 					slaveSn: "0",

@@ -246,16 +246,7 @@
 		{
 			"path": "pages/tabBar/tendency/Historical_record",
 			"style": {
-				// "enablePullDownRefresh": true,
-				// "onReachBottomDistance": 120,
 				"navigationStyle": "custom"
-				// "app-plus": {
-				// 	"pullToRefresh": {
-				// 		"support": true,
-				// 		"color": "#000000", //小圈圈的颜色
-				// 		"style": "circle" //小圈圈的样式
-				// 	}
-				// }
 			}
 		},
 		{
@@ -807,6 +798,30 @@
 				"navigationBarBackgroundColor": "#F5F5F5",
 				"navigationBarTextStyle": "black"
 			}
+		},
+		{
+			"path": "pages/tabBar/share/share_history",
+			"style": {
+				"navigationBarTitleText": "共享历史数据",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/tabBar/share/share_history_BOOL",
+			"style": {
+				"navigationBarTitleText": "共享历史数据",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/tabBar/main/globalweather/globalweather",
+			"style": {
+				"navigationBarTitleText": "天气",
+				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarTextStyle": "black"
+			}
 		}
 	],
 
@@ -815,7 +830,7 @@
 		"pageOrientation": "portrait",
 		"navigationBarTitleText": "Hello uniapp",
 		"navigationBarTextStyle": "white",
-		"navigationBarBackgroundColor": "black",
+		"navigationBarBackgroundColor": "#000000",
 		"backgroundColor": "#F8F8F8",
 		"backgroundColorTop": "#F4F5F6",
 		"backgroundColorBottom": "#F4F5F6",

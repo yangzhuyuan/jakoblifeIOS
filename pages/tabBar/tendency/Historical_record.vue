@@ -88,11 +88,12 @@
 		},
 
 		data() {
-			const currentDate = new Date();
-			const currentMonth =
-				`${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}`;
-			const today = currentDate.toISOString().slice(0, 10);
-
+			const now = new Date();
+			const year = now.getFullYear();
+			const month = (now.getMonth() + 1).toString().padStart(2, '0');
+			const day = now.getDate().toString().padStart(2, '0');
+			const currentMonth = `${year}-${month}`;
+			const today = `${year}-${month}-${day}`; // 本地日期，不是 UTC
 			return {
 				// 常量定义
 				ITEM_TYPES: {
@@ -249,18 +250,32 @@
 						const keyMap = {
 							Blood: 'bloodUnit',
 							danwei1: 'heightUnit',
-							danwei2: 'weightUnit'
+							danwei2: 'weightUnit',
+							yaliswitchHER: 'switchHER'
 						};
 						/* ② 统一循环：值 → 索引 → 缓存 */
 						Object.keys(keyMap).forEach(key => {
 							const value = unitData[keyMap[key]];
-							const row = this.rows.find(r => r.key === key);
-							if (!row) return;
-							const idx = row.array.indexOf(value);
-							const safe = idx !== -1 ? idx : 0;
-							this.$set(this.unitMap, key, value);
-							this.$set(this.indexMap, key, safe);
-							uni.setStorageSync(key, safe); // 直接存索引
+							switch (key) {
+								case 'yaliswitchHER':
+									if (value) {
+										uni.setStorageSync(key, value);
+									}
+									break;
+								case 'Blood':
+								case 'danwei1':
+								case 'danwei2':
+									if (value) {
+										const matchMap = {
+											Blood: "mmHg",
+											danwei1: "inch",
+											danwei2: "kg"
+										};
+										const idx = value === matchMap[key] ? 0 : 1;
+										uni.setStorageSync(key, idx);
+									}
+									break;
+							}
 						});
 					}
 				});
@@ -365,7 +380,7 @@
 				} catch (error) {
 					console.error('数据获取失败:', error);
 					uni.showToast({
-						title: this.$t('数据获取失败'),
+						title: this.$t('失败'),
 						icon: 'none'
 					});
 					this.swipeList = [];
@@ -383,21 +398,27 @@
 						'Authorization': 'Bearer ' + uni.getStorageSync("token")
 					});
 					if (res.code === 200 && res.rows && res.rows.length > 0) {
-						this.deviceSn = res.rows.map(item => item.deviceSn);
+						// this.deviceSn = res.rows.map(item => item.deviceSn);
+						this.deviceSn = [];
+						this.deviceSn.push(uni.getStorageSync("userid"))
 						console.log("获取到的设备:", this.deviceSn);
 						await this.fetchData();
 					} else {
 						this.deviceSn = [];
+						this.deviceSn.push(uni.getStorageSync("userid"))
 						this.swipeList = [];
-						uni.showToast({
-							title: res.msg || this.$t('当前未绑定任何设备'),
-							icon: 'none'
-						});
+						// uni.showToast({
+						// 	title: this.$t('当前未绑定任何设备'),
+						// 	icon: 'none'
+						// });
+						await this.fetchData();
 					}
 				} catch (error) {
 					console.error('设备查询失败:', error);
 					this.deviceSn = [];
+					this.deviceSn.push(uni.getStorageSync("userid"))
 					this.swipeList = [];
+					await this.fetchData();
 				} finally {
 					this.loading = false;
 				}
@@ -405,7 +426,7 @@
 
 			// 血压数据查询
 			async queryBloodPressureData(deviceSn, startTime, endTime) {
-				const data = {
+				let data = {
 					deviceSn,
 					dataType: "pressure",
 					slaveList: [{
@@ -424,13 +445,14 @@
 					startTime,
 					endTime,
 				};
-
+				console.log("res.data血压数据查询传参：", data)
 				const res = await this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				});
 
 				if (res.code === 200) {
+					console.log("res.data血压数据查询：", res.data)
 					this.processBloodPressureData(res.data || []);
 				} else {
 					throw new Error(res.msg || '血压数据查询失败');

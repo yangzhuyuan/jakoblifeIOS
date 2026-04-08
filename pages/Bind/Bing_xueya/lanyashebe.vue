@@ -1306,7 +1306,7 @@
 			connectBluetooth() {
 				this.idList = [];
 				uni.startBluetoothDevicesDiscovery({
-					allowDuplicatesKey: false,
+					allowDuplicatesKey: true,
 					success: (startBluetoothDevicesDiscovery) => {
 						this.onBluetoothDeviceFound();
 					}

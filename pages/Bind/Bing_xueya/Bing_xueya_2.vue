@@ -62,6 +62,7 @@
 			this.serviceId = res.serviceId
 			this.uuid = res.uuid
 			this.modelId = res.modelId
+			console.log("res", JSON.stringify(res))
 		},
 
 		onShow() {
@@ -102,6 +103,7 @@
 						// uni.navigateTo({
 						// 	url: "../Bing_page/Bind_pg?sn=" + that.sn + "&MACdeviceID=" + deviceId
 						// })
+						// that.getBLEDeviceCharacteristics(deviceId, serviceId,that.sn, deviceId, that.modelId)
 						that.bind_device(that.sn, deviceId, that.modelId)
 					},
 					fail: function(res) {
@@ -112,6 +114,47 @@
 					}
 				})
 			},
+
+
+			// //获取蓝牙外围设备的特征值
+			// getBLEDeviceCharacteristics(deviceId, serviceId, sn, MACdeviceID, modelId) {
+			// 	let that = this
+			// 	uni.getBLEDeviceCharacteristics({
+			// 		deviceId: deviceId,
+			// 		serviceId: serviceId,
+			// 		success: (res) => {
+			// 			console.log('获取蓝牙设备某个服务中所有特征值(characteristic)', res.characteristics)
+			// 			for (let i = 0; res.characteristics.length > i; i++) {
+			// 				let item = res.characteristics[i]
+			// 				//蓝牙消息通知
+			// 				if (item.properties.notify) {
+			// 					uni.notifyBLECharacteristicValueChange({
+			// 						state: true, // 启用 notify 功能
+			// 						deviceId: deviceId,
+			// 						serviceId: serviceId,
+			// 						characteristicId: item.uuid,
+			// 						success: (notifyres) => {
+			// 							that.onBLECharacteristicValueChange3(sn, MACdeviceID,
+			// 								modelId);
+			// 						},
+			// 						fail: (notifyerr) => {}
+			// 					})
+			// 				}
+			// 			}
+			// 		},
+			// 		fail(res) {
+			// 			console.error('getBLEDeviceCharacteristics', res)
+			// 		}
+			// 	})
+			// },
+			// onBLECharacteristicValueChange3(sn, MACdeviceID, modelId) {
+			// 	let that = this
+			// 	uni.onBLECharacteristicValueChange((res) => {
+			// 		console.log("蓝牙没收到的数据", that.ab2hex(res.value))
+			// 		that.bind_device(sn, MACdeviceID, modelId)
+			// 	})
+			// },
+
 
 			//设备绑定
 			bind_device(sn, MACdeviceID, modelId) {

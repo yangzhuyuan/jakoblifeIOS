@@ -57,7 +57,7 @@ export default class BluetoothManager {
 					await bluetooth.getCharacteristics1(bluetooth.services[3].uuid);
 					break;
 				default:
-					console.warn(`设备 ${deviceId} 的服务数量不符合预期：`, bluetooth.services.length);
+					// console.warn(`设备 ${deviceId} 的服务数量不符合预期：`, bluetooth.services.length);
 					break;
 			}
 			// 将设备实例存储到已连接设备列表中
@@ -91,6 +91,7 @@ export default class BluetoothManager {
 		}
 		// 将设备实例存储到已连接设备列表中
 		this.connectedDevices[deviceId] = bluetooth;
+		return this.connectedDevices[deviceId];
 		// console.log(`设备 ${deviceId} 已成功连接并存储`, this.connectedDevices[deviceId]);
 	}
 
