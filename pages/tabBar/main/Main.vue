@@ -190,7 +190,7 @@
 								<image src="/static/image/yundomng.png"
 									style="width: 88vw;height: 220px; margin: 0 20px 120px 20px;border-radius: 20px;">
 								</image>
-								<!-- <scroll-view class="log" scroll-y :scroll-top="scrollTop">
+							<!-- 	<scroll-view class="log" scroll-y :scroll-top="scrollTop">
 									<view v-for="(l,i) in logs" :key="i" class="log-item">
 										log：{{l}}
 									</view>
@@ -1479,6 +1479,16 @@
 								})
 							}
 						},
+						{
+							icon: '/static/page_icon/dingshiBP.png',
+							text: this.$t("监测"),
+							handler: () => {
+								//定时血压测量
+								uni.navigateTo({
+									url: "/pages/tabBar/main/globalweather/bloodpressuretimer"
+								})
+							}
+						},
 					],
 				},
 				Blood: uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa",
@@ -1998,7 +2008,7 @@
 				currentDatehis: boolhistoday,
 				boolserverData: null,
 				BPW1deviceId: "",
-				// aatimer: null,
+				isProcessed: uni.getStorageSync("isProcessed") || false, // 标志位
 			}
 		},
 
@@ -2021,17 +2031,13 @@
 				clearInterval(this.timsdpad);
 				this.timsdpad = null;
 			}
-			uni.stopBluetoothDevicesDiscovery({
-				complete(complete) {
-					console.log("stopBluetoothDevicesDiscovery", complete)
-				}
-			})
 		},
 
 
 		onShow: async function() { // ✅ 添加 async
 			let that = this
 			that.sethuilian(true)
+			uni.removeStorageSync("jiance")
 			// const ISUserInfoChina = await ISgetUserInfoChina(that.$APP_IP1);
 			// const isUserInfoUS = await ISgetUserInfoUS(that.$APP_IP2);
 			// console.log('ISUserInfoChina', ISUserInfoChina);
@@ -2329,10 +2335,8 @@
 				let that = this
 				uni.openBluetoothAdapter({
 					success(openBluetoothAdapter) {
-						// console.log("调用官方初始化蓝牙api返回成功：", openBluetoothAdapter)
-						// that.log("调用官方初始化蓝牙api返回成功：", openBluetoothAdapter)
 						// that.startBluetoothDevicesDiscoveryall()
-					 // 修改后的定时器代码
+						// 修改后的定时器代码
 						if (Vue.prototype.$globalTimers.heartbeatInterval) {
 							clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
 							Vue.prototype.$globalTimers.heartbeatInterval = null;
@@ -2769,8 +2773,9 @@
 				// console.log(writeuuid)
 				setTimeout(() => {
 					let buffer2 = that.toArrayBuffer("e00006f3060104000101")
-					if (uni.getStorageSync("otadatares") === "6986AF9F0656352E382E350741423536313043" || uni
-						.getStorageSync("otadatares") === "69C0EB890656352E382E370741423536313043") {
+					if (uni.getStorageSync("otadatares") === "6986AF9F0656352E382E350741423536313043" ||
+						uni.getStorageSync("otadatares") === "69C0EB890656352E382E370741423536313043" ||
+						uni.getStorageSync("otadatares") === "69D616630656352E382E380741423536313043") {
 						buffer2 = that.toArrayBuffer("e0000611030125000101") //5.8.5||5.8.7的版本情绪测量命令
 					} else {
 						buffer2 = that.toArrayBuffer("e00006f3060104000101")
@@ -3294,7 +3299,7 @@
 										writeType: "write",
 										value: buffer,
 										complete(complete) {
-											console.log("发送命令：","e00006e8000000000101");
+											console.log("发送命令：", "e00006e8000000000101");
 											that.deviceIdwatch = deviceId
 											that.serviceIdwatch = serviceId
 											that.writeuuid = item.uuid
@@ -3567,6 +3572,7 @@
 											await that.handleCMD04(hexData, deviceId, serviceId, deviceSn);
 											break
 										case "10":
+											uni.setStorageSync("jiance", true)
 											if (hexData.length < 160) {
 												const bytes = hexStringToBytes(hexData.slice(18, hexData
 													.length));
@@ -5591,7 +5597,6 @@
 							bp: `${bp.highPressure}/${bp.lowPressure}`,
 							hr: matchedHr.heartRate
 						});
-						console.log("hhhhhhhhhhh")
 						that.jakoblife_fat_scale22list(
 							deviceId,
 							bp.highPressure,
@@ -7056,56 +7061,35 @@
 				uni.getStorageInfo({
 					success(res) {
 						// 检查是否开启了通知开关
-						if (res.keys.includes("swichs") && uni.getStorageSync(
-								"swichs") === true) {
-							const notify = {
-								triggered: false
-							}; // 初始化通知标志
+						if (res.keys.includes("swichs") && uni.getStorageSync("swichs") === true) {
 							// 检查舒张压
-							if (res.keys.includes("shuzhangyaId1") || res.keys
-								.includes(
-									"shuzhangyaId2")) {
-								that.checkAndNotify("shuzhangyaId1",
-									"shuzhangyaId2",
-									aaa.lowPressure,
-									"舒张压",
-									notify);
+							if (res.keys.includes("shuzhangyaId1") || res.keys.includes("shuzhangyaId2")) {
+								that.checkAndNotify("shuzhangyaId1", "shuzhangyaId2", aaa.lowPressure, "舒张压");
 							}
 							// 检查收缩压
-							if (res.keys.includes("shousuoyaId1") || res.keys
-								.includes("shousuoyaId2")) {
-								that.checkAndNotify("shousuoyaId1", "shousuoyaId2",
-									aaa
-									.highPressure,
-									"收缩压",
-									notify);
+							if (res.keys.includes("shousuoyaId1") || res.keys.includes("shousuoyaId2")) {
+								that.checkAndNotify("shousuoyaId1", "shousuoyaId2", aaa.highPressure, "收缩压");
 							}
 							// 检查脉搏
-							if (res.keys.includes("maiboId1") || res.keys.includes(
-									"maiboId2")) {
-								that.checkAndNotify("maiboId1", "maiboId2", aaa
-									.heartrate, "脉搏",
-									notify);
+							if (res.keys.includes("maiboId1") || res.keys.includes("maiboId2")) {
+								that.checkAndNotify("maiboId1", "maiboId2", aaa.heartrate, "脉搏");
 							}
+						} else {
+							console.log("警报开关没有设置")
 						}
 					},
-					fail(err) {}
+					fail(err) {
+						console.log("1警报开关没有设置")
+					}
 				})
 			},
 			getStorageInfooy(aaa) {
 				let that = this
 				uni.getStorageInfo({
 					success(res) {
-						if (res.keys.includes("swichs") && uni.getStorageSync(
-								"swichs") === true) {
-							const notify = {
-								triggered: false
-							};
-							if (res.keys.includes("xeuyang1") || res.keys.includes(
-									"xeuyang2")) {
-								that.checkAndNotify("xeuyang1", "xeuyang2", aaa
-									.oxygen,
-									"血氧", notify);
+						if (res.keys.includes("swichs") && uni.getStorageSync("swichs") === true) {
+							if (res.keys.includes("xeuyang1") || res.keys.includes("xeuyang2")) {
+								that.checkAndNotify("xeuyang1", "xeuyang2", aaa.oxygen, "血氧");
 							}
 						}
 					},
@@ -7113,16 +7097,19 @@
 			},
 
 			// 封装检查和通知的逻辑
-			checkAndNotify(key1, key2, value, messageKey, notify) {
+
+			checkAndNotify(key1, key2, value, messageKey) {
 				const storedValue1 = uni.getStorageSync(key1);
 				const storedValue2 = uni.getStorageSync(key2);
-				let nototy = false
-				if ((storedValue1 !== undefined && value < storedValue1) ||
-					(storedValue2 !== undefined && value > storedValue2)) {
+				if ((storedValue1 && value < storedValue1) ||
+					(storedValue2 && value > storedValue2)) {
 					// 如果已经触发了通知，则不再重复触发
-					if (!notify.triggered) {
+					if (!uni.getStorageSync("isProcessed")) {
 						this.Notificationss(this.$t("测量通知"));
-						notify.triggered = true; // 标记已触发通知
+						uni.setStorageSync("isProcessed", true) // 标记已触发通知
+						setTimeout(() => {
+							uni.removeStorageSync("isProcessed")
+						}, 5000)
 					}
 				}
 			},

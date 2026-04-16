@@ -182,7 +182,6 @@
 				return buffer;
 			},
 			queryDevices() {
-				console.log('查询设备列表', uni.getStorageSync('token'));
 				uni.request({
 					url: this.$url_APP_IP + this.$url_queryDevices,
 					method: 'POST',

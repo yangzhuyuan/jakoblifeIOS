@@ -1,17 +1,6 @@
 <script>
 	const systemInfo = uni.getSystemInfoSync()
 	import {
-		initKeepAlive,
-		startBackgroundTask,
-		endBackgroundTask,
-		scheduleBackgroundRefresh,
-		enableAudioKeepAlive,
-		enableLocationKeepAlive,
-		checkBackgroundRefreshStatus,
-		onBackgroundTaskExpired,
-		offBackgroundTaskExpired
-	} from 'nativeplugins/KeepAlivesdkplugin/ios/keepAlive.js';
-	import {
 		isInChinaByIP,
 		ISgetUserInfoUS,
 		ISgetUserInfoChina,
@@ -50,15 +39,6 @@
 			setTimeout(() => {
 				this.startInterval();
 			}, 1000)
-
-			// this.handleInit()
-			// this.handleStartTask()
-			// this.handleScheduleRefresh()
-			// this.handleToggleAudio()
-			// this.handleToggleAudio()
-			// this.handleToggleLocation()
-			// this.handleCheckStatus()
-
 		},
 
 		mounted() {
@@ -88,7 +68,7 @@
 				// 	const isInChina = await isInChinaByIP();
 				// 	console.log('IP定位结果:', isInChina ? '中国' : '国外');
 				// 	if (isInChina) {
-						Vue.prototype.$url_APP_IP = this.$APP_IP1;
+				Vue.prototype.$url_APP_IP = this.$APP_IP1;
 				// 	} else {
 				// 		Vue.prototype.$url_APP_IP = this.$APP_IP2;
 				// 	}

@@ -17,5 +17,11 @@
             }
         }
     },
-    "displayName": "国际区号和国旗索引列表"
+    "displayName": "国际区号和国旗索引列表",
+    "dependencies": {
+        "html2canvas": "^1.4.1",
+        "jspdf": "^4.2.1",
+        "pdf-lib": "^1.17.1",
+        "text-encoding": "^0.7.0"
+    }
 }

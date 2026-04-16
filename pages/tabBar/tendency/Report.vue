@@ -782,6 +782,7 @@
 					padding: [15, 10, 0, 15],
 					enableScroll: false,
 					legend: {},
+					dataLabel: false, // 在根级别关闭所有数据标签
 					xAxis: {
 						disableGrid: false,
 						gridType: "dash",
@@ -812,7 +813,13 @@
 						line: {
 							type: "straight",
 							width: 2,
-							activeType: "hollow"
+							activeType: "hollow",
+							// 确保这里没有 dataLabel 属性，或者显式设为 false
+							dataLabel: false,
+							// 关闭数据点上的文本显示
+							showPoint: true, // 显示点
+							pointSize: 3, // 点的大小
+							// 不设置 label 相关属性
 						}
 					}
 				},
@@ -1398,6 +1405,21 @@
 										that.fenxi15 = that.$t("分析aa")
 									}
 								}
+
+
+								if ((that.youxiao_2 !== "0" && that.junzhi_8 !== "0") || (that.youxiao_1 !== "0" &&
+										that.junzhi_7 !== "0") || that.youxiao_3 !== 0) {
+									console.log("测量次数较少")
+									uni.showModal({
+										content: `${this.$t("建议")}\n1.${this.$t("建议9")}\n2.${this.$t("建议10")}\n3.${this.$t("建议11")}`,
+										confirmText: this.$t("知道了"),
+										showCancel: false,
+										success: (modalres) => {
+											if (modalres.confirm) {}
+										}
+									});
+								}
+
 								// 标准差
 								that.biaozhun_SZY_b = checkAndAssign(resultArray1[27]);
 								that.biaozhun_SSY_b = checkAndAssign(resultArray1[28]);

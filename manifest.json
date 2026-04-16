@@ -2,8 +2,8 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "3.2.016",
-    "versionCode" : 368,
+    "versionName" : "3.2.021",
+    "versionCode" : 373,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
@@ -486,20 +486,6 @@
                     "name" : "TestUniPlugin",
                     "description" : "ailink uni插件",
                     "platforms" : "Android,iOS",
-                    "url" : "",
-                    "android_package_name" : "",
-                    "ios_bundle_id" : "",
-                    "isCloud" : false,
-                    "bought" : -1,
-                    "pid" : "",
-                    "parameters" : {}
-                }
-            },
-            "KeepAliveSdkPlugin" : {
-                "__plugin_info__" : {
-                    "name" : "KeepAliveSdkPlugin",
-                    "description" : "iOS后台保活插件",
-                    "platforms" : "iOS",
                     "url" : "",
                     "android_package_name" : "",
                     "ios_bundle_id" : "",
