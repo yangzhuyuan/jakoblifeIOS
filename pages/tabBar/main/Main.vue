@@ -190,7 +190,7 @@
 								<image src="/static/image/yundomng.png"
 									style="width: 88vw;height: 220px; margin: 0 20px 120px 20px;border-radius: 20px;">
 								</image>
-							<!-- 	<scroll-view class="log" scroll-y :scroll-top="scrollTop">
+								<!-- 	<scroll-view class="log" scroll-y :scroll-top="scrollTop">
 									<view v-for="(l,i) in logs" :key="i" class="log-item">
 										log：{{l}}
 									</view>
@@ -2038,6 +2038,8 @@
 			let that = this
 			that.sethuilian(true)
 			uni.removeStorageSync("jiance")
+			uni.setStorageSync("last_app_version", systemInfo.appVersion)
+			console.log('last_app_version', uni.getStorageSync("last_app_version"));
 			// const ISUserInfoChina = await ISgetUserInfoChina(that.$APP_IP1);
 			// const isUserInfoUS = await ISgetUserInfoUS(that.$APP_IP2);
 			// console.log('ISUserInfoChina', ISUserInfoChina);

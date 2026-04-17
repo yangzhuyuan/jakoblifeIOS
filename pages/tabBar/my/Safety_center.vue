@@ -106,6 +106,7 @@
 		mapState,
 		mapMutations
 	} from 'vuex'
+	const systemInfo = uni.getSystemInfoSync();
 	export default {
 		data() {
 			return {
@@ -253,6 +254,8 @@
 				uni.removeStorageSync("listdadsa")
 				this.setacktypes("0")
 				uni.clearStorageSync()
+				uni.setStorageSync("last_app_version", systemInfo.appVersion)
+				uni.setStorageSync('agree', 1)
 				uni.reLaunch({
 					url: '/pages/login/login_land'
 				})
