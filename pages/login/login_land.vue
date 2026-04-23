@@ -360,7 +360,7 @@
 							})
 							return
 						} else {
-							this.codetime = 60
+							this.codetime = 120
 							this.msg = this.$t('s后可重发')
 							let timer = setInterval(() => {
 								this.codetime-- + this.msg;
@@ -399,7 +399,7 @@
 							})
 							return
 						} else {
-							this.codetime = 60
+							this.codetime = 120
 							this.msg = this.$t('s后可重发')
 							let timer = setInterval(() => {
 								this.codetime-- + this.msg;

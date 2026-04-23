@@ -187,7 +187,7 @@
 								</view>
 							</view>
 							<view>
-								<image src="/static/image/yundomng.png"
+								<image src="/static/image/yundomng2.png"
 									style="width: 88vw;height: 220px; margin: 0 20px 120px 20px;border-radius: 20px;">
 								</image>
 								<!-- 	<scroll-view class="log" scroll-y :scroll-top="scrollTop">
@@ -2757,27 +2757,16 @@
 			// 情绪立即测量命令
 			sendstartheartwatch(writeuuid, type) {
 				let that = this
-				// let buffer2 = that.toArrayBuffer("E00008010200170000") //请求设备信息命令
-				// let buffer2 = that.toArrayBuffer("e0000611030125000101")//5.8.5的版本情绪测量命令
-				// let buffer2 = that.toArrayBuffer("e00006f3060104000101") //5.8.4及以下版本情绪测量命令
-
-				// if (!uni.getStorageSync("otadatares")) {
 				that.OTAdata(that.deviceIdwatch ? that.deviceIdwatch : uni.getStorageSync(
 					"deviceIdwatch"), that.serviceIdwatch ? that.serviceIdwatch : uni.getStorageSync(
 					"serviceIdwatch"), writeuuid ? writeuuid : uni.getStorageSync("writeuuid"))
-				// }
-
-				// console.log(uni.getStorageSync("deviceIdwatch"))
-				// console.log(uni.getStorageSync("serviceIdwatch"))
-				// console.log(uni.getStorageSync("writeuuid"))
-				// console.log(that.deviceIdwatch)
-				// console.log(that.serviceIdwatch)
-				// console.log(writeuuid)
 				setTimeout(() => {
 					let buffer2 = that.toArrayBuffer("e00006f3060104000101")
 					if (uni.getStorageSync("otadatares") === "6986AF9F0656352E382E350741423536313043" ||
 						uni.getStorageSync("otadatares") === "69C0EB890656352E382E370741423536313043" ||
-						uni.getStorageSync("otadatares") === "69D616630656352E382E380741423536313043") {
+						uni.getStorageSync("otadatares") === "69D616630656352E382E380741423536313043" ||
+						uni.getStorageSync("otadatares") === "69E5814C0656352E382E390741423536313043" ||
+						uni.getStorageSync("otadatares") === "69E587830656352E382E380741423536313043") {
 						buffer2 = that.toArrayBuffer("e0000611030125000101") //5.8.5||5.8.7的版本情绪测量命令
 					} else {
 						buffer2 = that.toArrayBuffer("e00006f3060104000101")
@@ -3708,6 +3697,8 @@
 										const bytes = hexData.slice(18, hexData.length);
 										console.log("手环信息更新", bytes)
 										uni.setStorageSync("otadatares", bytes.toUpperCase())
+										uni.setStorageSync("otaBP", bytes.toUpperCase())
+										console.log("手环信息更新", that.sleep_alertid)
 										if (that.sleep_alertid === 1) {
 											that.resetDataState("情绪测量")
 											return
@@ -9109,7 +9100,6 @@
 									complete(complete) {
 										if (complete.code === 10007) {
 											uni.hideLoading()
-											console.log(res)
 											uni.$emit('updateIdChanged', 1)
 											that.resetDataState("34")
 										} else {
@@ -9158,19 +9148,11 @@
 												e
 												.target
 												.result;
-											// console.log('Base64内容:', base64);
-											// 将 Base64 转为文本
-											// 方法1：对于纯文本，可以直接解码
 											const
 												text =
 												this
 												.decodeBase64(
 													base64
-												);
-											console
-												.log(
-													'解码后文本:',
-													text
 												);
 											resolve
 												(text

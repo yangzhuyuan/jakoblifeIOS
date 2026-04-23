@@ -121,16 +121,19 @@
 
 
 			NOclick() {
-				const lan = uni.getLocale();
-				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					uni.navigateTo({
-						url: "../../Bind/Bing_page/helpcenterss?id=1153"
-					})
-				} else {
-					uni.navigateTo({
-						url: "../../Bind/Bing_page/helpcenterss?id=1154"
-					})
-				}
+				// const lan = uni.getLocale();
+				// if (lan == 'zh-Hans' || lan == 'zh-Hant') {
+				// 	uni.navigateTo({
+				// 		url: "../../Bind/Bing_page/helpcenterss?id=1153"
+				// 	})
+				// } else {
+				// 	uni.navigateTo({
+				// 		url: "../../Bind/Bing_page/helpcenterss?id=1154"
+				// 	})
+				// }
+				uni.navigateTo({
+					url: "/pages/tabBar/my/Help_center"
+				})
 			},
 
 			//获取设备型号列表

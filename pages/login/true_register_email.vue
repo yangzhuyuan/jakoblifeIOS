@@ -215,7 +215,7 @@
 								})
 								return
 							} else {
-								that.codetime = 60
+								that.codetime = 120
 								that.msg = that.$t('s后可重发')
 								let timer = setInterval(() => {
 									that.codetime-- + that.msg;
