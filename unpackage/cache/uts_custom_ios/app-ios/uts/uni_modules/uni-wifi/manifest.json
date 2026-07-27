@@ -1,11 +1,12 @@
 {
   "version": "1",
   "env": {
-    "compilerVersion": "5.07"
+    "vapor": false,
+    "compilerVersion": "5.15"
   },
   "files": {
     "utssdk/app-ios/index.uts": {
-      "md5": "c3bc2a64aafc63ab1ee0c7a4bb447ee2"
+      "md5": "0eaa4c217ed3520f9834cb16710fc59b"
     },
     "utssdk/interface.uts": {
       "md5": "3f602b40f95a6bfc0ca17f015c93aa66"

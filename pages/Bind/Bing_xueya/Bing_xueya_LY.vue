@@ -44,9 +44,9 @@
 				<view class="title_text_style_1">{{$t("确保手表靠近你的手机")}}</view>
 				<view class="title_text_style">{{$t("开始配对")}}</view>
 				<view class="title_text_style_1">{{$t("导航到下一个屏幕以开始配对过程")}}</view>
-				<view class="title_text_style_2">{{$t("在可用蓝牙设备列表中")}}<text class="textstyle">BPW1</text>。</view>
+				<view class="title_text_style_2">{{$t("在可用蓝牙设备列表中")}}<text class="textstyle">U19M</text>。</view>
 				<view class="title_text_style_3">{{$t("如果没有出现")}}<text
-						class="textstyle">BPW1</text>，{{$t("点击屏幕顶部的刷新按钮")}}
+						class="textstyle">U19M</text>，{{$t("点击屏幕顶部的刷新按钮")}}
 				</view>
 			</view>
 			<view v-else>

@@ -49,7 +49,7 @@
 				<view style="justify-content: flex-end; display: flex;flex-direction: row; align-items: center;">
 					<input type="number" :placeholder="$t('请输入')" v-model="height"
 						style="color: black; text-align: right; font-size: 14px;" maxlength="5" />
-					<view style="margin-right: 15px;width: 60px;">
+					<view style="margin-right: 15px;width: 80px;">
 						<picker @change="bindPickerChange_Height" :value="Height_index" :range="Height_array">
 							<view class="uni-input" style="text-align: right;">{{Height_array[Height_index]}}</view>
 						</picker>
@@ -62,7 +62,7 @@
 				<view style="justify-content: flex-end;display: flex;flex-direction: row;align-items: center;">
 					<input type="number" :placeholder="$t('请输入')" v-model="width"
 						style="color: black; text-align: right; font-size: 14px;" maxlength="5" />
-					<view style="margin-right: 15px;width: 60px;">
+					<view style="margin-right: 15px;width: 80px;">
 						<picker @change="bindPickerChange_Width" :value="Width_index" :range="Width_array">
 							<view class="uni-input" style="text-align: right;background: none;">
 								{{Width_array[Width_index]}}
@@ -96,9 +96,9 @@
 				width: '',
 				date: this.$t('请选择'),
 				phone: '',
-				Height_array: ["inch", 'cm'],
+				Height_array: [this.$t("英寸"), this.$t("厘米")],
 				Height_index: uni.getStorageSync("danwei1") !== "" ? uni.getStorageSync("danwei1") : 0,
-				Width_array: ["kg", "lb"],
+				Width_array: [this.$t("千克"), this.$t("英镑")],
 				Width_index: uni.getStorageSync("danwei2") !== "" ? uni.getStorageSync("danwei2") : 0,
 			}
 		},
@@ -281,8 +281,8 @@
 				const postData = {
 					bloodUnit: uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" :
 						"kPa",
-					heightUnit: Height_index === 0 || Height_index === "" ? "inch" : 'cm',
-					weightUnit: Width_index === 0 || Width_index === "" ? "kg" : "lb",
+					heightUnit: Height_index === 0 || Height_index === "" ? this.$t("英寸") : this.$t("厘米"),
+					weightUnit: Width_index === 0 || Width_index === "" ? this.$t("千克"): this.$t("英镑"),
 					switchHER: uni.getStorageSync("yaliswitchHER") || true,
 				}
 				const editData = {

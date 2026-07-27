@@ -240,7 +240,7 @@
 				isSwiping: false,
 				lastSwipeId: null,
 				startX: 0,
-				newweightKG: uni.getStorageSync("danwei2") === 1 ? "lb" : "KG",
+				newweightKG: uni.getStorageSync("danwei2") === 1 ? this.$t("英镑") : this.$t("千克1"),
 				WeightConverter: WeightConverter,
 			}
 		},

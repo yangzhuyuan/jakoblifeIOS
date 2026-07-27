@@ -138,8 +138,7 @@
 <script>
 	export default {
 		data() {
-			return {
-				list: [{
+			const defaultList = [{
 						BMI_TF: 0,
 						BMI_ys: "-",
 						bmi_show: true,
@@ -231,32 +230,37 @@
 						Step_count: "-",
 						checkbox: false,
 					}
-				],
+				];
+			return {
+				defaultList,
+				list: JSON.parse(JSON.stringify(defaultList)),
 			}
 		},
 		onShow() {
 			uni.setNavigationBarTitle({
 				title: this.$t("编辑数据卡片")
 			})
-			// 获取存储的卡片列表
-			const kapianlist = uni.getStorageSync('kapianlist2');
-			if (kapianlist && kapianlist.length > 0) {
-				// 遍历存储的卡片列表
-				kapianlist.forEach(item => {
-					// 找到匹配的卡片并移除
-					const index = this.list.findIndex(listItem => listItem.title === item.title);
-					if (index !== -1) {
-						this.list.splice(index, 1);
-					}
-				});
-			}
-			// // 调用相关方法
-			this.list_recipe();
-			this.queryDevices()
+			this.prepareAvailableCards();
+			this.$nextTick(() => {
+				this.list_recipe();
+				this.queryDevices();
+			});
 		},
 
 
 		methods: {
+			prepareAvailableCards() {
+				const kapianlist = uni.getStorageSync('kapianlist2');
+				const addedTitles = new Set(
+					(Array.isArray(kapianlist) ? kapianlist : []).map(item => item.title)
+				);
+				this.list = this.defaultList
+					.filter(item => !addedTitles.has(item.title))
+					.map(item => ({
+						...item,
+						checkbox: false
+					}));
+			},
 			dianji(id, checkid) {
 				if (checkid == true) {
 					this.list[id].checkbox = false
@@ -274,6 +278,11 @@
 				let newarr = list2.concat(list1);
 				// 更新本地存储
 				uni.setStorageSync("kapianlist2", newarr);
+				const pages = getCurrentPages();
+				const prevPage = pages[pages.length - 2];
+				if (prevPage && prevPage.$vm) {
+					prevPage.$vm.list2 = newarr;
+				}
 				this.cardeditData(newarr)
 				// 返回上一页
 				uni.navigateBack();
@@ -488,7 +497,7 @@
 				let that = this
 				const heightItem = that.findValue(that.list, 'title', that.$t('身高'));
 				const height = that.findValue(item, 'register', 'height')?.registerVal;
-				const unit = uni.getStorageSync("danwei1") === 0 ? "inch" : "cm";
+				const unit = uni.getStorageSync("danwei1") === 0 ? that.$t("英寸") : that.$t("厘米");
 				heightItem.type_LX = unit;
 				heightItem.Step_number = height !== null ? height : '-/-';
 				heightItem.Step_count = that.formatDate(that.findValue(item, 'register', 'height')?.updateTime);

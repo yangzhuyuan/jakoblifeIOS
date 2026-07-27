@@ -81,7 +81,8 @@
 		formattedDate,
 		getMonthDays,
 		reduMonths,
-		getAppointDate
+		getAppointDate,
+		parseLocalDate
 	} from './dateManage.js'
 	import getChineseCalendar from './chineseCalendar.js'
 	import getSolarTerm from './solarTerm.js'
@@ -247,7 +248,7 @@
 					}
 				}
 				if (this.minDate) {
-					const cd = new Date(date)
+					const cd = parseLocalDate(date)
 					const firstDay = formattedDate(new Date(cd.getFullYear(), cd.getMonth(), 1))
 					const minDiff = getDaysDifference(firstDay, this.minDate)
 					this.prevDisabled = minDiff <= 0
@@ -315,7 +316,7 @@
 			initMonthCalender(value) {
 				let date = new Date()
 				if (value) {
-					date = new Date(value)
+					date = parseLocalDate(value)
 				}
 				const nowMonth = date.getMonth() + 1
 				const nowYear = date.getFullYear()
@@ -335,7 +336,7 @@
 				const date_arrs = []
 
 				if (this.minDate) {
-					const cd = new Date(date)
+					const cd = parseLocalDate(date)
 					const firstDay = formattedDate(new Date(cd.getFullYear(), cd.getMonth(), 1))
 					this.prevDisabled = getDaysDifference(firstDay, this.minDate) <= 0
 				}
@@ -389,7 +390,9 @@
 					next: 7
 				}
 				const timestamp = 3600 * 24 * 1000
-				const t_date = new Date(new Date(date || this.current).getTime() + typeMap[type] * timestamp)
+				// 必须按本地日历日解析，避免西时区把 yyyy-mm-dd 当成 UTC 导致日期/周几错位
+				const t_date = new Date(parseLocalDate(date || this.current).getTime() + typeMap[type] *
+					timestamp)
 				const ty = t_date.getFullYear()
 				const tm = t_date.getMonth()
 				const td = t_date.getDate() - t_date.getDay()
@@ -397,14 +400,14 @@
 				const weekDays = []
 				for (var i = 0; i < 7; i++) {
 					const _d = getAppointDate(formattedDate(weekStart), i)
-					const day = new Date(_d).getDate()
+					const day = parseLocalDate(_d).getDate()
 
 					weekDays.push({
 						type: 'current',
 						...this.getDateDetail(_d, day)
 					})
 				}
-				const selectDate = weekDays[new Date(this.current).getDay()].date
+				const selectDate = weekDays[parseLocalDate(this.current).getDay()].date
 				let _default = selectDate
 				if (!this.allowFuture) {
 					const weekDiff = getDaysDifference(today, weekDays[weekDays.length - 1].date)
@@ -457,7 +460,7 @@
 			getMonth(type) {
 				let nowYear = parseInt(this._nowYear)
 				let nowMonth = parseInt(this._nowMonth)
-				let nowDay = new Date(this.current).getDate()
+				let nowDay = parseLocalDate(this.current).getDate()
 
 				if (type == 'prev') {
 					if (nowMonth == 1) {

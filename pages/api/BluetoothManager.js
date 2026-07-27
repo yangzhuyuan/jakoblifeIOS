@@ -34,9 +34,8 @@ export default class BluetoothManager {
 		const bluetooth = new Bluetooth(deviceId);
 		const isAlreadyConnected = await this.isDeviceConnected(deviceId);
 		if (isAlreadyConnected) {
-			// console.log(`1设备 ${deviceId} 已连接，无需重复连接`);
-			await bluetooth.connect();
-			await bluetooth.delay(3000);
+			// 系统层已连接：勿再 createBLEConnection（会反复打「连接成功」并干扰 notify）
+			bluetooth.connected = true;
 			await bluetooth.getServices();
 			// 根据服务数量处理不同的逻辑
 			switch (bluetooth.services.length) {
@@ -54,7 +53,11 @@ export default class BluetoothManager {
 					await bluetooth.getCharacteristics3(bluetooth.services[1].uuid);
 					break;
 				case 4:
-					await bluetooth.getCharacteristics1(bluetooth.services[3].uuid);
+					if (bluetooth.services[0].uuid === "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E") {
+						await bluetooth.getCharacteristics6(bluetooth.services[0].uuid);
+					} else {
+						await bluetooth.getCharacteristics1(bluetooth.services[3].uuid);
+					}
 					break;
 				default:
 					// console.warn(`设备 ${deviceId} 的服务数量不符合预期：`, bluetooth.services.length);
@@ -67,6 +70,7 @@ export default class BluetoothManager {
 		await bluetooth.connect();
 		await bluetooth.delay(3000);
 		await bluetooth.getServices();
+		// console.log(`设备 ${deviceId} 的服务数量：`, bluetooth.services);
 		// 根据服务数量处理不同的逻辑
 		switch (bluetooth.services.length) {
 			case 1:
@@ -83,7 +87,11 @@ export default class BluetoothManager {
 				await bluetooth.getCharacteristics3(bluetooth.services[1].uuid);
 				break;
 			case 4:
-				await bluetooth.getCharacteristics1(bluetooth.services[3].uuid);
+				if (bluetooth.services[0].uuid === "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E") {
+					await bluetooth.getCharacteristics6(bluetooth.services[0].uuid);
+				} else {
+					await bluetooth.getCharacteristics1(bluetooth.services[3].uuid);
+				}
 				break;
 			default:
 				// console.warn(`设备 ${deviceId} 的服务数量不符合预期：`, bluetooth.services.length);

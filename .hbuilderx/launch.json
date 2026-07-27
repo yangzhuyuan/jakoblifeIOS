@@ -28,12 +28,16 @@
         },
         {
             "bundleId" : "io.dcloud.jakob",
-            "certificateFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife.p12",
-            "certificateProfileFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife_new.mobileprovision",
+            "certificateFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/20260513证书.p12",
+            "certificateProfileFile" : "/Users/yangzhuyuan/Desktop/剑博/ios开发证书/JakobLife.mobileprovision",
             "customPlaygroundType" : "local",
             "playground" : "custom",
             "runSignStatus" : 1,
             "type" : "uni-app:app-ios"
+        },
+        {
+            "playground" : "standard",
+            "type" : "uni-app:app-ios_simulator"
         }
     ]
 }

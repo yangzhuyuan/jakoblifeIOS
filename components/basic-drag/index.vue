@@ -144,11 +144,50 @@
 			},
 
 			initList(list = []) {
-				this.formattedList = list.map((item, index) => ({
-					...item,
-					...this.getPosition(index),
-					key: `${Date.now()}_${index}_${Math.random().toString(36).substr(2, 9)}`
-				}));
+				const next = Array.isArray(list) ? list : [];
+				const itemKey = this.itemKey;
+				const sameStructure = this.formattedList.length === next.length &&
+					next.every((item, index) => {
+						const prev = this.formattedList[index];
+						return prev && String(prev[itemKey]) === String(item[itemKey]);
+					});
+
+				// 仅数值/文案变化：就地更新，保留 key，避免图片每 8 秒闪烁重建
+				if (sameStructure && this.formattedList.length > 0) {
+					next.forEach((item, index) => {
+						const existing = this.formattedList[index];
+						Object.keys(item).forEach((k) => {
+							if (existing[k] !== item[k]) {
+								this.$set(existing, k, item[k]);
+							}
+						});
+						const position = this.getPosition(index);
+						if (existing.x !== position.x) {
+							this.$set(existing, 'x', position.x);
+						}
+						if (existing.y !== position.y) {
+							this.$set(existing, 'y', position.y);
+						}
+					});
+					return;
+				}
+
+				const oldKeyMap = {};
+				this.formattedList.forEach((item) => {
+					const id = item[itemKey];
+					if (id != null && id !== '') {
+						oldKeyMap[String(id)] = item.key;
+					}
+				});
+				this.formattedList = next.map((item, index) => {
+					const id = item[itemKey];
+					const idStr = id != null && id !== '' ? String(id) : `idx_${index}`;
+					return {
+						...item,
+						...this.getPosition(index),
+						key: oldKeyMap[idStr] || `drag_${idStr}`
+					};
+				});
 			},
 
 			toggleDrag() {

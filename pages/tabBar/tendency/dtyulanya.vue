@@ -1,11 +1,11 @@
 <template>
 	<view class="index">
 		<sp-html2pdf-render domId="render-dom" ref="renderRef" :pdfFileName="$t('动态血压监测报告')"
-			@beforeSavePDF="beforeSavePDF" @successSavePDF="successSavePDF"
-			@renderOver="renderOver"></sp-html2pdf-render>
+			@beforeSavePDF="beforeSavePDF" @successSavePDF="successSavePDF" @renderOver="renderOver"
+			@renderFail="onRenderFail"></sp-html2pdf-render>
 		<!-- 主渲染内容 -->
 		<view class="render-main">
-			<view id="render-dom" class="render-content">
+			<view id="render-dom" class="render-content" :class="{ 'pdf-exporting': pdfExporting }">
 				<view style="display: flex;justify-content: space-between;align-items: center;margin-top: 20px;">
 					<image :src="appicon" style="width: 95px; height: 35px;"></image>
 					<view style="color: #040000;font-size: 20px; font-weight: 500;">{{$t("动态血压监测报告")}}</view>
@@ -218,6 +218,10 @@
 				<view style="background: #969799; height: 1px; width: auto;margin-top: 10px;"></view>
 				<view class="txtetitlestyle">
 					<view class="texttitle">
+						<view class="text1style">{{$t('日期')}}:</view>
+						<view class="text2style">{{pacidate}}</view>
+					</view>
+					<view class="texttitle">
 						<view class="text1style">{{$t("是否服用药物")}}:</view>
 						<view class="text2style">{{medication}}</view>
 					</view>
@@ -229,32 +233,36 @@
 					</view>
 				</view>
 				<view style="background: black; height: 2px; width: auto;margin-top: 10px;"></view>
-				<view class="txtetitlestyle" style="padding-top: 40px;">
-					<view style="font-size: 14px;font-weight: 600;color: #3298F7;">{{$t("动态血压趋势图")}}</view>
-					<view style="display: flex;justify-content: center;align-items: center;flex-direction: row;">
-						<image :src="maibo" style="height: 13px;width: 20px;margin-right: 2px;">
-						</image>
-						<view style="font-size: 6.5px; font-weight: 400px;color: #999999;">{{$t("脉搏")}}({{$t("次")}}/min)
+				<view class="pdf-keep-together chart-section">
+					<view class="txtetitlestyle chart-section-title">
+						<view style="font-size: 14px;font-weight: 600;color: #3298F7;">{{$t("动态血压趋势图")}}</view>
+						<view style="display: flex;justify-content: center;align-items: center;flex-direction: row;">
+							<image :src="maibo" style="height: 13px;width: 20px;margin-right: 2px;">
+							</image>
+							<view style="font-size: 6.5px; font-weight: 400px;color: #999999;">
+								{{$t("脉搏")}}({{$t("次")}}/min)
+							</view>
+							<view
+								style="width: 10px; height: 10px;background: #F8B593;border-radius: 10px;margin-left:10px; margin-right: 10px;">
+							</view>
+							<view style="font-size: 6.5px;font-weight: 400px;color: #999999;">{{$t("收缩压")}}(mmHg)</view>
+							<view
+								style="width: 10px; height: 10px;background: #8ABAE8;border-radius: 10px;margin-left: 10px; margin-right:10px;">
+							</view>
+							<view style="font-size: 6.5px;font-weight: 400px;color: #999999;">{{$t("舒张压")}}(mmHg)</view>
 						</view>
-						<view
-							style="width: 10px; height: 10px;background: #F8B593;border-radius: 10px;margin-left:10px; margin-right: 10px;">
-						</view>
-						<view style="font-size: 6.5px;font-weight: 400px;color: #999999;">{{$t("收缩压")}}(mmHg)</view>
-						<view
-							style="width: 10px; height: 10px;background: #8ABAE8;border-radius: 10px;margin-left: 10px; margin-right:10px;">
-						</view>
-						<view style="font-size: 6.5px;font-weight: 400px;color: #999999;">{{$t("舒张压")}}(mmHg)</view>
 					</view>
-				</view>
-				<view class="charts-box">
-					<qiun-data-charts type="line" :opts="opts" :chartData="chartData" />
+					<view id="dty-charts-box" class="charts-box">
+						<qiun-data-charts v-if="chartReady" type="line" canvasId="dtyBpChart" :opts="opts"
+							:chartData="chartData" />
+					</view>
 				</view>
 				<view class="txtetitlestyle">
 					<view style="font-size: 14px;font-weight: 600;color: #3298F7;">{{$t("")}}</view>
 				</view>
 				<view class="txtetitlestyle_1">
 					<view style="font-size: 10px; display: flex; align-items: center;flex-direction: row;">
-						<view style="width: 12%;text-align: center;"></view>
+						<view class="row_label_s"></view>
 						<view style="width: 22%;text-align: center;border-left: 1px solid black;">
 							{{$t("白天清醒时段")}}</br>(06:00-21:30)
 						</view>
@@ -293,7 +301,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("有效数据个数")}}</view>
+						<view class="row_label_s">{{$t("有效数据个数")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall" :style="getblackgroud(youxiao_1)">{{youxiao_SZY_b}}</view>
 						</view>
@@ -308,7 +316,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("均值")}}</view>
+						<view class="row_label_s">{{$t("均值")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall" :style="getblackgroud(junzhi_1)">{{junzhi_SZY_b}}</view>
 							<view class="itemall_1" :style="getblackgroud(junzhi_2)">{{junzhi_SSY_b}}</view>
@@ -331,7 +339,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("标准差")}}</view>
+						<view class="row_label_s">{{$t("标准差")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall">{{biaozhun_SZY_b}}</view>
 							<view class="itemall_1">{{biaozhun_SSY_b}}</view>
@@ -354,7 +362,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("最大值")}}</view>
+						<view class="row_label_s">{{$t("最大值")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall">{{zuida_SZY_b}}</view>
 							<view class="itemall_1">{{zuida_SSY_b}}</view>
@@ -377,7 +385,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("中位数")}}</view>
+						<view class="row_label_s">{{$t("中位数")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall">{{zhongweishu_SSY_b}}</view>
 							<view class="itemall_1">{{zhongweishu_SSY_b}}</view>
@@ -400,7 +408,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("最小值")}}</view>
+						<view class="row_label_s">{{$t("最小值")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall">{{zuixiaozhi_SZY_b}}</view>
 							<view class="itemall_1">{{zuixiaozhi_SSY_b}}</view>
@@ -423,7 +431,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("血压负荷")}}</view>
+						<view class="row_label_s">{{$t("血压负荷")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall" :style="getblackgroud(xeuyafuhe_1)">{{xeuyafuhe_SZY_b}}</view>
 							<view class="itemall_1" :style="getblackgroud(xeuyafuhe_2)">{{xeuyafuhe_SSY_b}}</view>
@@ -445,25 +453,25 @@
 							<view class="itemall_1" style="background: #808080;"></view>
 						</view>
 					</view>
-					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("夜间血压下降率")}}</view>
-						<view class="listitemall_2">
+					<view class="listitemall listitemall_wrap">
+						<view class="row_label_s">{{$t("夜间血压下降率")}}</view>
+						<view class="listitemall_2 listitemall_2_wrap">
 							<view class="itemall" style="background: #808080;"></view>
 						</view>
-						<view class="listitemall_2">
+						<view class="listitemall_2 listitemall_2_wrap">
 							<view class="itemall" style="background: #808080;"></view>
 						</view>
-						<view class="listitemall_2">
+						<view class="listitemall_2 listitemall_2_wrap">
 							<view class="itemall" style="background: #808080;"></view>
 						</view>
-						<view class="listitemall_2">
-							<view class="itemall" :style="getblackgroud(yejian_1)">{{yejian_SZY_H}}</view>
-							<view class="itemall_1" :style="getblackgroud(yejian_2)">{{yejian_SSY_H}}</view>
+						<view class="listitemall_2 listitemall_2_wrap">
+							<view class="itemall cell_wrap" :style="getblackgroud(yejian_1)">{{yejian_SZY_H}}</view>
+							<view class="itemall_1 cell_wrap" :style="getblackgroud(yejian_2)">{{yejian_SSY_H}}</view>
 							<view class="itemall_1" style="background: #808080;"></view>
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("血压晨峰")}}</view>
+						<view class="row_label_s">{{$t("血压晨峰")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall" style="background: #808080;"></view>
 						</view>
@@ -480,7 +488,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("变异系数")}}</view>
+						<view class="row_label_s">{{$t("变异系数")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall">{{byxs_SZY_b}}</view>
 							<view class="itemall_1">{{byxs_SSY_b}}</view>
@@ -503,7 +511,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("动脉硬化指数")}}</view>
+						<view class="row_label_s">{{$t("动脉硬化指数")}}</view>
 						<view class="listitemall_2">
 							<view class="itemall" style="background: #808080;"></view>
 						</view>
@@ -518,7 +526,7 @@
 						</view>
 					</view>
 					<view class="listitemall">
-						<view style="width: 12%;text-align: center;">{{$t("盐敏感可能性")}}</view>
+						<view class="row_label_s">{{$t("盐敏感可能性")}}</view>
 						<view class="listitemall_3">{{yanminggan}}</view>
 					</view>
 				</view>
@@ -623,25 +631,32 @@
 							<view v-for="header in headers" :key="header" class="cell">{{header}}</view>
 						</view>
 						<view style="background: #969799;height: 1px; width: auto;"></view>
-						<view v-for="(item, index) in listall" :key="index">
-							<view class="row">
-								<view class="cell">
+						<view v-for="(item, index) in listallSorted" :key="item.sortKey || index">
+							<view class="row" :style="item.rowBlue ? 'background: #3298F7; color: #FFFFFF;' : ''">
+								<!-- <view class="cell" :style="item.rowBlue ? 'color: #FFFFFF;' : ''">
 									<image style="width: 10px;height: 10px;margin-right: 3px"
 										:src="item.type=='0'? soudong:wuxiao">
 									</image>{{index}}
+								</view> -->
+								<view class="cell" :style="item.rowBlue ? 'color: #FFFFFF;' : ''">{{item.date}}</view>
+								<view class="cell" :style="item.rowBlue ? 'color: #FFFFFF;' : ''">{{item.time}}</view>
+								<view class="cell" :style="item.rowBlue ? 'color: #FFFFFF;' : ''">
+									{{item.highPressure||'-/-'}}
 								</view>
-								<view class="cell">{{item.date}}</view>
-								<view class="cell">{{item.time}}</view>
-								<view class="cell">{{item.highPressure}}</view>
-								<view class="cell">{{item.lowPressure}}</view>
-								<view class="cell">{{item.heartrate}}</view>
-								<view class="cell">{{item.modelName}}</view>
+								<view class="cell" :style="item.rowBlue ? 'color: #FFFFFF;' : ''">
+									{{item.lowPressure||'-/-'}}
+								</view>
+								<view class="cell" :style="item.rowBlue ? 'color: #FFFFFF;' : ''">{{item.heartrate}}
+								</view>
+								<!-- <view class="cell" :style="item.rowBlue ? 'color: #FFFFFF;' : ''">{{item.modelName||'-/-'}}
+								</view> -->
 							</view>
 							<view style="background: #969799;height: 1px; width: 100%;"></view>
 						</view>
 					</view>
 				</view>
 				<view style="width: 100%; height: 2px; background: #040000;"></view>
+				<view style="margin: 20px; font-size: 10px; font-weight: 600; color:red; ">{{$t("动态血压当日7点后说明")}}</view>
 			</view>
 		</view>
 		<view class="titlestyle">
@@ -659,12 +674,24 @@
 		urlToBase64
 	} from '@/uni_modules/sp-html2pdf-render/utils/index.js'
 	import {
+		getChinaTimeAllJSON
+	} from '@/pages/api/unitls/timezone.js'
+	import {
 		mapState,
 		mapMutations
 	} from 'vuex'; //全局挂载
 	export default {
 		computed: {
 			...mapState(['BloodPressureLevel']),
+			/** 明细展示用：强制按日期+时间正序（不依赖 Date 解析，避免真机乱序） */
+			listallSorted() {
+				const list = Array.isArray(this.listall) ? this.listall.slice() : []
+				return list.sort((a, b) => {
+					const ka = (a && a.sortKey) || this.buildBpSortKey(a && a.date, a && a.time)
+					const kb = (b && b.sortKey) || this.buildBpSortKey(b && b.date, b && b.time)
+					return ka < kb ? -1 : ka > kb ? 1 : 0
+				})
+			},
 		},
 		data() {
 			return {
@@ -676,7 +703,8 @@
 				isExpanded1: false, // 控制是否展开
 				isExpanded2: false, // 控制是否展开
 				isExpanded3: false, // 控制是否展开
-				pacitime: "2025-03-17",
+				pacitime: getChinaTimeAllJSON().YMD,
+				pacidate: "2025-03-17",
 				name: "yang",
 				sex: '男',
 				age: '38',
@@ -693,27 +721,36 @@
 					series: [{
 						legendShape: "none",
 						name: "",
-						data: []
+						data: [],
+						connectNulls: true
 					}, {
 						legendShape: "none",
 						name: "",
-						data: []
+						data: [],
+						connectNulls: true
 					}, {
 						legendShape: "none",
 						name: "",
-						data: []
+						data: [],
+						connectNulls: true
 					}]
 				},
+				chartReady: false,
 				opts: {
 					color: ["#F8B593", "#8ABAE8", "#000000"],
 					padding: [15, 10, 0, 15],
 					enableScroll: false,
-					legend: {},
+					legend: {
+						show: false
+					},
 					dataLabel: false, // 在根级别关闭所有数据标签
 					xAxis: {
 						disableGrid: false,
 						gridType: "dash",
-						dashLength: 10
+						dashLength: 10,
+						fontSize: 8,
+						rotateLabel: true,
+						labelCount: 8
 					},
 					yAxis: {
 						gridType: "dash",
@@ -741,20 +778,14 @@
 							type: "straight",
 							width: 2,
 							activeType: "hollow",
-							// 确保这里没有 dataLabel 属性，或者显式设为 false
 							dataLabel: false,
-							// 关闭数据点上的文本显示
-							showPoint: true, // 显示点
-							pointSize: 3, // 点的大小
-							// 不设置 label 相关属性
+							showPoint: true,
+							pointSize: 3,
 						}
 					}
 				},
-				headers: [this.$t("序号"), this.$t("日期"), this.$t("时间"), this.$t("收缩压"), this.$t("舒张压"), this.$t("脉搏"), this
-					.$t("型号")
-				],
+				headers: [this.$t("日期"), this.$t("时间"), this.$t("收缩压"), this.$t("舒张压"), this.$t("脉搏")],
 				listall: [],
-
 				//有效值
 				youxiao_SZY_b: 'NA',
 				youxiao_SZY_Y: 'NA',
@@ -916,9 +947,13 @@
 				tizhongBMIa: '',
 				tizhongBMIjianyi: '',
 				lingfesds: 1,
+				pdfGenerating: false,
+				pdfExporting: false,
+				imagesReady: false,
 			}
 		},
 		onLoad(res) {
+			this.pacidate = res.profDate.slice(0, 10)
 			this.pacitime = res.profDate //报告日期
 			this.Whether_to_take = res.select //是否午休
 			this.Lunch_break = res.index
@@ -933,27 +968,23 @@
 			this.finlretVarList1 = res.finlretVarList1
 		},
 
-		onHide() {
-			console.log("onHide")
-		},
 
 		beforeDestroy() {
 			console.log("beforeDestroy")
+			this.pdfGenerating = false
+			uni.removeStorageSync("pdfreport")
 		},
 
 		onUnload() {
 			console.log("onUnload")
+			this.pdfGenerating = false
+			uni.removeStorageSync("pdfreport")
 		},
 
 		onShow() {
-			console.log("onShow", uni.getStorageSync("pdfreport"))
 			this.getUserInfo()
 			this.queryDevices()
-			setTimeout(() => {
-				if (uni.getStorageSync("pdfreport")) {
-					this.generatePDF()
-				}
-			}, 1000)
+
 
 		},
 
@@ -974,6 +1005,31 @@
 			toggleExpand3() {
 				this.isExpanded3 = !this.isExpanded3;
 			},
+			applyChartData(categories, series0, series1, series2) {
+				this.chartReady = false
+				this.chartData = {
+					categories,
+					series: [{
+						legendShape: "none",
+						name: "",
+						data: series0,
+						connectNulls: true
+					}, {
+						legendShape: "none",
+						name: "",
+						data: series1,
+						connectNulls: true
+					}, {
+						legendShape: "none",
+						name: "",
+						data: series2,
+						connectNulls: true
+					}]
+				}
+				this.$nextTick(() => {
+					this.chartReady = categories.length > 0
+				})
+			},
 			handleImage() {
 				/**
 				 * 使用urlToBase64将图片转换为base64格式，
@@ -982,27 +1038,34 @@
 				 * 终极大法是将网络图片通过工具转换为base64保存至文件中再放入image标签里
 				 */
 				const lan = uni.getLocale();
+				const tasks = []
 				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					urlToBase64('/static/splsh.png').then((res) => {
+					tasks.push(urlToBase64('/static/splsh.png').then((res) => {
 						this.appicon = res
-					})
+					}))
 				} else {
-					urlToBase64('/static/icons/loginssss.png').then((res) => {
+					tasks.push(urlToBase64('/static/icons/loginssss.png').then((res) => {
 						this.appicon = res
-					})
+					}))
 				}
 
-				urlToBase64('/static/image/mb.png').then((res) => {
+				tasks.push(urlToBase64('/static/image/mb.png').then((res) => {
 					this.maibo = res
-				})
-				urlToBase64('/static/image/dtx.png').then((res) => {
+				}))
+				tasks.push(urlToBase64('/static/image/dtx.png').then((res) => {
 					this.dtx = res
-				})
-				urlToBase64('/static/icons/soudong.png').then((res) => {
+				}))
+				tasks.push(urlToBase64('/static/icons/soudong.png').then((res) => {
 					this.soudong = res
-				})
-				urlToBase64('/static/icons/wuxiao.png').then((res) => {
+				}))
+				tasks.push(urlToBase64('/static/icons/wuxiao.png').then((res) => {
 					this.wuxiao = res
+				}))
+				Promise.all(tasks).then(() => {
+					this.imagesReady = true
+				}).catch(() => {
+					// 部分失败也允许继续，截图时会隐藏非 dataURL 图片
+					this.imagesReady = true
 				})
 			},
 
@@ -1017,35 +1080,72 @@
 			},
 
 			renderOver(e) {
-				// e为导出的图片（base64）
+				// e为导出的图片（base64）；中间态，勿清 pdfreport，否则数据回调可能再次触发 generatePDF
 				console.log('==== renderOver :')
+			},
+			finishPdfGenerate() {
+				this.pdfGenerating = false
+				this.pdfExporting = false
 				uni.removeStorageSync("pdfreport")
+				uni.hideLoading()
 			},
 			beforeSavePDF(e) {
 				// e为导出的pdf（base64）
 				console.log('==== beforeSavePDF :')
-				uni.removeStorageSync("pdfreport")
+				this.finishPdfGenerate()
 			},
 			successSavePDF(path) {
-				uni.removeStorageSync("pdfreport")
-				uni.hideLoading()
+				this.finishPdfGenerate()
 				// e为打开的pdf（临时路径）
-				console.log('==== successSavePDF :', uni.getStorageSync("pdfreport"))
+				console.log('==== successSavePDF :', path)
+			},
+			onRenderFail() {
+				this.finishPdfGenerate()
+				uni.showToast({
+					title: this.$t("网络错误请稍后重试"),
+					icon: 'none'
+				})
 			},
 			generatePDF() {
-				uni.setStorageSync("pdfreport", true)
+				if (this.pdfGenerating) return
+				this.pdfGenerating = true
+				// 导出时展开全部说明文案，保证 PDF 内容完整
+				this.isExpanded = true
+				this.isExpanded1 = true
+				this.isExpanded2 = true
+				this.isExpanded3 = true
+				this.pdfExporting = true
 				uni.showLoading({
 					title: this.$t("生成中"),
 					mask: true
 				})
-				this.$refs.renderRef.h2pRenderDom()
+				uni.setStorageSync("pdfreport", true)
+				const tryRender = (tries = 0) => {
+					if (!this.$refs.renderRef) {
+						this.finishPdfGenerate()
+						return
+					}
+					// 等静态图转 base64，避免 file:// 触发 SecurityError
+					if (!this.imagesReady && tries < 30) {
+						setTimeout(() => tryRender(tries + 1), 100)
+						return
+					}
+					// 给趋势图一点绘制时间
+					if (tries < 6) {
+						setTimeout(() => tryRender(tries + 1), 200)
+						return
+					}
+					this.$refs.renderRef.h2pRenderDom()
+				}
+				this.$nextTick(() => {
+					setTimeout(() => tryRender(), 600)
+				})
 			},
 			getUserInfo() {
 				this.$get(this.$url_APP_IP + this.$url_getInfo, {}, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(res => {
-					console.log("jjjjj", res)
 					if (res.code == 200) {
 						this.age = res.data.birthTime === null ? res.data.birthTime : res.data.birthTime
 						this.name = res.data.nickName === null ? res.data.userName : res.data.nickName
@@ -1058,6 +1158,7 @@
 				})
 			},
 
+
 			queryDevices() {
 				let that = this
 				uni.request({
@@ -1069,64 +1170,37 @@
 					},
 					success(res) {
 						if (res.data.code == 200) {
-							if (res.data.rows == "") {
-								uni.showToast({
-									title: that.$t("此账号还未绑定血压计设备"),
-									icon: 'none'
-								})
-								return
-							} else {
-								// 使用 every() 方法
-								const allElementsNot3000 = res.data.rows.every((item) => item.deviceModelId !==
-									"30000");
-								if (allElementsNot3000) {
-									console.log("数组中没有任何元素等于 3000");
-									for (let i = 0; res.data.rows.length > i; i++) {
-										if (res.data.rows[i].deviceModelId === "10005") {
-											let deviceSnlist = []
-											deviceSnlist.push(res.data.rows[i].deviceSn)
-											that.Testing_equipment = res.data.rows[i].name
-											that.get_retVarList(res.data.rows[i].deviceSn)
-											that.get_finalRetVarList(res.data.rows[i].deviceSn)
-											that.query_log_v2(deviceSnlist)
-											that.tizhicheng = 1
-										}
-										setTimeout(() => {
-											if (res.data.rows[i].deviceModelId === "20000" || res.data
-												.rows[i]
-												.deviceModelId === "20001") {
-												let deviceSnlist1 = []
-												deviceSnlist1.push(res.data.rows[i].deviceSn)
-												that.query_log_v22(deviceSnlist1)
-											}
-										}, 1000)
-									}
-									that.shebei = 0
-								} else {
-									console.log("数组中有元素等于 3000", allElementsNot3000);
-									for (let i = 0; res.data.rows.length > i; i++) {
-										if (res.data.rows[i].deviceModelId === "30000") {
-											let deviceSnlist = []
-											deviceSnlist.push(res.data.rows[i].deviceSn)
-											that.Testing_equipment = res.data.rows[i].name
-											that.get_retVarList(res.data.rows[i].deviceSn)
-											that.get_finalRetVarList(res.data.rows[i].deviceSn)
-											that.query_log_v2(deviceSnlist)
-											that.tizhicheng = 1
-										}
-										setTimeout(() => {
-											if (res.data.rows[i].deviceModelId === "20000" || res.data
-												.rows[i]
-												.deviceModelId === "20001") {
-												let deviceSnlist1 = []
-												deviceSnlist1.push(res.data.rows[i].deviceSn)
-												that.query_log_v22(deviceSnlist1)
-											}
-										}, 1000)
-									}
-									that.shebei = 1
+							let deviceSnlist = []
+							if (res.data.rows.length > 0) {
+								deviceSnlist.push(uni.getStorageSync("userid"))
+								for (let i = 0; res.data.rows.length > i; i++) {
+									that.Testing_equipment = res.data.rows[i].name
 								}
+								setTimeout(() => {
+									that.query_log_v22(deviceSnlist)
+								}, 1000)
+								that.get_retVarList(deviceSnlist)
+								that.get_finalRetVarList(deviceSnlist)
+								that.tizhicheng = 1
+								that.shebei = 0
+							} else {
+								deviceSnlist.push(uni.getStorageSync("userid"))
+								for (let i = 0; res.data.rows.length > i; i++) {
+									that.Testing_equipment = res.data.rows[i].name || "NA"
+								}
+								setTimeout(() => {
+									that.query_log_v22(deviceSnlist)
+								}, 1000)
+								that.get_retVarList(deviceSnlist)
+								that.get_finalRetVarList(deviceSnlist)
+								that.tizhicheng = 1
+								that.shebei = 1
 							}
+						} else if (res.data.code === 401) {
+							uni.showToast({
+								title: that.$t("登录账号已过期"),
+								icon: 'none'
+							})
 						} else {
 							uni.showToast({
 								title: res.data.msg,
@@ -1136,15 +1210,157 @@
 					}
 				})
 			},
-
-
+			isTimeAfterSeven(timeStr) {
+				if (!timeStr) return false
+				const parts = String(timeStr).trim().split(':')
+				const hour = parseInt(parts[0], 10)
+				const minute = parseInt(parts[1] || '0', 10)
+				if (isNaN(hour)) return false
+				return hour * 60 + minute >= 7 * 60
+			},
+			/** 规范化测量时间，生成可比较的 sortKey（YYYYMMDDHHmmss） */
+			parseMeasureDateTime(fullTime) {
+				const s = String(fullTime || '').trim()
+				const m = s.match(
+					/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})[\sT]+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/
+				)
+				if (!m) {
+					const segs = s.split(/\s+/)
+					const date = (segs[0] || s).replace(/\//g, '-')
+					const time = segs[1] || ''
+					return {
+						date,
+						time,
+						sortKey: this.buildBpSortKey(date, time)
+					}
+				}
+				const y = m[1]
+				const mo = String(m[2]).padStart(2, '0')
+				const d = String(m[3]).padStart(2, '0')
+				const hh = String(m[4]).padStart(2, '0')
+				const mm = String(m[5]).padStart(2, '0')
+				const ss = String(m[6] || '0').padStart(2, '0')
+				return {
+					date: `${y}-${mo}-${d}`,
+					time: `${hh}:${mm}:${ss}`,
+					sortKey: `${y}${mo}${d}${hh}${mm}${ss}`
+				}
+			},
+			buildBpSortKey(dateStr, timeStr) {
+				const d = String(dateStr || '').trim().replace(/\//g, '-')
+				const dm = d.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+				const ymd = dm ?
+					`${dm[1]}${String(dm[2]).padStart(2, '0')}${String(dm[3]).padStart(2, '0')}` :
+					d.replace(/\D/g, '').padEnd(8, '0').slice(0, 8)
+				const tp = String(timeStr || '00:00:00').trim().split(':')
+				const hh = String(parseInt(tp[0], 10) || 0).padStart(2, '0')
+				const mm = String(parseInt(tp[1], 10) || 0).padStart(2, '0')
+				const ss = String(parseInt(tp[2], 10) || 0).padStart(2, '0')
+				return `${ymd}${hh}${mm}${ss}`
+			},
+			buildListallFromRetVarList(retVarListStr) {
+				let that = this
+				const reportDay = that.pacitime.slice(0, 10)
+				that.listall = []
+				if (!retVarListStr) {
+					that.checkDateRange()
+					return
+				}
+				const isInvalid = (value) => {
+					const v = String(value == null ? '' : value).trim()
+					return !v || v >= '999999990.00' || v === 'NA'
+				}
+				const isHighBpHit = (lp, hp) => {
+					return (lp >= 81 && lp <= 90) || (hp >= 121 && hp <= 140) ||
+						(lp >= 91 && lp <= 100) || (hp >= 141 && hp <= 160) ||
+						(lp >= 101 && lp <= 110) || (hp >= 161 && hp <= 180)
+				}
+				const applyLevelFromAvg = (l, h) => {
+					if (l >= 61 && l <= 80 && h >= 91 && h <= 120) {
+						that.setBloodPressureLevel(1)
+					} else if ((l >= 81 && l <= 90) || (h >= 121 && h <= 140)) {
+						that.setBloodPressureLevel(2)
+					} else if ((l >= 91 && l <= 100) || (h >= 141 && h <= 160)) {
+						that.setBloodPressureLevel(3)
+					} else if ((l >= 101 && l <= 110) || (h >= 161 && h <= 180)) {
+						that.setBloodPressureLevel(4)
+					}
+				}
+				const seen = new Set()
+				const dailyMap = new Map()
+				const rows = retVarListStr.split(';').filter(Boolean)
+				for (const row of rows) {
+					const parts = row.split(',').map(item => item.trim())
+					if (parts.length < 4) continue
+					const fullTime = parts[0]
+					if (seen.has(fullTime)) continue
+					if (isInvalid(parts[1]) || isInvalid(parts[2])) continue
+					seen.add(fullTime)
+					const parsed = that.parseMeasureDateTime(fullTime)
+					const date = parsed.date
+					const time = parsed.time
+					const hp = parseFloat(parts[1])
+					const lp = parseFloat(parts[2])
+					const item = {
+						date,
+						time,
+						sortKey: parsed.sortKey,
+						highPressure: hp,
+						lowPressure: lp,
+						heartrate: isInvalid(parts[3]) ? '-/-' : parts[3],
+						modelName: that.Testing_equipment || '-/-',
+						type: '0'
+					}
+					// 所选报告日 7:00 及之后的数据标蓝（含次日及之后）
+					const thresholdKey = that.buildBpSortKey(reportDay, '07:00:00')
+					const itemKey = parsed.sortKey || that.buildBpSortKey(date, time)
+					if (itemKey >= thresholdKey) {
+						item.rowBlue = true
+					}
+					that.listall.push(item)
+					if (!dailyMap.has(date)) {
+						dailyMap.set(date, {
+							hit: false,
+							sumH: 0,
+							sumL: 0,
+							count: 0
+						})
+					}
+					const dayInfo = dailyMap.get(date)
+					dayInfo.sumH += hp
+					dayInfo.sumL += lp
+					dayInfo.count += 1
+					if (isHighBpHit(lp, hp)) {
+						dayInfo.hit = true
+					}
+				}
+				// 按 YYYYMMDDHHmmss 正序（纯字符串比较，避免真机 Date 解析失败）
+				that.listall = that.listall.slice().sort((a, b) => {
+					const ka = a.sortKey || that.buildBpSortKey(a.date, a.time)
+					const kb = b.sortKey || that.buildBpSortKey(b.date, b.time)
+					return ka < kb ? -1 : ka > kb ? 1 : 0
+				})
+				const dailyHit = []
+				Array.from(dailyMap.keys()).sort().forEach(date => {
+					const dayInfo = dailyMap.get(date)
+					dailyHit.push(dayInfo.hit)
+					if (dayInfo.count > 0) {
+						applyLevelFromAvg(dayInfo.sumL / dayInfo.count, dayInfo.sumH / dayInfo.count)
+					}
+				})
+				const n = dailyHit.length
+				if (n >= 3 && dailyHit[n - 1] && dailyHit[n - 2] && dailyHit[n - 3]) {
+					that.gaoya = 0
+				}
+				that.checkDateRange()
+			},
 			get_retVarList(deviceSn) {
 				let that = this
 				uni.request({
 					url: that.$url_APP_IP + "/prod-api/device_app/get_retVarList",
 					method: 'POST',
 					data: {
-						deviceSn: deviceSn,
+						userId: uni.getStorageSync("userid"),
 						profDate: that.pacitime,
 						filterVarList: that.filterVarList,
 						retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
@@ -1154,27 +1370,60 @@
 						'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
 					},
 					success(get_retVarList) {
-						if (get_retVarList.data.code === 200) {
-							let resultArray = get_retVarList.data.data.retVarList.split(";");
-							that.chartData.categories = []
-							for (let i = 0; resultArray.length > i; i++) {
-								let resultArray1 = resultArray[i].split(",");
-								if (that.idsss === "1") {
-									that.chartData.categories.push(resultArray1[0].trim().slice(10, 13) + that.$t(
-										"时"))
-								} else {
-									that.chartData.categories.push(resultArray1[0].trim().slice(8, 10) + that.$t(
-										"日"))
-								}
-								that.chartData.series[0].data.push(resultArray1[1])
-								that.chartData.series[1].data.push(resultArray1[2])
-								that.chartData.series[2].data.push(resultArray1[3])
-							}
-						} else {
+						if (get_retVarList.data.code === 200 && get_retVarList.data.data && get_retVarList.data
+							.data.retVarList) {
+							const retVarListStr = get_retVarList.data.data.retVarList || ''
+							let resultArray = retVarListStr ? retVarListStr.split(";").filter(Boolean) : []
 							that.chartData.categories = []
 							that.chartData.series[0].data = []
 							that.chartData.series[1].data = []
 							that.chartData.series[2].data = []
+							const toNum = (v) => {
+								const n = parseFloat(v)
+								return isNaN(n) ? null : n
+							}
+							const seen = new Set()
+							const chartRows = []
+							for (let i = 0; i < resultArray.length; i++) {
+								const resultArray1 = resultArray[i].split(",")
+								const fullTime = (resultArray1[0] || '').trim()
+								if (!fullTime || seen.has(fullTime)) continue
+								seen.add(fullTime)
+								chartRows.push(resultArray1)
+							}
+							chartRows.sort((a, b) => {
+								const ka = that.parseMeasureDateTime((a[0] || '').trim()).sortKey
+								const kb = that.parseMeasureDateTime((b[0] || '').trim()).sortKey
+								return ka < kb ? -1 : ka > kb ? 1 : 0
+							})
+							const categories = []
+							const series0 = []
+							const series1 = []
+							const series2 = []
+							for (let i = 0; i < chartRows.length; i++) {
+								let resultArray1 = chartRows[i]
+								if (that.idsss === "1") {
+									categories.push(resultArray1[0].trim().slice(10, 13) + that.$t("时"))
+								} else {
+									categories.push(resultArray1[0].trim().slice(8, 10) + that.$t("日"))
+								}
+								series0.push(toNum(resultArray1[1]))
+								series1.push(toNum(resultArray1[2]))
+								series2.push(toNum(resultArray1[3]))
+							}
+							that.applyChartData(categories, series0, series1, series2)
+							that.buildListallFromRetVarList(retVarListStr)
+						} else {
+							that.applyChartData([], [], [], [])
+							that.buildListallFromRetVarList('')
+						}
+						if (uni.getStorageSync("pdfreport") && !that.pdfGenerating) {
+							that.$nextTick(() => {
+								// 等趋势图转成图片后再导出
+								setTimeout(() => {
+									that.generatePDF()
+								}, 2200)
+							})
 						}
 					}
 				})
@@ -1186,7 +1435,7 @@
 					url: that.$url_APP_IP + "/prod-api/device_app/get_finalRetVarList",
 					method: 'POST',
 					data: {
-						deviceSn: deviceSn,
+						userId: uni.getStorageSync("userid"),
 						profDate: that.pacitime,
 						period: that.period,
 						retVarList: that.finlretVarList1
@@ -1200,7 +1449,7 @@
 							if (get_finalRetVarList.data.data.retVarList !== "") {
 								let resultArray = get_finalRetVarList.data.data.retVarList.split(";");
 								const checkAndAssign = (value) => {
-									return value === "999999998.00" || value === "999999999.00" ? "NA" : value;
+									return value >= "999999990.00" ? "NA" : value;
 								};
 								for (let i = 0; i < resultArray.length; i++) {
 									let resultArray1 = resultArray[i].split(",");
@@ -1390,22 +1639,26 @@
 									// 夜间血压下降率
 									if (resultArray1[93] === "1") {
 										that.yejian_1 = "1"
-										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "反杓型";
+										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "\n" + that.$t(
+											"反杓型");
 										that.jianyi = that.$t("建议1")
 										that.fenxi = that.$t("分析1")
 									} else if (resultArray1[94] === "1") {
 										that.yejian_1 = "1"
-										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "非杓型";
+										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "\n" + that.$t(
+											"非杓型");
 										that.jianyi = that.$t("建议2")
 										that.fenxi = that.$t("分析2")
 									} else if (resultArray1[95] === "1") {
 										that.yejian_1 = "0"
-										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "杓型";
+										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "\n" + that.$t(
+											"杓型");
 										that.jianyi = that.$t("建议4")
 										that.fenxi = that.$t("分析4")
 									} else if (resultArray1[96] === "1") {
 										that.yejian_1 = "1"
-										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "超杓型";
+										that.yejian_SZY_H = checkAndAssign(resultArray1[91]) + "\n" + that.$t(
+											"超杓型");
 										that.jianyi = that.$t("建议3")
 										that.fenxi = that.$t("分析3")
 									} else {
@@ -1415,22 +1668,26 @@
 									}
 									if (resultArray1[93] === "1") {
 										that.yejian_2 = "1"
-										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "反杓型";
+										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "\n" + that.$t(
+											"反杓型");
 										that.jianyi1 = that.$t("建议1")
 										that.fenxi1 = that.$t("分析11")
 									} else if (resultArray1[94] === "1") {
 										that.yejian_2 = "1"
-										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "非杓型";
+										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "\n" + that.$t(
+											"非杓型");
 										that.jianyi1 = that.$t("建议2")
 										that.fenxi1 = that.$t("分析22")
 									} else if (resultArray1[95] === "1") {
 										that.yejian_2 = "0"
-										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "杓型";
+										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "\n" + that.$t(
+											"杓型");
 										that.jianyi1 = that.$t("建议4")
 										that.fenxi1 = that.$t("分析44")
 									} else if (resultArray1[96] === "1") {
 										that.yejian_2 = "1"
-										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "超杓型";
+										that.yejian_SSY_H = checkAndAssign(resultArray1[92]) + "\n" + that.$t(
+											"超杓型");
 										that.jianyi1 = that.$t("建议3")
 										that.fenxi1 = that.$t("分析33")
 									} else {
@@ -1474,184 +1731,6 @@
 										that.fenxi4 = that.$t("分析7")
 									}
 								}
-							}
-						}
-					}
-				})
-			},
-			//历史记录V2 - 血压
-			query_log_v2(deviceSn) {
-				let that = this
-				let endTime = that.pacitime.slice(0, 10) + " 23:59:59"
-				const initialDate = new Date(endTime);
-				let startTime = ""
-				if (that.period === "1D") {
-					// 减去一天
-					const minusOneDay = new Date(initialDate);
-					minusOneDay.setDate(minusOneDay.getDate()); // setDate 方法会自动处理日期的增减
-					startTime = minusOneDay.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "2D") {
-					const minusOneDay = new Date(initialDate);
-					minusOneDay.setDate(minusOneDay.getDate() - 1); // setDate 方法会自动处理日期的增减
-					startTime = minusOneDay.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "3D") {
-					const minusOneDay = new Date(initialDate);
-					minusOneDay.setDate(minusOneDay.getDate() - 2); // setDate 方法会自动处理日期的增减
-					startTime = minusOneDay.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "4D") {
-					const minusOneDay = new Date(initialDate);
-					minusOneDay.setDate(minusOneDay.getDate() - 3); // setDate 方法会自动处理日期的增减
-					startTime = minusOneDay.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "5D") {
-					const minusOneDay = new Date(initialDate);
-					minusOneDay.setDate(minusOneDay.getDate() - 5); // setDate 方法会自动处理日期的增减
-					startTime = minusOneDay.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "6D") {
-					const minusOneDay = new Date(initialDate);
-					minusOneDay.setDate(minusOneDay.getDate() - 4); // setDate 方法会自动处理日期的增减
-					startTime = minusOneDay.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "1W") {
-					// 减去一周（7天）
-					const minusOneWeek = new Date(initialDate);
-					minusOneWeek.setDate(minusOneWeek.getDate() - 5); // 减去一周
-					startTime = minusOneWeek.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "2W") {
-					// 减去一周（7天）
-					const minusOneWeek = new Date(initialDate);
-					minusOneWeek.setDate(minusOneWeek.getDate() - 13); // 减去一周
-					startTime = minusOneWeek.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "3W") {
-					// 减去一周（7天）
-					const minusOneWeek = new Date(initialDate);
-					minusOneWeek.setDate(minusOneWeek.getDate() - 20); // 减去一周
-					startTime = minusOneWeek.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "1M") {
-					// 减去一个月
-					const minusOneMonth = new Date(initialDate);
-					minusOneMonth.setMonth(minusOneMonth.getMonth() - 1); // 减去一个月
-					startTime = minusOneMonth.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "2M") {
-					const minusOneMonth = new Date(initialDate);
-					minusOneMonth.setMonth(minusOneMonth.getMonth() - 2); // 减去一个月
-					startTime = minusOneMonth.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				} else if (that.period === "3M") {
-					const minusOneMonth = new Date(initialDate);
-					minusOneMonth.setMonth(minusOneMonth.getMonth() - 3); // 减去一个月
-					startTime = minusOneMonth.toISOString().replace('T', ' ').substring(0, 10) + " 00:00:00"
-				}
-				uni.request({
-					url: that.$url_APP_IP + that.$url_query_log_v2,
-					method: 'POST',
-					data: {
-						deviceSn: deviceSn,
-						dataType: "pressure",
-						slaveList: [{
-								slaveSn: "0",
-								register: "highPressure"
-							},
-							{
-								slaveSn: "0",
-								register: "lowPressure"
-							},
-							{
-								slaveSn: "0",
-								register: "heartrate"
-							}
-						],
-						startTime: startTime,
-						endTime: endTime,
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/json' //自定义请求头信息
-					},
-					success(res) {
-						console.log('血压', res)
-						if (res.data.code == 200) {
-							if (res.data.data !== "") {
-								that.listall = []
-								// ---------- 1. 记录每日是否命中高血压 ----------
-								const dailyHit = []; // true / false
-
-								res.data.data.forEach(day => {
-									let hit = false;
-
-									// 1.1 原有 setBloodPressureLevel 逻辑（不变）
-									const sum = day.object.summary;
-									const l = sum.lowPressureAvg;
-									const h = sum.highPressureAvg;
-
-									if (l >= 61 && l <= 80 && h >= 91 && h <= 120) {
-										that.setBloodPressureLevel(1);
-									} else if ((l >= 81 && l <= 90) || (h >= 121 && h <= 140)) {
-										that.setBloodPressureLevel(2);
-									} else if ((l >= 91 && l <= 100) || (h >= 141 && h <= 160)) {
-										that.setBloodPressureLevel(3);
-									} else if ((l >= 101 && l <= 110) || (h >= 161 && h <= 180)) {
-										that.setBloodPressureLevel(4);
-									}
-
-									// 1.2 判断当天是否出现高血压记录
-									day.object.details.forEach(item => {
-										const lp = item.lowPressure;
-										const hp = item.highPressure;
-
-										if (
-											(lp >= 81 && lp <= 90) || (hp >= 121 && hp <= 140) ||
-											(lp >= 91 && lp <= 100) || (hp >= 141 && hp <= 160) ||
-											(lp >= 101 && lp <= 110) || (hp >= 161 && hp <= 180)
-										) {
-											hit = true;
-										}
-
-										// 原有 listall 组装逻辑（不变）
-										item.date = day.dateTime;
-										item.modelName = day.modelName;
-										that.listall.push(item);
-									});
-
-									dailyHit.push(hit);
-								});
-
-								// ---------- 2. 仅当最近连续 3 天都命中时，才置 gaoya = 0 ----------
-								const n = dailyHit.length;
-								if (n >= 3 && dailyHit[n - 1] && dailyHit[n - 2] && dailyHit[n - 3]) {
-									that.gaoya = 0;
-								}
-								// for (let i = 0; res.data.data.length > i; i++) {
-								// 	let lowPressureAvg = res.data.data[i].object.summary.lowPressureAvg
-								// 	let highPressureAvg = res.data.data[i].object.summary.highPressureAvg
-								// 	if ((lowPressureAvg >= 61 && lowPressureAvg <= 80) && (highPressureAvg >= 91 &&
-								// 			highPressureAvg <= 120)) {
-								// 		that.setBloodPressureLevel(1)
-								// 	} else if ((lowPressureAvg >= 81 && lowPressureAvg <= 90) || (
-								// 			highPressureAvg >= 121 && highPressureAvg <= 140)) {
-								// 		that.setBloodPressureLevel(2)
-								// 	} else if ((lowPressureAvg >= 91 && lowPressureAvg <= 100) || (
-								// 			highPressureAvg >= 141 && highPressureAvg <= 160)) {
-								// 		that.setBloodPressureLevel(3)
-								// 	} else if ((lowPressureAvg >= 101 && lowPressureAvg <= 110) || (
-								// 			highPressureAvg >= 161 && highPressureAvg <= 180)) {
-								// 		that.setBloodPressureLevel(4)
-								// 	}
-								// 	res.data.data[i].object.details.forEach((item1, index1) => {
-								// 		item1.date = res.data.data[i].dateTime
-								// 		item1.modelName = res.data.data[i].modelName
-								// 		if ((item1.lowPressure >= 81 && item1.lowPressure <= 90) || (item1
-								// 				.highPressure >= 121 && item1.highPressure <= 140)) {
-								// 			that.gaoya = 0
-								// 		} else if ((item1.lowPressure >= 91 && item1.lowPressure <= 100) ||
-								// 			(item1.highPressure >= 141 && item1.highPressure <= 160)) {
-								// 			that.gaoya = 0
-								// 		} else if ((item1.lowPressure >= 101 && item1.lowPressure <=
-								// 				110) || (item1.highPressure >= 161 && item1.highPressure <=
-								// 				180)) {
-								// 			that.gaoya = 0
-								// 		}
-								// 		that.listall.push(item1)
-								// 	});
-								// }
-								that.checkDateRange()
 							}
 						}
 					}
@@ -1743,7 +1822,6 @@
 				}).then(res => {
 					if (res.code === 200) {
 						const last = res.data[res.data.length - 1]
-						console.log(this.BloodPressureLevel)
 						if (last.object.summary.bmiAvg <= 24.00 && this.BloodPressureLevel === 0) {
 							this.tizhongBMIa = "BMI:" + last.object.summary.bmiAvg + "<=24.00"
 							this.tizhongBMI = this.$t("正常体重") + ":" + this.$t("高血压风险增幅1")
@@ -1928,14 +2006,18 @@
 		padding: 20px;
 		color: black;
 		display: flex;
-		justify-content: center;
+		flex-direction: column;
+		justify-content: flex-start;
 		align-items: center;
 		box-sizing: border-box;
+		background: #f2f3f5;
+		min-height: 100vh;
 	}
 
 	.render-main {
 		margin-top: 88px;
 		overflow: auto;
+		width: 100%;
 	}
 
 	.render-content {
@@ -1978,12 +2060,33 @@
 		font-weight: 600;
 	}
 
+	.pdf-keep-together {
+		width: 100%;
+	}
+
+	.chart-section-title {
+		padding-top: 40px;
+	}
+
 	.charts-box {
 		margin-top: 20px;
 		width: 100%;
-		display: flex;
-		justify-content: center;
-		height: auto;
+		height: 280px;
+		overflow: hidden;
+		position: relative;
+		background: #ffffff;
+	}
+
+	.charts-box /deep/ .chartsview,
+	.charts-box ::v-deep .chartsview {
+		width: 100% !important;
+		height: 100% !important;
+		overflow: hidden;
+	}
+
+	.pdf-exporting .toggle-button,
+	.pdf-exporting .toggle-button1 {
+		display: none !important;
 	}
 
 	.popup_bg {
@@ -2062,7 +2165,8 @@
 
 	.texttitle {
 		display: flex;
-		justify-content: center;
+		flex: 1;
+		justify-content: flex-start;
 		align-items: center;
 		flex-direction: row;
 	}
@@ -2079,12 +2183,17 @@
 		font-weight: 600;
 	}
 
+	.pdf-keep-together {
+		width: 100%;
+	}
+
 	.charts-box {
 		margin-top: 20px;
 		width: 100%;
-		display: flex;
-		justify-content: center;
-		height: auto;
+		height: 280px;
+		overflow: hidden;
+		position: relative;
+		background: #ffffff;
 	}
 
 	.txtetitlestyles {
@@ -2108,6 +2217,14 @@
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
+	}
+
+	.row.row-after7 {
+		background: #3298F7;
+	}
+
+	.row.row-after7 .cell {
+		color: #FFFFFF;
 	}
 
 	.cell {
@@ -2145,6 +2262,16 @@
 		flex-direction: row;
 	}
 
+	.listitemall_wrap {
+		min-height: 48px;
+		align-items: stretch;
+	}
+
+	.listitemall_2_wrap {
+		height: auto;
+		min-height: 48px;
+	}
+
 	.listitemall_3 {
 		height: 30px;
 		border-left: 1px solid black;
@@ -2160,6 +2287,13 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		line-height: 1.2;
+		padding: 2px;
+		box-sizing: border-box;
+		text-align: center;
 	}
 
 	.itemall_3s {
@@ -2175,6 +2309,37 @@
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		line-height: 1.2;
+		padding: 2px;
+		box-sizing: border-box;
+		text-align: center;
+	}
+
+	.row_label_s {
+		width: 12%;
+		text-align: center;
+		white-space: normal;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		line-height: 1.2;
+		padding: 0 2px;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.cell_wrap {
+		white-space: pre-line;
+		word-break: break-word;
+		overflow-wrap: anywhere;
+		line-height: 1.2;
+		padding: 2px;
+		box-sizing: border-box;
+		text-align: center;
 	}
 
 	.dtsdstyle {

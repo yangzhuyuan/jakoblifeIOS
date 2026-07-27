@@ -1,22 +1,14 @@
 <template>
-	<view style="color: black;width: 100vw;height: 100vh;">
+	<view style="color: #000000;width: 100vw;height: 100vh;">
 		<view style="display: flex; flex-direction: column;">
 			<view style="margin: 20px 0 0 20px; font-size: 12px; color: #969799">{{$t('请勿连接名称前有5G的WIFI')}}</view>
-
 			<view class="shebeistyle">
 				<image style="padding: 20px;" :src="SELECT_TYPE === '0' ? imagess:imagess1"></image>
 			</view>
 			<view style="margin: 20px 20px 0 20px;">
 				<view class="input_style">
 					<view style="font-weight: 400;font-size: 16px;color: #000000;">WIFI:</view>
-
-					<view style="width: 80vw;" v-if="shouji">
-						<uni-combox :border="false" :candidates="candidates" :placeholder="$t('请选择wifi')"
-							v-model="wifi_name"></uni-combox>
-					</view>
-					<view v-else style="width: 80vw; margin-left: 20px;" @click="open()">
-						{{wifi_name}}
-					</view>
+					<input class="wifi-input" v-model="wifi_name" :placeholder="$t('请输入wifi')" />
 				</view>
 			</view>
 			<view style="margin: 20px 20px 0 20px;">
@@ -26,15 +18,15 @@
 						:placeholder="$t('请输入wifi密码')" />
 				</view>
 			</view>
-			<view style="position: fixed;bottom: 40px;width: 100vw;">
-				<button class="btn" @click="btn_start()">{{$t('开始连接')}}</button>
-			</view>
-
+			<button class="btn" @click="btn_start()">{{$t('开始连接')}}</button>
 		</view>
 	</view>
 </template>
 
 <script>
+	import {
+		getLocalTimeAllJSON
+	} from '@/pages/api/unitls/timezone.js'
 	export default {
 		data() {
 			return {
@@ -46,11 +38,10 @@
 				wifi_password: '',
 				deviceId: '',
 				serviceId: '',
+				notifyuuid: '',
 				uuid: '',
-				shouji: '',
-				wifiArray: [], // 存储WiFi列表
-				candidates: [],
-				modelId: ''
+				modelId: '',
+				WIFITYPE: false,
 
 			}
 		},
@@ -59,146 +50,168 @@
 			this.sn = res.sn
 			this.SELECT_TYPE = res.SELECT_TYPE
 			this.deviceId = res.deviceId
+			this.notifyuuid = res.notifyuuid
 			this.serviceId = res.serviceId
 			this.uuid = res.uuid
 			this.modelId = res.modelId
-			console.log("res", JSON.stringify(res))
 		},
 
 		onShow() {
 			uni.setNavigationBarTitle({
 				title: this.$t('为设备连接WiFi')
 			})
-			this.wifi()
+			this.fetchDeviceConnectedWifi()
 		},
 
-
 		methods: {
-
-
-			//通过蓝牙发送AT命令的接口
-			sendATCommand(deviceId, serviceId, uuid, senddata) {
+			isAndroidPlatform() {
+				const platform = uni.getSystemInfoSync().platform
+				return platform === 'android' || (typeof plus !== 'undefined' && plus.os.name === 'Android')
+			},
+			isIOSPlatform() {
+				const platform = uni.getSystemInfoSync().platform
+				return platform === 'ios' || (typeof plus !== 'undefined' && plus.os.name === 'iOS')
+			},
+			normalizeSSID(ssid) {
+				return String(ssid || '').replace(/(^\"*)|(\"*$)/g, '').trim()
+			},
+			sendATCommand(deviceId, serviceId, uuid, senddata, notifyuuid) {
+				console.log("senddata：" + senddata)
 				let that = this
-				// 向蓝牙设备发送一个0x00的16进制数据
 				let buffer = new ArrayBuffer(senddata.length)
 				let dataView = new DataView(buffer)
-				console.log("senddatalength", senddata.length)
 				for (var i = 0; i < senddata.length; i++) {
 					dataView.setUint8(i, senddata.charAt(i).charCodeAt())
 				}
-
-				console.log("发送 _deviceId：" + deviceId)
-				console.log("发送_serviceId：" + serviceId)
-				console.log("发送_characteristicId：" + uuid)
-				console.log("发送_value：" + that.ab2hex(buffer))
 				uni.writeBLECharacteristicValue({
 					deviceId: deviceId,
 					serviceId: serviceId,
 					characteristicId: uuid,
 					value: buffer,
-					writeType: "writeNoResponse",
+					writeType: "write",
 					success(res) {
-						console.log('向低功耗蓝牙设备特征值中写入二进制数据', res)
-						console.log('向低功耗蓝牙设备特征值中写入二进制数据', that.sn)
-						// uni.navigateTo({
-						// 	url: "../Bing_page/Bind_pg?sn=" + that.sn + "&MACdeviceID=" + deviceId
-						// })
-						// that.getBLEDeviceCharacteristics(deviceId, serviceId,that.sn, deviceId, that.modelId)
-						that.bind_device(that.sn, deviceId, that.modelId)
+						setTimeout(() => {
+							that.notifyBLECharacteristicValueChange(deviceId, serviceId, uuid, notifyuuid)
+						}, 1000)
 					},
-					fail: function(res) {
-						console.log('失败', res)
-						uni.navigateTo({
-							url: '../Bing_page/Bind_fail'
-						})
-					}
-				})
-			},
-
-
-			// //获取蓝牙外围设备的特征值
-			// getBLEDeviceCharacteristics(deviceId, serviceId, sn, MACdeviceID, modelId) {
-			// 	let that = this
-			// 	uni.getBLEDeviceCharacteristics({
-			// 		deviceId: deviceId,
-			// 		serviceId: serviceId,
-			// 		success: (res) => {
-			// 			console.log('获取蓝牙设备某个服务中所有特征值(characteristic)', res.characteristics)
-			// 			for (let i = 0; res.characteristics.length > i; i++) {
-			// 				let item = res.characteristics[i]
-			// 				//蓝牙消息通知
-			// 				if (item.properties.notify) {
-			// 					uni.notifyBLECharacteristicValueChange({
-			// 						state: true, // 启用 notify 功能
-			// 						deviceId: deviceId,
-			// 						serviceId: serviceId,
-			// 						characteristicId: item.uuid,
-			// 						success: (notifyres) => {
-			// 							that.onBLECharacteristicValueChange3(sn, MACdeviceID,
-			// 								modelId);
-			// 						},
-			// 						fail: (notifyerr) => {}
-			// 					})
-			// 				}
-			// 			}
-			// 		},
-			// 		fail(res) {
-			// 			console.error('getBLEDeviceCharacteristics', res)
-			// 		}
-			// 	})
-			// },
-			// onBLECharacteristicValueChange3(sn, MACdeviceID, modelId) {
-			// 	let that = this
-			// 	uni.onBLECharacteristicValueChange((res) => {
-			// 		console.log("蓝牙没收到的数据", that.ab2hex(res.value))
-			// 		that.bind_device(sn, MACdeviceID, modelId)
-			// 	})
-			// },
-
-
-			//设备绑定
-			bind_device(sn, MACdeviceID, modelId) {
-				let that = this
-				console.log("token", uni.getStorageSync("token"))
-				console.log("sn", sn)
-				console.log("MACdeviceID", MACdeviceID)
-				uni.request({
-					url: that.$url_APP_IP + that.$url_bind_device,
-					method: 'POST',
-					data: {
-						deviceSn: sn,
-						mac: MACdeviceID.trim()
-					},
-					header: {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/x-www-form-urlencoded;' //自定义请求头信息
-					},
-					success(bind_device) {
-						console.log("设备绑定", bind_device)
-						if (bind_device.data.code == 200) {
-							uni.setStorageSync("deviceSn", sn)
-							setTimeout(function() {
+					fail: function(errrore) {
+						if (!that.WIFITYPE) {
+							that.getunbind(that.sn)
+							that.WIFITYPE = true
+							console.log('失败', errrore)
+							setTimeout(() => {
 								uni.navigateTo({
-									url: "../Bing_page/Bind_success?modelId=" + modelId
+									url: "../Bing_page/Bind_fail?bindcode=0"
 								})
-							}, 500)
-						} else {
-							uni.showToast({
-								title: bind_device.data.msg,
-								icon: 'none'
-							})
-							setTimeout(function() {
-								uni.reLaunch({
-									url: "../Bing_page/Bind_fail"
-								})
-							}, 500)
+							}, 1000)
 						}
 					}
 				})
 			},
-
-
-			// ArrayBuffer转16进度字符串示例
+			notifyBLECharacteristicValueChange(deviceId, serviceId, uuid, notifyuuid) {
+				let that = this
+				uni.notifyBLECharacteristicValueChange({
+					state: true, // 启用 notify 功能
+					deviceId: deviceId,
+					serviceId: serviceId,
+					characteristicId: notifyuuid,
+					success: (notifyres) => {
+						that.onBLEValue(deviceId, serviceId, uuid, notifyuuid)
+					},
+					fail: (notifyerr) => {}
+				})
+			},
+			onBLEValue(deviceId, serviceId, uuid, notifyuuid) {
+				let that = this
+				uni.onBLECharacteristicValueChange((res) => {
+					let hexData = that.ab2hex(res.value)
+					let asciiString = that.hexToAscii(hexData)
+					if (asciiString === "+QSTASTAT:WLAN_DISCONNECTED\r\n" || asciiString.includes(
+							"WLAN_DISCONNECTED")) {
+						if (!that.WIFITYPE) {
+							that.getunbind(that.sn)
+							that.WIFITYPE = true
+							console.log('失败', errrore)
+							setTimeout(() => {
+								uni.navigateTo({
+									url: "../Bing_page/Bind_fail?bindcode=0"
+								})
+							}, 1000)
+						}
+					} else if (asciiString === "+QSTASTAT:WLAN_CONNECTED\r\n" || asciiString.includes(
+							"WLAN_CONNECTED")) {
+						let buffertime = that.toArrayBuffer("74696d6540" + that.getTimeAllJSON().YMDHMSWIFI)
+						uni.writeBLECharacteristicValue({
+							deviceId: deviceId,
+							serviceId: serviceId,
+							characteristicId: uuid,
+							value: buffertime,
+							writeType: "write",
+							success(res) {
+								that.bind_device(that.sn, deviceId, that.modelId)
+							},
+							fail: function(errrore) {
+								if (!that.WIFITYPE) {
+									that.getunbind(that.sn)
+									that.WIFITYPE = true
+									console.log('失败', errrore)
+									setTimeout(() => {
+										uni.navigateTo({
+											url: "../Bing_page/Bind_fail?bindcode=0"
+										})
+									}, 1000)
+								}
+							}
+						})
+					}
+				})
+			},
+			getunbind(deviceSn) {
+				uni.request({
+					url: this.$url_APP_IP + this.$url_getunbind,
+					method: 'POST',
+					data: {
+						deviceSn
+					},
+					header: {
+						'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+						'content-type': 'application/x-www-form-urlencoded'
+					},
+				});
+			},
+			toArrayBuffer(data) {
+				const buffer = new ArrayBuffer(data.length / 2);
+				const dataView = new DataView(buffer);
+				for (let i = 0; i < data.length; i += 2) {
+					dataView.setUint8(i / 2, parseInt(data.substr(i, 2), 16));
+				}
+				return buffer;
+			},
+			//通用时间（跟随设备时区）
+			getTimeAllJSON() {
+				return getLocalTimeAllJSON()
+			},
+			bind_device(sn, MACdeviceID, modelId) {
+				const data = {
+					deviceSn: sn,
+					mac: MACdeviceID.trim()
+				}
+				this.$post(this.$url_APP_IP + this.$url_bind_device, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/x-www-form-urlencoded;'
+				}).then(bind_device => {
+					if (bind_device.code == 200) {
+						uni.setStorageSync("deviceSn", sn)
+						uni.navigateTo({
+							url: "../Bing_page/Bind_success?modelId=" + modelId
+						})
+					} else {
+						uni.reLaunch({
+							url: "../Bing_page/Bind_fail?bindcode=" + bind_device.code
+						})
+					}
+				})
+			},
 			ab2hex(buffer) {
 				var hexArr = Array.prototype.map.call(
 					new Uint8Array(buffer),
@@ -208,108 +221,259 @@
 				)
 				return hexArr.join('');
 			},
-
-
-
-
-			wifi() {
-				let that = this
-				uni.startWifi({
-					success(res) {
-						console.log("res", res)
-					}
-				})
-
-
-				if (uni.getSystemInfoSync().platform === "android") {
-					that.shouji = true
-
-
-					let aaa = that.getWiFiIP()
-					let uniqueArr = aaa.filter((item, index, self) => {
-						return self.findIndex(t => t.name === item.name) === index;
-					});
-					for (let a = 0; uniqueArr.length > a; a++) {
-						that.candidates.push(uniqueArr[a].name)
-					}
-				} else {
-					that.shouji = false
-					// var UIApplication = plus.ios.import("UIApplication");  
-					// var NSURL = plus.ios.import("NSURL");  
-					// var setting = NSURL.URLWithString("app-settings:");  
-					// var application = UIApplication.sharedApplication();  
-					// application.openURL(setting);  
-					// plus.ios.deleteObject(setting);  
-					// plus.ios.deleteObject(application);
-
+			hexToAscii(hexString) {
+				let str = '';
+				for (let i = 0; i < hexString.length; i += 2) {
+					let hex = hexString.substr(i, 2);
+					str += String.fromCharCode(parseInt(hex, 16));
+				}
+				return str;
+			},
+			applyConnectedWifi(ssid) {
+				const name = this.normalizeSSID(ssid)
+				if (name) {
+					this.wifi_name = name
+				}
+			},
+			fetchDeviceConnectedWifi() {
+				const that = this
+				const fetchConnectedWifi = (retryCount) => {
 					uni.getConnectedWifi({
+						partialInfo: true,
 						success(resd) {
-							console.log("获取已连接的Wi-Fi信息", resd)
-							that.wifi_name = resd.wifi.SSID
+							console.log('获取已连接的Wi-Fi信息', resd)
+							const ssid = resd.wifi && resd.wifi.SSID
+							if (ssid) {
+								that.applyConnectedWifi(ssid)
+								return
+							}
+							if (retryCount < 2) {
+								setTimeout(() => fetchConnectedWifi(retryCount + 1), 800)
+								return
+							}
+							that.applyConnectedWifi(that.getConnectedSSIDNative())
+						},
+						fail(err) {
+							// console.log('getConnectedWifi fail', err)
+							if (retryCount < 2) {
+								setTimeout(() => fetchConnectedWifi(retryCount + 1), 800)
+								return
+							}
+							that.applyConnectedWifi(that.getConnectedSSIDNative())
 						}
 					})
 				}
-
-			},
-
-			open() {
-				plus.runtime.openURL("prefs:root=WIFI"); //打开wifi设置页面
-			},
-
-			getWiFiIP() {
-				// MainActivity
-				var MainActivity = plus.android.runtimeMainActivity()
-				// Context
-				var Context = plus.android.importClass('android.content.Context')
-				// WiFi 相关包  
-				plus.android.importClass("android.net.wifi.WifiManager")
-				plus.android.importClass("android.net.wifi.WifiInfo")
-				plus.android.importClass("android.net.wifi.ScanResult")
-				plus.android.importClass("java.util.ArrayList")
-				// WiFi 管理实例
-				var wifiManager = MainActivity.getSystemService(Context.WIFI_SERVICE)
-				// 开启 WiFi
-				// wifiManager.setWifiEnabled(true)
-				// 当前连接 WiFi 信息 
-				var wifiInfo = wifiManager.getConnectionInfo()
-
-				// console.log(wifiInfo.toString()) //打印当前连接 WiFi 的所有信息
-
-				var wifirssi = wifiInfo.getRssi() // 获取当前链接 WiFi 的信号强度
-				// console.log(wifirssi) //打印 WiFi 的信号强度
-
-				var ssid = wifiInfo.getSSID() // 获取当前 WIFI 连接的 SSID (WIFI 名称)  
-				ssid = ssid.replace(/(^\"*)|(\"*$)/g, "")
-				// console.log(ssid) //打印 WIFI 名称
-				// console.log(ssid + "," + "信号强度:" + wifirssi)
-
-				//注意 getConnectionInfo() 与 getScanResults() 的区别
-				var resultList = wifiManager.getScanResults(), //扫描得到的wifi信号集合
-					len = resultList.size()
-				var wifiScanResults = '' //定义wifiScanResults
-				// console.log(resultList)
-
-				//注:获取resultList中的场强信息用的是 level 而不是 RSSI
-
-				for (var i = 0; i < len; i++) {
-					// console.log(resultList.get(i).plusGetAttribute('SSID') + " 信号：" + resultList.get(i).plusGetAttribute(
-					// 	'level'))
-					//将每一个ssid与rssi 都添加到wifiArray数组中，用于绑定显示，根据个人业务取舍 wifiArray=[{name:WiFi的SSID}]
-					let oneWiFi = {
-						name: resultList.get(i).plusGetAttribute('SSID'),
-						signal: resultList.get(i).plusGetAttribute('level')
-					}
-					this.wifiArray.push(oneWiFi);
-					// wifiScanResults = wifiScanResults + ',' + this.wifiArray[i].name + ' 信号:' + this.wifiArray[i].signal +
-					// 	"\n"; //打印内容
+				const startFetch = () => {
+					uni.startWifi({
+						success() {
+							if (that.isAndroidPlatform()) {
+								that.requestLocationPermission(() => fetchConnectedWifi(0))
+							} else {
+								fetchConnectedWifi(0)
+							}
+						},
+						fail(err) {
+							console.log('startWifi fail', err)
+							that.applyConnectedWifi(that.getConnectedSSIDNative())
+						}
+					})
 				}
-				return this.wifiArray //返回
-
-
+				if (that.isIOSPlatform()) {
+					that.prepareIOSWifiAccess(startFetch)
+				} else {
+					startFetch()
+				}
 			},
-
-
-
+			prepareIOSWifiAccess(callback) {
+				if (!this.isIOSPlatform()) {
+					callback && callback()
+					return
+				}
+				const done = () => {
+					setTimeout(() => {
+						callback && callback()
+					}, 200)
+				}
+				try {
+					const CLLocationManager = plus.ios.importClass('CLLocationManager')
+					let authStatus = CLLocationManager.authorizationStatus()
+					const locationManager = plus.ios.newObject('CLLocationManager')
+					const startLocationUpdates = () => {
+						try {
+							locationManager.startUpdatingLocation()
+						} catch (e) {
+							console.log('startUpdatingLocation error', e)
+						}
+						uni.getLocation({
+							type: 'wgs84',
+							isHighAccuracy: true,
+							highAccuracyExpireTime: 5000,
+							success: () => {},
+							fail: (err) => {
+								console.log('getLocation fail', err)
+							},
+							complete: () => {
+								setTimeout(() => {
+									try {
+										locationManager.stopUpdatingLocation()
+									} catch (e) {}
+									plus.ios.deleteObject(locationManager)
+									done()
+								}, 2500)
+							}
+						})
+					}
+					if (authStatus === 0) {
+						locationManager.requestWhenInUseAuthorization()
+						setTimeout(() => {
+							authStatus = CLLocationManager.authorizationStatus()
+							if (authStatus === 2 || authStatus === 1) {
+								plus.ios.deleteObject(locationManager)
+								done()
+								return
+							}
+							startLocationUpdates()
+						}, 1500)
+						return
+					}
+					if (authStatus === 2 || authStatus === 1) {
+						plus.ios.deleteObject(locationManager)
+						done()
+						return
+					}
+					startLocationUpdates()
+				} catch (e) {
+					console.log('prepareIOSWifiAccess error', e)
+					done()
+				}
+			},
+			getConnectedSSIDNative() {
+				if (this.isIOSPlatform()) {
+					return this.getIOSConnectedSSIDNative()
+				}
+				return this.getAndroidConnectedSSIDNative()
+			},
+			getAndroidConnectedSSIDNative() {
+				try {
+					var MainActivity = plus.android.runtimeMainActivity()
+					var Context = plus.android.importClass('android.content.Context')
+					plus.android.importClass('android.net.wifi.WifiManager')
+					var wifiManager = MainActivity.getSystemService(Context.WIFI_SERVICE)
+					if (!wifiManager || !wifiManager.isWifiEnabled()) {
+						return ''
+					}
+					var wifiInfo = wifiManager.getConnectionInfo()
+					if (!wifiInfo) {
+						return ''
+					}
+					return this.normalizeSSID(wifiInfo.getSSID())
+				} catch (e) {
+					console.log('getAndroidConnectedSSIDNative error', e)
+					return ''
+				}
+			},
+			getIOSConnectedSSIDNative() {
+				if (!this.isIOSPlatform()) {
+					return ''
+				}
+				const readSSIDFromInfo = (info) => {
+					if (!info) {
+						return ''
+					}
+					try {
+						const NSString = plus.ios.importClass('NSString')
+						const ssidKey = NSString.stringWithString('SSID')
+						const ssidObj = plus.ios.invoke(info, 'objectForKey:', ssidKey)
+						if (!ssidObj) {
+							return ''
+						}
+						let ssid = ''
+						try {
+							ssid = plus.ios.invoke(ssidObj, 'UTF8String')
+						} catch (e) {
+							ssid = plus.ios.invoke(ssidObj, 'description')
+						}
+						return this.normalizeSSID(ssid)
+					} catch (e) {
+						return ''
+					}
+				}
+				const readSSIDFromInterface = (ifname) => {
+					try {
+						const NSString = plus.ios.importClass('NSString')
+						const iface = NSString.stringWithString(ifname)
+						const info = plus.ios.invoke('CNCopyCurrentNetworkInfo', iface)
+						const ssid = readSSIDFromInfo(info)
+						if (info) {
+							plus.ios.deleteObject(info)
+						}
+						return ssid
+					} catch (e) {
+						return ''
+					}
+				}
+				try {
+					let interfaces = null
+					try {
+						interfaces = plus.ios.invoke('CNCopySupportedInterfaces')
+					} catch (e) {
+						console.log('CNCopySupportedInterfaces error', e)
+					}
+					if (interfaces) {
+						const count = plus.ios.invoke(interfaces, 'count')
+						for (let i = 0; i < count; i++) {
+							const ifnameObj = plus.ios.invoke(interfaces, 'objectAtIndex:', i)
+							let ifname = ''
+							try {
+								ifname = plus.ios.invoke(ifnameObj, 'UTF8String')
+							} catch (e) {
+								ifname = plus.ios.invoke(ifnameObj, 'description')
+							}
+							const ssid = readSSIDFromInterface(this.normalizeSSID(ifname))
+							if (ssid) {
+								plus.ios.deleteObject(interfaces)
+								return ssid
+							}
+						}
+						plus.ios.deleteObject(interfaces)
+					}
+					const fallbackInterfaces = ['en0', 'en1', 'awdl0']
+					for (let i = 0; i < fallbackInterfaces.length; i++) {
+						const ssid = readSSIDFromInterface(fallbackInterfaces[i])
+						if (ssid) {
+							return ssid
+						}
+					}
+				} catch (e) {
+					console.log('getIOSConnectedSSIDNative error', e)
+				}
+				return ''
+			},
+			requestLocationPermission(callback) {
+				if (!this.isAndroidPlatform()) {
+					callback && callback()
+					return
+				}
+				plus.android.requestPermissions(
+					['android.permission.ACCESS_FINE_LOCATION', 'android.permission.ACCESS_COARSE_LOCATION'],
+					(e) => {
+						if (e.granted && e.granted.length > 0) {
+							callback && callback()
+						} else {
+							uni.showToast({
+								title: this.$t('您的手机定位服务未开启'),
+								icon: 'none'
+							})
+						}
+					},
+					() => {
+						uni.showToast({
+							title: this.$t('您的手机定位服务未开启'),
+							icon: 'none'
+						})
+					}
+				)
+			},
 			btn_start() {
 				let that = this
 				if (that.wifi_name == that.$t("请选择wifi") || that.wifi_name == "") {
@@ -326,10 +490,9 @@
 					return
 				} else {
 					that.sendATCommand(that.deviceId, that.serviceId, that.uuid,
-						'AT+QSTAAPINFODEF=' + that.wifi_name + ',' + that.wifi_password)
+						'AT+QSTAAPINFODEF=' + that.wifi_name + ',' + that.wifi_password, that.notifyuuid)
 				}
 			}
-
 		}
 	}
 </script>
@@ -354,9 +517,16 @@
 		flex-direction: row;
 	}
 
+	.wifi-input {
+		flex: 1;
+		margin-left: 10px;
+		font-size: 16px;
+		color: #000;
+	}
+
 	.btn {
 		width: auto;
-		margin: 0 20px 88px 20px;
+		margin: 40px 20px 88px 20px;
 		border-radius: 100px;
 		height: 48px;
 		display: flex;

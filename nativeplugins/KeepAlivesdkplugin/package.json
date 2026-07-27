@@ -1,0 +1,44 @@
+{
+  "name": "KeepAlivesdkplugin",
+  "id": "KeepAlivesdkplugin",
+  "version": "1.0.0",
+  "description": "iOS 后台保活插件 - 支持音频、定位、后台任务和后台刷新",
+  "_dp_type": "nativeplugin",
+  "_dp_nativeplugin": {
+    "ios": {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "KeepAliveModule",
+          "class": "KeepAliveModule"
+        }
+      ],
+      "integrateType": "framework",
+      "deploymentTarget": "12.0",
+      "capabilities": [
+        "background-modes"
+      ],
+      "infoPlist": {
+        "BGTaskSchedulerPermittedIdentifiers": [
+          "io.dcloud.jakob.keepalive.refresh"
+        ],
+        "UIBackgroundModes": [
+          "audio",
+          "location",
+          "fetch",
+          "processing"
+        ]
+      },
+      "frameworks": [
+        "AVFoundation.framework",
+        "CoreLocation.framework",
+        "BackgroundTasks.framework"
+      ],
+      "plist": {
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "需要定位权限以保持后台运行",
+        "NSLocationWhenInUseUsageDescription": "需要定位权限以保持后台运行",
+        "NSLocationAlwaysUsageDescription": "需要始终定位权限以保持后台运行"
+      }
+    }
+  }
+}

@@ -2,8 +2,8 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "3.3.0",
-    "versionCode" : 381,
+    "versionName" : "3.3.088",
+    "versionCode" : 468,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
@@ -24,6 +24,7 @@
             ],
             "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
             "UIBackgroundModes" : [
+                "audio",
                 "location",
                 "processing",
                 "bluetooth-central",
@@ -32,7 +33,7 @@
                 "remote-notification"
             ], //可选，字符串类型，应用后台运行模式，参考：https://uniapp.dcloud.io/tutorial/app-ios-uibackgroundmodes
             "plistcmds" : [ "Set :UIRequiredDeviceCapabilities bluetooth-le" ],
-            "urlschemewhitelist" : [ "baidumap", "iosamap" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
+            "urlschemewhitelist" : [ "baidumap", "iosamap", "app-settings" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
             "dSYMs" : false,
             "optimize" : true,
             "subPackages" : true,
@@ -90,6 +91,7 @@
                     ],
                     "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
+                        "audio",
                         "location",
                         "processing",
                         "bluetooth-central",
@@ -98,7 +100,7 @@
                         "remote-notification"
                     ], //可选，字符串类型，应用后台运行模式，参考：https://uniapp.dcloud.io/tutorial/app-ios-uibackgroundmodes
                     "plistcmds" : [ "Set :UIRequiredDeviceCapabilities bluetooth-le" ],
-                    "urlschemewhitelist" : [ "baidumap", "iosamap" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
+                    "urlschemewhitelist" : [ "baidumap", "iosamap", "app-settings" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
                     "dSYMs" : false,
                     "optimize" : true,
                     "subPackages" : true,
@@ -153,6 +155,7 @@
                     ],
                     "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
+                        "audio",
                         "location",
                         "processing",
                         "bluetooth-central",
@@ -161,7 +164,7 @@
                         "remote-notification"
                     ], //可选，字符串类型，应用后台运行模式，参考：https://uniapp.dcloud.io/tutorial/app-ios-uibackgroundmodes
                     "plistcmds" : [ "Set :UIRequiredDeviceCapabilities bluetooth-le" ],
-                    "urlschemewhitelist" : [ "baidumap", "iosamap" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
+                    "urlschemewhitelist" : [ "baidumap", "iosamap", "app-settings" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
                     "dSYMs" : false,
                     "optimize" : true,
                     "subPackages" : true,
@@ -205,8 +208,8 @@
             }
         },
         "compatible" : {
-            "runtimeVersion" : "5.06", //根据实际情况填写  
-            "compilerVersion" : "5.06", //根据实际情况填写  
+            "runtimeVersion" : "5.15", //根据实际情况填写  
+            "compilerVersion" : "5.15", //根据实际情况填写  
             "ignoreVersion" : true
         },
         "usingComponents" : true,
@@ -294,6 +297,7 @@
                 ],
                 "deploymentTarget" : "10.0", //可选，字符串类型，iOS支持的最低版本
                 "UIBackgroundModes" : [
+                    "audio",
                     "location",
                     "processing",
                     "bluetooth-central",
@@ -302,7 +306,7 @@
                     "remote-notification"
                 ], //可选，字符串类型，应用后台运行模式，参考：https://uniapp.dcloud.io/tutorial/app-ios-uibackgroundmodes
                 "plistcmds" : [ "Set :UIRequiredDeviceCapabilities bluetooth-le" ],
-                "urlschemewhitelist" : [ "baidumap", "iosamap" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
+                "urlschemewhitelist" : [ "baidumap", "iosamap", "app-settings" ], //可选，字符串类型，应用访问白名单列表，参考：https://uniapp.dcloud.io/tutorial/app-ios-schemewhitelist
                 "dSYMs" : false,
                 "optimize" : true,
                 "subPackages" : true,
@@ -486,6 +490,20 @@
                     "name" : "TestUniPlugin",
                     "description" : "ailink uni插件",
                     "platforms" : "Android,iOS",
+                    "url" : "",
+                    "android_package_name" : "",
+                    "ios_bundle_id" : "",
+                    "isCloud" : false,
+                    "bought" : -1,
+                    "pid" : "",
+                    "parameters" : {}
+                }
+            },
+            "KeepAlivesdkplugin" : {
+                "__plugin_info__" : {
+                    "name" : "KeepAlivesdkplugin",
+                    "description" : "iOS 后台保活插件 - 支持音频、定位、后台任务和后台刷新",
+                    "platforms" : "iOS",
                     "url" : "",
                     "android_package_name" : "",
                     "ios_bundle_id" : "",

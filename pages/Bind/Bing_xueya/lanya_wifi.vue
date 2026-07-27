@@ -142,6 +142,7 @@
 				deviceId: '',
 				serviceId: '',
 				uuid: '',
+				notifyuuid: '',
 				modelId: '',
 			}
 		},
@@ -207,12 +208,7 @@
 					}
 				});
 			},
-
-
-
-
 			switch1Change(e) {
-				console.log("大师罗杰斯打卡大数据", e.detail.value)
 				if (e.detail.value == true) {
 					this.checked = true
 					this.initBluetooth()
@@ -403,6 +399,9 @@
 								that.serviceId = serviceId
 								that.uuid = item.uuid
 							}
+							if (item.properties.notify) {
+								that.notifyuuid = item.uuid
+							}
 							that.$refs.popup1.open("bottom")
 							that.$refs.popup.close()
 						}
@@ -413,23 +412,20 @@
 				})
 			},
 
-
 			turesss() {
 				let that = this
 				that.$refs.popup1.close()
-				console.log("发送 _deviceId：" + that.deviceId)
-				console.log("发送_serviceId：" + that.serviceId)
-				console.log("发送_characteristicId：" + that.uuid)
+				console.log("turesss _deviceId：" + that.deviceId)
+				console.log("turesss_serviceId：" + that.serviceId)
+				console.log("turesss_characteristicId：" + that.uuid)
 				uni.navigateTo({
 					url: '../../Bind/Bing_xueya/Bing_xueya_2?deviceId=' + that.deviceId +
 						"&serviceId=" + that.serviceId + "&uuid=" + that.uuid + "&sn=" + that.sn +
-						"&SELECT_TYPE=" + that.SELECT_TYPE + "&modelId=" + that.modelId
+						"&SELECT_TYPE=" + that.SELECT_TYPE + "&modelId=" + that.modelId + "&notifyuuid=" + that
+						.notifyuuid
 				})
 
 			},
-
-
-
 			android() {
 
 				var main = plus.android.runtimeMainActivity();

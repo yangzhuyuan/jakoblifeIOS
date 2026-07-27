@@ -53,6 +53,8 @@
 			...mapState(['getpendinglenth'])
 		},
 		data() {
+			const lan = uni.getLocale();
+			const isZh = lan === 'zh-Hans' || lan === 'zh-Hant';
 			return {
 				timsdpad: null,
 				avatar: '',
@@ -76,6 +78,10 @@
 						title: '生成健康报告',
 						url: '/pages/tabBar/tendency/supplement'
 					},
+					...(isZh ? [{
+						title: '脉诊健康管理',
+						url: '/pages/tabBar/main/Pulsediagnosis'
+					}] : []),
 					// {
 					// 	title: '手表设置',
 					// 	url: "/pages/tabBar/main/WatctOTA/WatctOTA"

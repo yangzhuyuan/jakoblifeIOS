@@ -125,6 +125,10 @@
 </template>
 
 <script>
+	import {
+		getLocalTimeAllJSON,
+		localSelectedYmdToChinaYmd
+	} from '@/pages/api/unitls/timezone.js'
 	export default {
 		data() {
 			return {
@@ -165,17 +169,9 @@
 				return this.$t(translateKey);
 			},
 
+			/** 界面展示：手机本地日期 */
 			getCurrentTime() {
-				const now = new Date(); // 获取当前时间
-				// 获取年、月、日
-				const year = now.getFullYear();
-				const month = String(now.getMonth() + 1).padStart(2, "0"); // 月份从 0 开始，需要加 1
-				const day = String(now.getDate()).padStart(2, "0");
-				// 获取小时、分钟、秒
-				const hours = String(now.getHours()).padStart(2, "0");
-				const minutes = String(now.getMinutes()).padStart(2, "0");
-				const seconds = String(now.getSeconds()).padStart(2, "0");
-				return `${year}-${month}-${day}`
+				return getLocalTimeAllJSON().YMD
 			},
 
 
@@ -316,8 +312,10 @@
 					})
 					return
 				} else {
+					// 选 D：中国已过 (D+1) 01:00 → 传 D+1，否则传 D（只换算一次）
+					const chinaProfDate = localSelectedYmdToChinaYmd(this.profDate)
 					uni.navigateTo({
-						url: '../../tabBar/tendency/Report?profDate=' + this.profDate + "&time=" + this.time +
+						url: '../../tabBar/tendency/Report?profDate=' + chinaProfDate + "&time=" + this.time +
 							"&time1=" +
 							this.time1 + "&select=" + this.select + "&index=" + this.index + "&select2=" + this
 							.select2 + "&select4=" + this.select4 + "&index1=" + this.index1

@@ -10,7 +10,7 @@
 					<view class="list_item_bg" @click="check_click(index,item.modelConnectType,item.name)">
 						<image style="width: 100%;object-fit: contain;margin-top: 10px;" mode="aspectFit"
 							:src="item.modelPicturePath" />
-						<view style="text-align: center;margin-bottom: 10px;margin-top: 10px;">{{item.name}}</view>
+						<view style="text-align: center;margin-bottom: 10px;margin-top: 10px;">{{item.name === "BPW6" ? "U19M" : item.name}}</view>
 					</view>
 				</view>
 			</view>
@@ -34,6 +34,39 @@
 		mapState,
 		mapMutations
 	} from 'vuex';
+
+
+
+	// 设备图片映射
+	const DEVICE_IMAGES = {
+		zh: {
+			30000: '/static/image/BPW1.png',
+			30001: '/static/image/BPW6.jpg',
+			20000: '/static/image/jls260.png',
+			20001: '/static/image/jls260.png',
+			10000: '/static/image/617.png',
+			10001: '/static/image/BP68.png',
+			10002: '/static/image/BP67.png',
+			10003: '/static/image/68G.png',
+			10004: '/static/image/BP67.png',
+			10005: '/static/image/68G.png',
+			10006: '/static/image/xueya1.png'
+		},
+		default: {
+			30000: '/static/image/shoubiao1.png',
+			30001: '/static/image/BPW6.jpg',
+			20000: '/static/image/tizhi1.jpg',
+			20001: '/static/image/tizhi1.jpg',
+			10000: '/static/image/xueya1.png',
+			10001: '/static/image/xueya1.png',
+			10002: '/static/image/xueya1.png',
+			10003: '/static/image/xueya1.png',
+			10004: '/static/image/xueya1.png',
+			10005: '/static/image/xueya1.png',
+			10006: '/static/image/xueya1.png'
+		}
+	}
+
 	export default {
 
 		computed: {
@@ -135,7 +168,14 @@
 					url: "/pages/tabBar/my/Help_center"
 				})
 			},
-
+			// 封装图片路径处理逻辑
+			updateModelPicturePath(row, lan) {
+				if (lan === 'zh-Hans' || lan === 'zh-Hant') {
+					return DEVICE_IMAGES.zh[row.modelId]
+				} else {
+					return DEVICE_IMAGES.default[row.modelId]
+				}
+			},
 			//获取设备型号列表
 			getlist() {
 				let that = this
@@ -160,75 +200,20 @@
 							if (that.per == 1) {
 								that.list = []
 								for (let i = 0; res.data.rows.length > i; i++) {
-									if (res.data.rows[i] && res.data.rows[i].modelPicturePath && res.data.rows[i]
-										.modelPicturePath.includes(that.$url_APP_IP)) {
-										const lan = uni.getLocale();
-										if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-											res.data.rows[i].modelPicturePath = res.data.rows[i].modelPicturePath
-										} else {
-											if (res.data.rows[i].modelId === 30000) { //手表
-												res.data.rows[i].modelPicturePath = "/static/image/shoubiao1.png"
-											} else if (res.data.rows[i].modelId === 30001) { //手表
-												res.data.rows[i].modelPicturePath = "/static/image/shoubiao1.png"
-											} else if (res.data.rows[i].modelId === 20000) { //体脂秤
-												res.data.rows[i].modelPicturePath = '/static/image/tizhi1.jpg'
-											} else if (res.data.rows[i].modelId === 20001) { //体脂秤
-												res.data.rows[i].modelPicturePath = '/static/image/tizhi1.jpg'
-											} else if (res.data.rows[i].modelId === 10000) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10001) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10002) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10003) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10004) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10005) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											}
-										}
-									} else {
-										const lan = uni.getLocale();
-										if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-											res.data.rows[i].modelPicturePath = that.$url_APP_IP + res.data.rows[i]
-												.modelPicturePath
-										} else {
-											if (res.data.rows[i].modelId === 30000) { //手表
-												res.data.rows[i].modelPicturePath = "/static/image/shoubiao1.png"
-											} else if (res.data.rows[i].modelId === 30001) { //手表
-												res.data.rows[i].modelPicturePath = "/static/image/shoubiao1.png"
-											} else if (res.data.rows[i].modelId === 20000) { //体脂秤
-												res.data.rows[i].modelPicturePath = '/static/image/tizhi1.jpg'
-											} else if (res.data.rows[i].modelId === 20001) { //体脂秤
-												res.data.rows[i].modelPicturePath = '/static/image/tizhi1.jpg'
-											} else if (res.data.rows[i].modelId === 10000) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10001) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10002) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10003) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10004) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											} else if (res.data.rows[i].modelId === 10005) { //血压计
-												res.data.rows[i].modelPicturePath = "/static/image/xueya1.png"
-											}
-										}
-									}
+									const lan = uni.getLocale();
+									res.data.rows[i].modelPicturePath = that.updateModelPicturePath(res.data.rows[
+										i], lan)
 								}
 							}
 							for (let i = 0; res.data.rows.length > i; i++) {
-
 								that.list.push(res.data.rows[i])
-								const index = that.list.findIndex(item => item.name === "BPW6");
-								if (index !== -1) that.list.splice(index, 1);
-								// const lan = uni.getLocale();
-								// if (lan == 'zh-Hans'||lan == 'zh-Hant') {
-								// that.list.push(res.data.rows[i])
-								// const index = that.list.findIndex(item => item.name === "ZK-B872B");
+								// const index = that.list.findIndex(item => item.name === "BPW6");
 								// if (index !== -1) that.list.splice(index, 1);
+								// const lan = uni.getLocale();
+								// if (lan === 'zh-Hans' || lan === 'zh-Hant') {
+								// 	that.list.push(res.data.rows[i])
+								// 	const index = that.list.findIndex(item => item.name === "ZK-B872B");
+								// 	if (index !== -1) that.list.splice(index, 1);
 								// } else {
 								// 	that.list.push(res.data.rows[i])
 								// 	const index = that.list.findIndex(item => item.name === "TSB-617B-T");

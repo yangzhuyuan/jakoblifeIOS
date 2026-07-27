@@ -85,6 +85,12 @@
 	} from 'vuex'
 	const platform = uni.getSystemInfoSync().platform;
 	import BluetoothManager from '../../api/BluetoothManager.js';
+	import {
+		u16proBLE
+	} from '../../api/protocol/u16pro-ble-manager.js'
+	import {
+		U16ProProtocol
+	} from '../../api/protocol/u16pro-protocol.js'
 	export default {
 		onLoad(opt) {
 			this.sn = opt.sn
@@ -142,7 +148,7 @@
 		},
 
 		methods: {
-			...mapMutations(['setlanyaId', 'setacktypes']),
+			...mapMutations(['setlanyaId', 'setacktypes', 'setacktypes6']),
 			//返回按钮
 			back() {
 				uni.navigateBack({
@@ -165,6 +171,7 @@
 			},
 			//获取蓝牙设备设置图标
 			getDeviceImage(deviceName) {
+				if (deviceName.includes('U19M')) return '/static/page_icon/shoubiao.png';
 				if (deviceName === 'BPW1') return '/static/page_icon/shoubiao.png';
 				if (deviceName === 'EL2') return '/static/page_icon/lanya.png';
 				return '/static/page_icon/lanya.png';
@@ -517,7 +524,11 @@
 						if (res.services.length == 3) {
 							that.getBLEDeviceCharacteristics3(deviceId, res.services[1].uuid)
 						} else if (res.services.length == 4) {
-							that.getBLEDeviceCharacteristics2(deviceId, res.services[3].uuid)
+							if (res.services[0].uuid === "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E") {
+								that.getBLEDeviceCharacteristics6(deviceId, res.services[0].uuid)
+							} else {
+								that.getBLEDeviceCharacteristics2(deviceId, res.services[3].uuid)
+							}
 						} else if (res.services.length == 2) {
 							that.getBLEDeviceCharacteristics2(deviceId, res.services[1].uuid)
 						} else if (res.services.length == 1) {
@@ -653,8 +664,8 @@
 							if (platformres.platform === "android") {
 								setTimeout(() => {
 									if (item.properties.notify) {
-										uni.setStorageSync("landeviceId", deviceId)
-										uni.setStorageSync("lanserviceId", serviceId)
+										uni.setStorageSync("deviceIdwatch", deviceId)
+										uni.setStorageSync("serviceIdwatch", serviceId)
 										uni.setStorageSync("landcharacteristicId", item
 											.uuid)
 										that.notifyUuid = res.characteristics[i].uuid
@@ -675,8 +686,8 @@
 								}, 500)
 							} else {
 								if (item.properties.notify) {
-									uni.setStorageSync("landeviceId", deviceId)
-									uni.setStorageSync("lanserviceId", serviceId)
+									uni.setStorageSync("deviceIdwatch", deviceId)
+									uni.setStorageSync("serviceIdwatch", serviceId)
 									uni.setStorageSync("landcharacteristicId", item.uuid)
 									that.notifyUuid = res.characteristics[i].uuid
 									uni.notifyBLECharacteristicValueChange({
@@ -700,6 +711,66 @@
 					}
 				})
 			},
+			// 同步时间
+			async syncTime(deviceId) {
+				try {
+					await u16proBLE.setTime(new Date(), 0, deviceId) // 0=中文
+					console.log('时间同步成功')
+				} catch (err) {
+					console.error('时间同步失败:', err)
+				}
+			},
+			async getBLEDeviceCharacteristics6(deviceId, serviceId) {
+				const that = this;
+				try {
+					const res = await this._getBLEDeviceCharacteristics(deviceId, serviceId);
+					// 只执行一次时间同步和电量读取
+					let hasWriten = false;
+					for (let i = 0; i < res.characteristics.length; i++) {
+						const item = res.characteristics[i];
+						// 处理可写入的特征值（只执行一次）
+						if (item.properties.write && !hasWriten) {
+							hasWriten = true;
+							try {
+								// 连接成功后同步时间
+								await that.syncTime(deviceId);
+								// await u16proBLE.readBattery(deviceId);
+							} catch (err) {
+								console.error('同步失败:', err);
+							}
+						}
+					}
+					that.setacktypes6("0")
+				} catch (res) {
+					console.error('getBLEDeviceCharacteristics 失败:', res);
+				}
+			},
+
+			// 封装 Promise 版本的 API
+			_getBLEDeviceCharacteristics(deviceId, serviceId) {
+				return new Promise((resolve, reject) => {
+					uni.getBLEDeviceCharacteristics({
+						deviceId: deviceId,
+						serviceId: serviceId,
+						success: resolve,
+						fail: reject
+					});
+				});
+			},
+
+			_notifyBLECharacteristicValueChange(options) {
+				return new Promise((resolve, reject) => {
+					uni.notifyBLECharacteristicValueChange({
+						...options,
+						success: resolve,
+						fail: reject
+					});
+				});
+			},
+
+
+
+
 
 			// 16进制转2进制
 			hexToBinary(hexString) {

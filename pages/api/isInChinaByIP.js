@@ -21,7 +21,7 @@ export async function isInChinaByIP() {
 		throw new Error(res?.data?.message || 'ip-api 服务异常');
 
 	} catch (err) {
-		console.log('ip-api 失败，启用备用:', err.message || err);
+		// console.log('ip-api 失败，启用备用:', err.message || err);
 		// 第二个请求：ipinfo.io（备用）
 		try {
 			const [error2, res2] = await uni.request({
@@ -36,7 +36,7 @@ export async function isInChinaByIP() {
 			}
 			if (res2?.statusCode === 200 && res2?.data?.country) {
 				const countryCode = res2.data.country;
-				console.log('备用API成功，国家代码:', countryCode);
+				// console.log('备用API成功，国家代码:', countryCode);
 				return ['CN', 'HK', 'MO', 'TW'].includes(countryCode);
 			}
 			return false;

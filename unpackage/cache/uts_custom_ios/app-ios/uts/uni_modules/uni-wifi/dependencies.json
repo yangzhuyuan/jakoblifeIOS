@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "dependencies": {
+    "frameworks": [
+      "CoreLocation.framework",
+      "SystemConfiguration.framework"
+    ]
+  }
+}

@@ -2,8 +2,33 @@ function padStart(n) {
 	return n.toString().padStart(2, 0)
 }
 
+/**
+ * 将 yyyy-mm-dd / Date / 时间戳解析为「本地日历日」的 Date
+ * 避免 new Date('yyyy-mm-dd') 按 UTC 零点解析，导致西时区日期/周几错位
+ */
+function parseLocalDate(input) {
+	if (input == null || input === '') {
+		return new Date(NaN)
+	}
+	if (input instanceof Date) {
+		return new Date(input.getTime())
+	}
+	if (typeof input === 'number') {
+		return new Date(input)
+	}
+	const str = String(input).trim()
+	if (/^\d{4}-\d{1,2}-\d{1,2}$/.test(str)) {
+		return new Date(str.replace(/-/g, '/'))
+	}
+	if (/^\d{4}-\d{1,2}-\d{1,2}[ T]\d/.test(str)) {
+		return new Date(str.replace(/-/g, '/').replace('T', ' '))
+	}
+	return new Date(str.replace(/-/g, '/'))
+}
+
 module.exports = {
 	padStart,
+	parseLocalDate,
 	/**
 	 * 时间戳转日期
 	 * @param timestamp 日期、时间戳
@@ -11,7 +36,7 @@ module.exports = {
 	 * @returns 返回转换后日期格式
 	 * */
 	formattedDate(timestamp, format = 'yyyy-mm-dd') {
-		const date = new Date(timestamp)
+		const date = parseLocalDate(timestamp)
 		const year = date.getFullYear()
 		const month = padStart(date.getMonth() + 1)
 		const day = padStart(date.getDate())
@@ -41,7 +66,7 @@ module.exports = {
 	 * @returns {number} 返回 day 后的日期
 	 * */
 	getAppointDate(targetDate, day) {
-		const datetmp = new Date(targetDate.replace(/-/g, '/')).getTime()
+		const datetmp = parseLocalDate(targetDate).getTime()
 		let result = new Date(datetmp + 24 * 60 * 60 * 1000 * day)
 		return `${result.getFullYear()}-${padStart(result.getMonth() + 1)}-${padStart(result.getDate())}`
 	},
@@ -72,8 +97,8 @@ module.exports = {
 	 * @returns {number} 返回两日期相差的天数
 	 */
 	getDaysDifference(startDate, enDate) {
-		const sDate = Date.parse(startDate.replace(/-/g, '/'))
-		const eDate = Date.parse(enDate.replace(/-/g, '/'))
+		const sDate = parseLocalDate(startDate).getTime()
+		const eDate = parseLocalDate(enDate).getTime()
 
 		const days = (sDate - eDate) / (24 * 60 * 60 * 1000)
 		return days

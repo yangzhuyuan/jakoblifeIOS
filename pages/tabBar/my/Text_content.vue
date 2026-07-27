@@ -1,150 +1,201 @@
 <template>
-	<view style="padding: 10px; display: flex;background: #EFEFF4;color: black;height: 100vh;flex-direction: column;">
-		<view class="title_bg">{{title}}</view>
-		<view style="padding: 10px 10px 60px 10px">
+	<view class="page-container">
+		<view class="title_bg">{{ title }}</view>
+		<view class="content-wrapper">
 			<rich-text :nodes="content"></rich-text>
 		</view>
 	</view>
 </template>
 
 <script>
+	const lan = uni.getLocale();
+
 	export default {
 		data() {
 			return {
-				titles: "关于&更新",
 				title: '',
 				content: ''
-			}
+			};
 		},
-
-
 		onLoad(res) {
-			if (res.id == "1134") {
-				this.titles = this.$t('给JakobLife好评')
-				this.article(1134)
-			} else if (res.id == "1131") {
-				this.titles = this.$t('JakobLife软件移动客户端用户使用规范1')
-				this.article(1131)
-			} else if (res.id == "1130") {
-				this.titles = this.$t('JakobLife隐私政策1')
-				const lan = uni.getLocale();
-				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					this.article(1150)
-				} else {
-					this.article(1130)
-				}
-			} else if (res.id == "1") {
-				this.titles = this.$t('JakobLife软件移动客户端用户使用规范1')
-				const lan = uni.getLocale();
-				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					this.article(1149)
-				} else {
-					this.article(1)
-				}
-			} else if (res.id == "1135") {
-				this.titles = this.$t('敏感个人信息处理情况说明1')
-				this.article(1135)
-			} else if (res.id == "1111") {
-				this.titles = this.$t('向第三方提供个人信息情况的说明1')
-				this.article(1111)
-			} else if (res.id == "1136") {
-				this.titles = this.$t('已收集个人信息清单1')
-				this.article(1136)
-			} else if (res.id == "1137") {
-				this.titles = this.$t('第三方共享个人清单1')
-				this.article(1137)
-			} else if (res.id == "1138") {
-				this.titles = this.$t('医疗器械使用安全提示1')
-				this.article(1138)
-			} else if (res.id == "1151") {
-				this.titles = this.$t('血压手表使用指南')
-				const lan = uni.getLocale();
-				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					this.article(1151)
-				} else {
-					this.article(1155)
-				}
-			} else if (res.id == "1156") {
-				this.titles = this.$t('血压手表问题解答')
-				const lan = uni.getLocale();
-				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					this.article(1156)
-				} else {
-					this.article(1157)
-				}
-			} else if (res.id == "1158") {
-				this.titles = this.$t('血压手表问题解答')
-				const lan = uni.getLocale();
-				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					this.article(1158)
-				} else {
-					this.article(1159)
-				}
-			} else if (res.id == "1160") {
-				this.titles = this.$t('体脂秤问题解答')
-				const lan = uni.getLocale();
-				if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-					this.article(1160)
-				} else {
-					this.article(1161)
-				}
+			const {
+				id
+			} = res;
+			const titleConfig = this.getTitleConfig(id);
+
+			if (titleConfig) {
+				this.title = titleConfig.title;
+				const articleId = this.getArticleId(id, titleConfig.useLangCheck);
+				this.fetchArticle(articleId);
 			} else {
-				this.titles = this.$t('关于更新')
+				this.title = this.$t('关于更新');
 			}
+
 			uni.setNavigationBarTitle({
-				title: this.titles
-			})
+				title: this.title
+			});
 		},
-
-
-
-
 		methods: {
-			article(id) {
-				let that = this
+			// 配置化管理文章标题和ID映射
+			getTitleConfig(id) {
+				const configMap = {
+					'1134': {
+						title: this.$t('给JakobLife好评'),
+						articleId: 1134
+					},
+					'1131': {
+						title: this.$t('JakobLife软件移动客户端用户使用规范1'),
+						articleId: 1131
+					},
+					'1130': {
+						title: this.$t('JakobLife隐私政策1'),
+						articleId: 1130,
+						useLangCheck: true,
+						langMap: {
+							'1150': ['zh-Hans', 'zh-Hant']
+						}
+					},
+					'1': {
+						title: this.$t('JakobLife软件移动客户端用户使用规范1'),
+						articleId: 1,
+						useLangCheck: true,
+						langMap: {
+							'1149': ['zh-Hans', 'zh-Hant']
+						}
+					},
+					'1135': {
+						title: this.$t('敏感个人信息处理情况说明1'),
+						articleId: 1135
+					},
+					'1111': {
+						title: this.$t('向第三方提供个人信息情况的说明1'),
+						articleId: 1111
+					},
+					'1136': {
+						title: this.$t('已收集个人信息清单1'),
+						articleId: 1136
+					},
+					'1137': {
+						title: this.$t('第三方共享个人清单1'),
+						articleId: 1137
+					},
+					'1138': {
+						title: this.$t('医疗器械使用安全提示1'),
+						articleId: 1138
+					},
+					'1151': {
+						title: this.$t('血压手表使用指南'),
+						articleId: 1151,
+						useLangCheck: true,
+						langMap: {
+							'1155': ['en']
+						}
+					},
+					'1156': {
+						title: this.$t('血压手表问题解答'),
+						articleId: 1156,
+						useLangCheck: true,
+						langMap: {
+							'1157': ['en']
+						}
+					},
+					'1158': {
+						title: this.$t('血压手表问题解答'),
+						articleId: 1158,
+						useLangCheck: true,
+						langMap: {
+							'1159': ['en']
+						}
+					},
+					'1160': {
+						title: this.$t('体脂秤问题解答'),
+						articleId: 1160,
+						useLangCheck: true,
+						langMap: {
+							'1161': ['en']
+						}
+					}
+				};
+
+				return configMap[id];
+			},
+
+			// 获取实际的文章ID（考虑语言版本）
+			getArticleId(id, useLangCheck) {
+				if (!useLangCheck) return parseInt(id);
+
+				const config = this.getTitleConfig(id);
+				if (!config || !config.langMap) return parseInt(id);
+
+				const isChinese = lan === 'zh-Hans' || lan === 'zh-Hant';
+
+				for (const [articleId, langArray] of Object.entries(config.langMap)) {
+					if ((isChinese && langArray.includes('zh-Hans')) ||
+						(!isChinese && langArray.includes('en'))) {
+						return parseInt(articleId);
+					}
+				}
+
+				return config.articleId || parseInt(id);
+			},
+
+			// 获取文章内容
+			fetchArticle(articleId) {
 				uni.request({
-					url: that.$url_APP_IP + that.$url_article,
+					url: this.$url_APP_IP + this.$url_article,
 					method: 'GET',
 					data: {
-						articleId: id
+						articleId
 					},
 					header: {
-						'content-type': 'application/json' //自定义请求头信息
+						'content-type': 'application/json'
 					},
-					success(res) {
-						that.title = res.data.data.title
-						// that.content = res.data.data.content
-						// 在赋值前处理内容
-						that.content = that.formatContent(res.data.data.content)
+					success: (res) => {
+						if (res.data && res.data.data) {
+							this.content = this.formatContent(res.data.data.content);
+						}
+					},
+					fail: (err) => {
+						console.error("获取文章失败", err);
 					}
-				})
+				});
 			},
+
 			// 完整的图片处理方法
 			formatContent(html) {
 				if (!html) return '';
-				// 修复图片路径并添加样式
-				const processedHtml = html.replace(/<img[^>]*src=['"]([^'"]+)['"][^>]*>/gi, (match, src) => {
-					let newSrc = src;
-					// 处理各种情况
-					if (src.startsWith('//')) {
-						// 双斜杠开头，添加 https:
-						newSrc = 'https:' + src;
-					} else if (src.startsWith('/')) {
-						// 绝对路径，添加完整域名
-						newSrc = this.$url_APP_IP + src;
-					} else if (!src.startsWith('http')) {
-						// 相对路径，添加基础URL
-						newSrc = `${this.$url_APP_IP}/${src}`;
+				let formattedHtml = html;
+				// 移除 <url> 标签包裹层，提取真实地址
+				formattedHtml = formattedHtml.replace(/<url[^>]*>(https?:\/\/[^<]+)<\/url>/gi, '$1');
+				// 修复 img 标签的 src 属性
+				formattedHtml = formattedHtml.replace(/<img([^>]*)src=["']([^"']+)["']([^>]*)>/gi, (match, before, src,
+					after) => {
+					let newSrc = src.trim();
+					if (newSrc.startsWith('//')) {
+						newSrc = 'https:' + newSrc;
+					} else if (newSrc.startsWith('/')) {
+						newSrc = this.$url_APP_IP + newSrc;
+					} else if (!newSrc.startsWith('http')) {
+						newSrc = `${this.$url_APP_IP}/${newSrc}`;
 					}
-					return `<img src="${newSrc}" style="max-width: 100%; height: auto; display: block;" />`;
+					return `<img${before}src="${newSrc}"${after} style="max-width: 100%; height: auto; display: block;" />`;
 				});
-				return processedHtml;
+				return formattedHtml;
 			}
 		}
-	}
+	};
 </script>
 
 <style>
+	.page-container {
+		padding: 10px;
+		display: flex;
+		background: #EFEFF4;
+		color: black;
+		height: 100vh;
+		flex-direction: column;
+	}
+
 	.title_bg {
 		display: flex;
 		justify-content: center;
@@ -152,5 +203,9 @@
 		font-weight: bold;
 		padding-top: 20px;
 		padding-bottom: 20px;
+	}
+
+	.content-wrapper {
+		padding: 10px 10px 60px 10px;
 	}
 </style>

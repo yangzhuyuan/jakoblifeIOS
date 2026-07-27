@@ -50,6 +50,7 @@ export default class BluetoothService {
 			uni.getBLEDeviceServices({
 				deviceId: this.deviceId,
 				success: (res) => {
+					// console.log("BPW6", res.services)
 					this.services = res.services;
 					resolve(res.services);
 				},
@@ -108,7 +109,24 @@ export default class BluetoothService {
 			});
 		});
 	}
-
+	async getCharacteristics6(serviceId) {
+		return new Promise((resolve, reject) => {
+			uni.getBLEDeviceCharacteristics({
+				deviceId: this.deviceId,
+				serviceId: serviceId,
+				success: (res) => {
+					this.characteristics[serviceId] = res.characteristics;
+					// console.log("6获取特征值成功", res.characteristics);
+					resolve(res.characteristics);
+				},
+				fail: (err) => {
+					console.error("3获取特征值失败", err);
+					this.disconnect()
+					reject(err);
+				},
+			});
+		});
+	}
 	// 启用通知
 	async notifyCharacteristic(serviceId, characteristicId) {
 		return new Promise((resolve, reject) => {

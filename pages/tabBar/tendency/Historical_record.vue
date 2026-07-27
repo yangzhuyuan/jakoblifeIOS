@@ -49,6 +49,11 @@
 					:view-type="currentView" :blood-unit="bloodUnit" @delete-record="handleDeleteRecord"
 					@toggle-expand="handleToggleExpand" @show-bmi-info="showBmiInfo" />
 
+				<!-- 血氧数据 -->
+				<blood-oxygen-list v-else-if="currentItemType === ITEM_TYPES.BLOOD_OXYGEN" :data="swipeList"
+					:view-type="currentView" @delete-record="handleDeleteRecord" @toggle-expand="handleToggleExpand"
+					@show-bmi-info="showBmiInfo" />
+
 				<!-- 体脂数据 -->
 				<body-fat-list v-else-if="currentItemType === ITEM_TYPES.BODY_FAT" :data="swipeList"
 					:view-type="currentView" @delete-record="handleDeleteRecord" @toggle-expand="handleToggleExpand"
@@ -67,6 +72,7 @@
 		<!-- 弹窗组件 -->
 		<blood-pressure-popup ref="bloodPressurePopup" />
 		<bmi-popup ref="bmiPopup" />
+		<blood-oxygen-popup ref="bloodOxygenPopup" />
 		<export-popup ref="exportPopup" @export="handleExport" />
 	</view>
 </template>
@@ -75,25 +81,30 @@
 	import BloodPressureList from '../tendency/historecal/BloodPressureList.vue';
 	import BloodPressurePopup from '../tendency/historecal/BloodPressurePopup.vue';
 	import BodyFatList from '../tendency/historecal/BodyFatList.vue';
+	import BloodOxygenList from '../tendency/historecal/BloodOxygenList.vue';
 	import BmiPopup from '../tendency/historecal/BmiPopup.vue';
+	import BloodOxygenPopup from '../tendency/historecal/BloodOxygenPopup.vue';
 	import ExportPopup from '../tendency/historecal/ExportPopup.vue';
+	import {
+		getLocalTimeAllJSON
+	} from '@/pages/api/unitls/timezone.js';
 
 	export default {
+
 		components: {
 			BloodPressureList,
 			BodyFatList,
+			BloodOxygenList,
 			BloodPressurePopup,
 			BmiPopup,
+			BloodOxygenPopup,
 			ExportPopup
 		},
 
 		data() {
-			const now = new Date();
-			const year = now.getFullYear();
-			const month = (now.getMonth() + 1).toString().padStart(2, '0');
-			const day = now.getDate().toString().padStart(2, '0');
-			const currentMonth = `${year}-${month}`;
-			const today = `${year}-${month}-${day}`; // 本地日期，不是 UTC
+			const local = getLocalTimeAllJSON();
+			const currentMonth = local.YMD.slice(0, 7);
+			const today = local.YMD;
 			return {
 				// 常量定义
 				ITEM_TYPES: {
@@ -139,7 +150,7 @@
 				return (stored === 0 || stored === "" || stored === undefined) ? "mmHg" : "kPa";
 			},
 
-			// 当前时间范围
+			// 当前时间范围（手机本地墙钟）
 			currentDateRange() {
 				if (this.isCalendarView) {
 					return {
@@ -150,6 +161,7 @@
 					return this.getMonthDateRange(this.currentMonth);
 				}
 			},
+
 
 			// 显示用的当前项目名称（国际化）
 			currentItemDisplayName() {
@@ -221,8 +233,8 @@
 
 				console.log("当前项目类型:", this.currentItemType);
 
+				// 心电、血糖历史尚未接入，暂不请求；血氧已支持查询
 				const noDataItems = [
-					this.ITEM_TYPES.BLOOD_OXYGEN,
 					this.ITEM_TYPES.ECG,
 					this.ITEM_TYPES.BLOOD_SUGAR
 				];
@@ -345,7 +357,7 @@
 				await this.fetchData();
 			},
 
-			// 数据获取
+			// 数据获取（查询窗与分组一律手机本地墙钟）
 			async fetchData() {
 				if (!this.deviceSn.length) {
 					console.log("没有设备信息，无法获取数据");
@@ -359,16 +371,12 @@
 						start,
 						end
 					} = this.currentDateRange;
-					console.log("获取数据参数:", {
-						type: this.currentItemType,
-						deviceSn: this.deviceSn,
-						start,
-						end
-					});
-
 					switch (this.currentItemType) {
 						case this.ITEM_TYPES.BLOOD_PRESSURE:
 							await this.queryBloodPressureData(this.deviceSn, start, end);
+							break;
+						case this.ITEM_TYPES.BLOOD_OXYGEN:
+							await this.queryOxygenData(this.deviceSn, start, end);
 							break;
 						case this.ITEM_TYPES.BODY_FAT:
 							await this.queryBodyFatData(this.deviceSn, start, end);
@@ -380,15 +388,16 @@
 				} catch (error) {
 					console.error('数据获取失败:', error);
 					uni.showToast({
-						title: this.$t('失败'),
+						title: this.$t('数据获取失败'),
 						icon: 'none'
 					});
 					this.swipeList = [];
 				} finally {
 					this.loading = false;
-					console.log("最终数据:", this.swipeList);
+					console.log("【最终数据】:", this.swipeList);
 				}
 			},
+
 
 			// 查询设备
 			async queryDevices() {
@@ -426,7 +435,7 @@
 
 			// 血压数据查询
 			async queryBloodPressureData(deviceSn, startTime, endTime) {
-				let data = {
+				const data = {
 					deviceSn,
 					dataType: "pressure",
 					slaveList: [{
@@ -445,17 +454,40 @@
 					startTime,
 					endTime,
 				};
-				console.log("res.data血压数据查询传参：", data)
+				console.log("【原始血压数据传参】" + this.$url_APP_IP, data);
 				const res = await this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				});
-
+				console.log("【原始血压数据】:", res);
 				if (res.code === 200) {
-					console.log("res.data血压数据查询：", res.data)
 					this.processBloodPressureData(res.data || []);
 				} else {
 					throw new Error(res.msg || '血压数据查询失败');
+				}
+			},
+			// 血氧数据查询
+			async queryOxygenData(deviceSn, startTime, endTime) {
+				const data = {
+					deviceSn,
+					dataType: "pressure",
+					slaveList: [{
+						slaveSn: "0",
+						register: "oxygen"
+					}],
+					startTime,
+					endTime,
+				};
+				console.log("【原始血氧数据传参】" + this.$url_APP_IP, data);
+				const res = await this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8'
+				});
+				console.log("【原始血氧数据】:", res);
+				if (res.code === 200) {
+					this.processBloodOxygenData(res.data || []);
+				} else {
+					throw new Error(res.msg || '血氧数据查询失败');
 				}
 			},
 
@@ -471,11 +503,9 @@
 					startTime,
 					endTime,
 				};
-
 				const res = await this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token")
 				});
-
 				if (res.code === 200) {
 					this.processBodyFatData(res.data || []);
 				} else {
@@ -485,7 +515,7 @@
 
 			// 处理血压数据
 			processBloodPressureData(data) {
-				console.log("原始血压数据:", data);
+				console.log("【原始血压数据】", data);
 				if (!data || data.length === 0) {
 					this.swipeList = [];
 					return;
@@ -501,16 +531,16 @@
 					}
 				}));
 			},
-
+			
 			// 处理体脂数据
 			processBodyFatData(data) {
 				console.log("原始体脂数据:", data);
-
+			
 				if (!data || data.length === 0) {
 					this.swipeList = [];
 					return;
 				}
-
+			
 				this.swipeList = data.map(item => ({
 					...item,
 					object: {
@@ -522,7 +552,55 @@
 					}
 				}));
 			},
+			getOxygenValue(data) {
+				if (!data) return null;
+				const value = data.oxygen ?? data.Oxygen ?? data.spo2 ?? data.SpO2 ?? data.oxygenAvg;
+				return value == null || value === '' ? null : value;
+			},
 
+			normalizeOxygenSummary(summary, details) {
+				const avg = this.getOxygenValue(summary);
+				if (avg != null) {
+					return { ...summary, oxygenAvg: avg };
+				}
+				if (!details || !details.length) {
+					return summary;
+				}
+				const values = details.map(detail => Number(this.getOxygenValue(detail)))
+					.filter(value => !Number.isNaN(value));
+				if (!values.length) {
+					return summary;
+				}
+				const oxygenAvg = Math.round(values.reduce((sum, value) => sum + value, 0) / values.length);
+				return { ...summary, oxygenAvg };
+			},
+
+			// 处理血氧数据
+			processBloodOxygenData(data) {
+				console.log("【原始血氧数据】", data);
+				if (!data || data.length === 0) {
+					this.swipeList = [];
+					return;
+				}
+				this.swipeList = data.map(item => {
+					const details = (item.object?.details || []).map(detail =>
+						this.calculateBloodOxygenLevel(detail, true)
+					);
+					const summary = this.calculateBloodOxygenLevel(
+						this.normalizeOxygenSummary(item.object?.summary || {}, details)
+					);
+					return {
+						...item,
+						object: {
+							...item.object,
+							summary,
+							details
+						}
+					};
+				});
+			},
+
+			
 			// 计算血压等级
 			calculateBloodPressureLevel(data, isDetail = false) {
 				if (!data) return isDetail ? {
@@ -563,6 +641,55 @@
 					...data,
 					level,
 					xueyalist,
+					expanded: false
+				};
+			},
+
+			// 计算血氧等级（与首页卡片一致：≤95偏低，96–97正常，≥98偏高）
+			calculateBloodOxygenLevel(data, isDetail = false) {
+				if (!data) {
+					return isDetail ? {
+						level2: this.$t("未知"),
+						oxygenlist1: 3,
+						oxygen: '-'
+					} : {
+						level: this.$t("未知"),
+						oxygenlist: 3,
+						oxygenAvg: '-',
+						expanded: false
+					};
+				}
+				const raw = isDetail ? this.getOxygenValue(data) : (data.oxygenAvg != null && data.oxygenAvg !==
+					'' ? data.oxygenAvg : this.getOxygenValue(data));
+				const spo2 = parseInt(raw, 10);
+				let level;
+				let oxygenlist;
+				if (isNaN(spo2)) {
+					level = this.$t("未知");
+					oxygenlist = 3;
+				} else if (spo2 <= 95) {
+					level = this.$t("偏低");
+					oxygenlist = 0;
+				} else if (spo2 < 98) {
+					level = this.$t("正常");
+					oxygenlist = 1;
+				} else {
+					level = this.$t("偏高");
+					oxygenlist = 2;
+				}
+				if (isDetail) {
+					return {
+						...data,
+						oxygen: raw != null ? raw : data.oxygen,
+						level2: level,
+						oxygenlist1: oxygenlist
+					};
+				}
+				return {
+					...data,
+					oxygenAvg: raw != null ? raw : data.oxygenAvg,
+					level,
+					oxygenlist,
 					expanded: false
 				};
 			},
@@ -663,6 +790,7 @@
 			async handleExport(exportConfig) {
 				try {
 					console.log("导出配置:", exportConfig);
+					// 导出时间窗直接用手机本地墙钟
 					if (exportConfig.format === "pdf") {
 						uni.navigateTo({
 							url: '../tendency/yulan?chooseItem_name=' + this.currentItemType + "&starttime=" +
@@ -673,6 +801,8 @@
 					} else {
 						if (this.currentItemType === "血压" || this.currentItemType === "blood_pressure") {
 							this.query_log_v2s(this.deviceSn, exportConfig.startDate, exportConfig.endDate)
+						} else if (this.currentItemType === this.ITEM_TYPES.BLOOD_OXYGEN) {
+							this.query_log_v23s(this.deviceSn, exportConfig.startDate, exportConfig.endDate)
 						} else if (this.currentItemType == "体脂" || this.currentItemType == "body_fat") {
 							this.query_log_v22s(this.deviceSn, exportConfig.startDate, exportConfig.endDate)
 						}
@@ -682,6 +812,7 @@
 					console.error('导出失败:', error);
 				}
 			},
+
 
 			query_log_v2s(deviceSn, startTime, endTime) {
 				let that = this
@@ -1058,6 +1189,10 @@
 			},
 
 			showBmiInfo() {
+				if (this.currentItemType === this.ITEM_TYPES.BLOOD_OXYGEN) {
+					this.$refs.bloodOxygenPopup.open();
+					return
+				}
 				this.$refs.bmiPopup.open();
 			}
 		}

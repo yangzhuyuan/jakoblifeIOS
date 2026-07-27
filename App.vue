@@ -5,7 +5,28 @@
 		ISgetUserInfoUS,
 		ISgetUserInfoChina,
 	} from './pages/api/isInChinaByIP.js'; //获取定位
+	import {
+		initKeepAlive,
+		startBackgroundTask,
+		endBackgroundTask,
+		scheduleBackgroundRefresh,
+		enableAudioKeepAlive,
+		enableLocationKeepAlive,
+		checkBackgroundRefreshStatus,
+		onBackgroundTaskExpired,
+		offBackgroundTaskExpired
+	} from 'nativeplugins/KeepAlivesdkplugin/ios/keepAlive.js'; // 严格按 keepAlive.js 导出 API
 
+	import {
+		resumeQxBleScheduleIfEnabled,
+		onQxBleAppBackground,
+		onQxBleAppForeground
+	} from '@/pages/api/qxBleAlignedSchedule.js'
+	import keepAliveManager from 'nativeplugins/KeepAlivesdkplugin/keepAliveManager.js'
+	import Vue from 'vue'
+	import {
+		refreshActiveAppBaseUrl
+	} from '@/pages/api/appBaseHosts.js';
 	export default {
 		data() {
 			return {
@@ -16,51 +37,199 @@
 				lastTime: 0,
 				stepCount: 0, //步数
 				notifyTriggered: false, // 初始化通知标志
+				sendnotifyTriggered: false, // 初始化通知标志
 				intervalId: null, // 用于存储定时器的 ID
 				isMandatory: false,
+				initStatus: false,
+				taskRunning: false,
+				audioEnabled: false,
+				locationEnabled: false,
+				keepAliveInited: false,
+				backgroundRefreshScheduled: false,
+				bgRefreshPromptShowing: false,
+				qxAppHidden: false,
+				_lastBgTaskRenewAt: 0,
+				_bgTaskExpiredBound: false,
 			}
 		},
 
+	
 		onLaunch: function() {
+			const that = this
+			// 情绪定时开关保存后立刻启/停
+			uni.$on('qx:keepalive:start', function() {
+				that.activateQxPpgKeepAlive('schedule-start')
+			})
+			uni.$on('qx:keepalive:stop', function() {
+				that.deactivateQxPpgKeepAlive('schedule-stop')
+			})
+			uni.$on('qx:keepalive:renew', function() {
+				if (!that.isQxKeepAliveEnabled()) return
+				that.applyKeepAliveFromPlugin(true)
+			})
+			that.bindBackgroundTaskExpired()
+			if (typeof uni.onAppHide === 'function') {
+				uni.onAppHide(function() {
+					that.qxAppHidden = true
+					if (!that.isQxKeepAliveEnabled()) return
+					if (typeof onQxBleAppBackground === 'function') {
+						onQxBleAppBackground()
+					}
+					// 开关开启时：音频 + 连续定位（定位才是有效保活，勿在前后台反复开关）
+					that.applyKeepAliveFromPlugin(true)
+				})
+			}
+			if (typeof uni.onAppShow === 'function') {
+				uni.onAppShow(function() {
+					that.qxAppHidden = false
+					if (!that.isQxKeepAliveEnabled()) return
+					// 回前台仍保持定位保活，避免反复 enable/disable 被系统杀掉
+					that.applyKeepAliveFromPlugin(false)
+					if (typeof onQxBleAppForeground === 'function') {
+						onQxBleAppForeground()
+					} else {
+						resumeQxBleScheduleIfEnabled({
+							fromForeground: true
+						}).catch((e) => {
+							console.warn('resumeQxBleScheduleIfEnabled app-show', e)
+						})
+					}
+				})
+			}
 			setTimeout(() => {
 				plus.navigator.closeSplashscreen()
 			}, 1000)
-			// 根据手机系统设置app语言
 			const lan = uni.getLocale();
 			if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 				this._i18n.locale = "zh-CN";
 			} else {
 				this._i18n.locale = "en-US";
 			}
+			refreshActiveAppBaseUrl(Vue)
 		},
 
 		onHide() {
+			this.qxAppHidden = true
+			const qxOn = this.isQxKeepAliveEnabled()
 			this.stopInterval();
 			setTimeout(() => {
 				this.startInterval();
 			}, 1000)
+			if (qxOn) {
+				this.handleInit()
+				this.applyKeepAliveFromPlugin(true)
+			}
+			if (typeof onQxBleAppBackground === 'function') {
+				onQxBleAppBackground()
+			}
 		},
 
 		mounted() {
 			this.notifyTriggered = false
 		},
 
-		onShow: async function() { // ✅ 添加 async
+		onShow() {
 			let that = this
-			// 配置域名
-			await that.getBaseUrl();
+			that.qxAppHidden = false
+			that.getBaseUrl();
 			plus.runtime.setBadgeNumber(0)
 			that.setTabBarItems()
 			that.stopInterval();
 			setTimeout(() => {
 				that.startInterval();
 			}, 1000)
-			// that.accelerometerStart()
+			if (uni.getStorageSync('token') && that.isQxKeepAliveEnabled()) {
+				that.handleInit()
+			}
+			let timesder = setInterval(res => {
+				if (uni.getStorageSync("token")) {
+					clearInterval(timesder)
+					if (that.isQxKeepAliveEnabled()) {
+						that.handleInit()
+						if (typeof onQxBleAppForeground === 'function') {
+							onQxBleAppForeground()
+						}
+					}
+				}
+			}, 2000)
 		},
 
 		methods: {
-
-
+			/** 情绪定时测量开关（Reports_Alerts_new / QX_DATA → switchHER） */
+			isQxKeepAliveEnabled() {
+				const sh = uni.getStorageSync('switchHER')
+				return sh === true || sh === 'true' || sh === 1 || sh === '1'
+			},
+			/**
+			 * 严格按 keepAlive.js：开关开启时始终
+			 * enableAudioKeepAlive(true) + enableLocationKeepAlive(true)
+			 * 定位才是有效保活，前后台都保持开启，禁止反复开关导致进程被杀
+			 * @param {boolean} [renewBgTask] 进后台/到期时续申后台任务
+			 */
+			applyKeepAliveFromPlugin(renewBgTask = false) {
+				try {
+					enableAudioKeepAlive(true)
+					this.audioEnabled = true
+				} catch (e) {
+					console.warn('enableAudioKeepAlive', e)
+				}
+				try {
+					enableLocationKeepAlive(true)
+					this.locationEnabled = true
+				} catch (e) {
+					console.warn('enableLocationKeepAlive', e)
+				}
+				if (renewBgTask) {
+					this.renewBackgroundTaskForQx('applyKeepAlive')
+				}
+				try {
+					keepAliveManager.ensureRunningForAppTimers()
+				} catch (e) {}
+			},
+			bindBackgroundTaskExpired() {
+				if (this._bgTaskExpiredBound) return
+				const that = this
+				const doBind = () => {
+					if (that._bgTaskExpiredBound) return
+					that._bgTaskExpiredBound = true
+					try {
+						that._bgTaskExpiredHandler = function(data) {
+							console.log('后台任务即将过期', data)
+							if (!that.isQxKeepAliveEnabled()) return
+							that.taskRunning = false
+							that.applyKeepAliveFromPlugin(true)
+						}
+						onBackgroundTaskExpired(that._bgTaskExpiredHandler)
+					} catch (e) {
+						that._bgTaskExpiredBound = false
+						console.warn('onBackgroundTaskExpired', e)
+					}
+				}
+				if (typeof plus !== 'undefined' && plus.globalEvent) {
+					doBind()
+					return
+				}
+				if (typeof document !== 'undefined' && document.addEventListener) {
+					document.addEventListener('plusready', doBind, {
+						once: true
+					})
+				} else {
+					setTimeout(doBind, 500)
+				}
+			},
+			async renewBackgroundTaskForQx(reason = '') {
+				if (!this.isQxKeepAliveEnabled()) return
+				const now = Date.now()
+				if (this._lastBgTaskRenewAt && now - this._lastBgTaskRenewAt < 3000) return
+				this._lastBgTaskRenewAt = now
+				try {
+					await startBackgroundTask(600)
+					this.taskRunning = true
+					// console.log('[keepAlive] startBackgroundTask(600)', reason || '-')
+				} catch (e) {
+					console.warn('startBackgroundTask', reason, e)
+				}
+			},
 			compareVersion(v1, v2) {
 				const arr1 = v1.split('.').map(Number)
 				const arr2 = v2.split('.').map(Number)
@@ -76,17 +245,10 @@
 			},
 			async checkVersionAndLogout() {
 				try {
-					// 1. 获取当前原生版本（热更新不算）
 					const currentVersion = systemInfo.appVersion
-					// 2. 读取本地存储的上一版本
 					const lastVersion = uni.getStorageSync('last_app_version') || '3.2.0'
-					console.log("currentVersion", currentVersion)
-					console.log("lastVersion", lastVersion)
-					// 3. 版本变化 → 强制登出
 					if (this.compareVersion(currentVersion, lastVersion) !== 0) {
-						// 清除所有登录态（token、用户信息等）
 						uni.removeStorageSync("token")
-						// 保存新版本号
 						uni.setStorageSync('last_app_version', currentVersion)
 					}
 				} catch (e) {
@@ -94,121 +256,165 @@
 				}
 			},
 
-			async getBaseUrl() {
+			getBaseUrl() {
 				this.checkVersionAndLogout()
-				// const ISUserInfoChina = await ISgetUserInfoChina(this.$APP_IP1);
-				// const isUserInfoUS = await ISgetUserInfoUS(this.$APP_IP2);
-				// console.log('ISUserInfoChina', ISUserInfoChina);
-				// console.log('isUserInfoUS', isUserInfoUS);
-				// if (!isUserInfoUS && !ISUserInfoChina) {
-				// 	const isInChina = await isInChinaByIP();
-				// 	console.log('IP定位结果:', isInChina ? '中国' : '国外');
-				// 	if (isInChina) {
-				Vue.prototype.$url_APP_IP = this.$APP_IP1;
-				// 	} else {
-				// 		Vue.prototype.$url_APP_IP = this.$APP_IP2;
-				// 	}
-				// } else if (isUserInfoUS && !ISUserInfoChina) {
-				// 	Vue.prototype.$url_APP_IP = this.$APP_IP2;
-				// } else if (!isUserInfoUS && ISUserInfoChina) {
-				// 	Vue.prototype.$url_APP_IP = this.$APP_IP1;
-				// } else if (isUserInfoUS && ISUserInfoChina) {
-				// 	Vue.prototype.$url_APP_IP = this.$APP_IP2;
-				// }
-				console.log("国内baseUrl", this.$url_APP_IP);
-				this.check_new_version("io.dcloud.jakob", "1") //更新
+				refreshActiveAppBaseUrl(Vue)
+				this.check_new_version("io.dcloud.jakob", "1")
 			},
-
-			// 初始化
+			/** initKeepAlive → startBackgroundTask → 音频+定位 */
 			async handleInit() {
+				if (this.keepAliveInited) {
+					if (this.isQxKeepAliveEnabled()) {
+						this.applyKeepAliveFromPlugin(!!this.qxAppHidden)
+					}
+					return
+				}
 				try {
-					const res = await initKeepAlive();
-					this.initStatus = true;
-					// console.log(`初始化成功: ${res.data.platform} ${res.data.version}`, 'success');
+					await initKeepAlive()
+					this.initStatus = true
+					this.keepAliveInited = true
+					this.bindBackgroundTaskExpired()
+					await this.handleStartTask()
 				} catch (error) {
-					// console.log(`初始化失败: ${error.msg || error.message}`, 'error');
+					console.log(`初始化失败: ${error.msg || error.message}`, 'error');
 				} finally {
 					uni.hideLoading();
 				}
 			},
 
-			// 开始后台任务
 			async handleStartTask() {
 				try {
-					// 设置10分钟超时
-					const res = await startBackgroundTask(600);
-					this.taskRunning = true;
-					// console.log(`后台任务已启动，TaskID: ${res.taskId}`, 'success');
+					if (this.taskRunning) {
+						await this.handleScheduleRefresh()
+						return
+					}
+					await this.renewBackgroundTaskForQx('handleStartTask')
+					this.taskRunning = true
+					await this.handleScheduleRefresh()
 				} catch (error) {
-					// console.log(`启动失败: ${error.msg || error.message}`, 'error');
 				} finally {
 					uni.hideLoading();
 				}
 			},
 
-			// 结束后台任务
 			async handleEndTask() {
 				try {
-					await endBackgroundTask();
+					try {
+						await endBackgroundTask()
+					} catch (e) {}
 					this.taskRunning = false;
-					// console.log('后台任务已结束', 'success');
 				} catch (error) {
-					// console.log(`结束失败: ${error.msg || error.message}`, 'error');
 				} finally {
 					uni.hideLoading();
 				}
 			},
 
-			// 设置后台刷新
 			async handleScheduleRefresh() {
 				try {
-					// 每15分钟刷新一次
-					await scheduleBackgroundRefresh(900);
-					// console.log('后台刷新已设置（15分钟间隔）', 'success');
+					if (this.isQxKeepAliveEnabled()) {
+						await this.activateQxPpgKeepAlive('handleScheduleRefresh')
+						return
+					}
+					this.applyKeepAliveFromPlugin(false)
 				} catch (error) {
-					// console.error('设置后台刷新失败:', error);
 				} finally {
 					uni.hideLoading();
 				}
 			},
 
-			// 切换音频保活
+			async activateQxPpgKeepAlive(reason = '') {
+				if (!this.isQxKeepAliveEnabled()) return
+				try {
+					if (!this.keepAliveInited) {
+						await initKeepAlive()
+						this.keepAliveInited = true
+						this.initStatus = true
+						this.bindBackgroundTaskExpired()
+					}
+				} catch (e) {
+					console.warn('activateQxPpgKeepAlive init', reason, e)
+				}
+				this.applyKeepAliveFromPlugin(true)
+				// 可选：后台刷新（keepAlive.js scheduleBackgroundRefresh）
+				try {
+					if (!this.backgroundRefreshScheduled) {
+						await scheduleBackgroundRefresh(900)
+						this.backgroundRefreshScheduled = true
+					}
+				} catch (e) {
+					console.warn('scheduleBackgroundRefresh', e)
+				}
+				this.taskRunning = true
+				// console.log('QX PPG保活已激活(连续定位+音频)', reason || '-')
+			},
+			deactivateQxPpgKeepAlive(reason = '') {
+				try {
+					enableAudioKeepAlive(false)
+				} catch (e) {}
+				try {
+					enableLocationKeepAlive(false)
+				} catch (e) {}
+				try {
+					endBackgroundTask()
+				} catch (e) {}
+				try {
+					keepAliveManager.stopQxLocationAlarm()
+				} catch (e) {}
+				this.audioEnabled = false
+				this.locationEnabled = false
+				this.taskRunning = false
+				console.log('QX PPG保活已关闭', reason || '-')
+			},
+
+			ensureAudioKeepAlive() {
+				try {
+					enableAudioKeepAlive(true)
+					this.audioEnabled = true
+				} catch (e) {}
+			},
+
+			ensureLocationKeepAlive() {
+				try {
+					enableLocationKeepAlive(true)
+					this.locationEnabled = true
+				} catch (e) {}
+			},
+
+			forceQxBackgroundKeepAlive(forceLocation = true) {
+				this.applyKeepAliveFromPlugin(!!this.qxAppHidden)
+			},
+
 			handleToggleAudio() {
 				this.audioEnabled = !this.audioEnabled;
 				enableAudioKeepAlive(this.audioEnabled);
-				// console.log(`音频保活已${this.audioEnabled ? '开启' : '关闭'}`, this.audioEnabled ? 'success' : 'warning');
-
+				console.log(`音频保活已${this.audioEnabled ? '开启' : '关闭'}`, this.audioEnabled ? 'success' : 'warning');
 			},
 
-			// 切换定位保活
 			handleToggleLocation() {
 				this.locationEnabled = !this.locationEnabled;
 				enableLocationKeepAlive(this.locationEnabled);
-				// console.log(`定位保活已${this.locationEnabled ? '开启' : '关闭'}`, this.locationEnabled ? 'success' : 'warning');
+				console.log(`定位保活已${this.locationEnabled ? '开启' : '关闭'}`, this.locationEnabled ? 'success' : 'warning');
 			},
 
-			// 检查后台刷新状态
 			async handleCheckStatus() {
 				try {
-					const status = await checkBackgroundRefreshStatus();
-					this.refreshStatus = status.status === 'available' ? '可用' :
-						status.status === 'denied' ? '已拒绝' :
-						status.status === 'restricted' ? '受限' : '未知';
-					// console.log(`后台刷新状态: ${this.refreshStatus} (可用性: ${status.available ? '是' : '否'})`, 'info');
-				} catch (error) {
-					// console.error('检查状态失败:', error);
+					const st = await checkBackgroundRefreshStatus()
+					this.refreshStatus = JSON.stringify(st)
+				} catch (e) {
+					this.refreshStatus = '未知'
 				}
 			},
-
-
 
 			// 发送推送消息
 			sendPushMessage(pushClientId) {
 				const now = new Date(); // 获取当前时间
+				const year = now.getFullYear();
+				const month = String(now.getMonth() + 1).padStart(2, '0');
+				const day = String(now.getDate()).padStart(2, '0');
 				const houres = now.getHours() < 10 ? "0" + now.getHours() : now.getHours()
 				const Minutes = now.getMinutes() < 10 ? "0" + now.getMinutes() : now.getMinutes()
 				const Seconds = now.getSeconds() < 10 ? "0" + now.getSeconds() : now.getSeconds()
-				const timestamp = now.toLocaleDateString() + " " + houres + ":" + Minutes + ":" + Seconds;
+				const timestamp = year + "/" + month + "/" + day + " " + houres + ":" + Minutes + ":" + Seconds;
 				uniCloud.callFunction({
 						name: "testUniPush", // 云函数名称
 						data: {
@@ -221,11 +427,13 @@
 					})
 					.then((dataRes) => {
 						this.notifyTriggered = false; // 标记已触发通知
+						this.sendnotifyTriggered = false
 						console.log("云函数返回的参数", dataRes)
 					})
 					.catch((err) => {
 						console.log("云函数报错", err)
 						this.notifyTriggered = false; // 标记已触发通知
+						this.sendnotifyTriggered = false
 						uni.showToast({
 							title: err.errMsg,
 							icon: "none"
@@ -443,8 +651,10 @@
 				}, 3000);
 			},
 			startInterval() {
-				// 启动定时器
-				this.intervalId = setInterval(this.receiver_list, 2000);
+				// 启动定时器（仅分享列表轮询，PPG 后台到点靠定位保活脉冲，不写在这里）
+				this.intervalId = setInterval(() => {
+					this.receiver_list()
+				}, 2000);
 			},
 			stopInterval() {
 				// 停止定时器
@@ -453,6 +663,7 @@
 					this.intervalId = null; // 清空定时器 ID
 				}
 			},
+
 			//查看别人分享给我的数据点列表
 			receiver_list() {
 				let that = this
@@ -463,271 +674,268 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {
+					// console.log("receiver_list", pending)
 					if (pending.code === 200 && pending.data && pending.data.length > 0) {
 						let pendingDevices = pending.data;
 						that.notifyTriggered = false
-						uni.getStorageInfo({
-							success(res) {
-								if (res.keys.includes("switchList")) {
-									if (uni.getStorageSync("switchList").length === pending.data
-										.length) {
-										const shuzhangya1 = uni.getStorageSync("shuzhangyaId1")
-										const shuzhangya2 = uni.getStorageSync("shuzhangyaId2")
-										const shousuoya1 = uni.getStorageSync("shousuoyaId1")
-										const shousuoya2 = uni.getStorageSync("shousuoyaId2")
-										const maibo1 = uni.getStorageSync("maiboId1")
-										const maibo2 = uni.getStorageSync("maiboId2")
-										const xeuyang1 = uni.getStorageSync("xeuyang1")
-										const xeuyang2 = uni.getStorageSync("xeuyang2")
-										// 判断设备数量是否一致
-										const storedDevices = uni.getStorageSync("switchList") || [];
-										if (storedDevices.length === pendingDevices.length) {
-											// 创建快速查找映射
-											const pendingMap = new Map(pendingDevices.map(d => [d
-												.sharerId,
-												d
-											]));
-											// 更新 storedDevices 中的 registerVal 值
-											const updatedDevices = storedDevices.map(
-												storedDevice => {
-													const pendingDevice = pendingMap.get(
-														storedDevice
-														.sharerId);
-													if (!pendingDevice) return storedDevice;
-													const updatedDataPoints = storedDevice
-														.dataPoints
-														.flatMap(dp => {
-															const pendingDataPoints =
-																pendingDevice
-																.dataPoints.filter(pdp =>
-																	pdp
-																	.register === dp
-																	.register);
-															if (pendingDataPoints.length >
-																0) {
-																// 为每个匹配的 pendingDataPoint 创建一个新的 dp 对象
-																return pendingDataPoints
-																	.map(
-																		pendingDataPoint =>
-																		({
-																			...dp,
-																			registerVal: pendingDataPoint
-																				.registerVal
-																		}));
-															} else {
-																// 如果没有匹配项，保留原始的 dp 对象
-																return dp;
-															}
-														});
-													return {
-														...storedDevice,
-														dataPoints: updatedDataPoints
-													};
+						if (uni.getStorageSync("switchList")) {
+							if (uni.getStorageSync("switchList").length === pending.data
+								.length) {
+								const shuzhangya1 = uni.getStorageSync("shuzhangyaId1")
+								const shuzhangya2 = uni.getStorageSync("shuzhangyaId2")
+								const shousuoya1 = uni.getStorageSync("shousuoyaId1")
+								const shousuoya2 = uni.getStorageSync("shousuoyaId2")
+								const maibo1 = uni.getStorageSync("maiboId1")
+								const maibo2 = uni.getStorageSync("maiboId2")
+								const xeuyang1 = uni.getStorageSync("xeuyang1")
+								const xeuyang2 = uni.getStorageSync("xeuyang2")
+								// 判断设备数量是否一致
+								const storedDevices = uni.getStorageSync("switchList") || [];
+								if (storedDevices.length === pendingDevices.length) {
+									// 创建快速查找映射
+									const pendingMap = new Map(pendingDevices.map(d => [d
+										.sharerId,
+										d
+									]));
+									// 更新 storedDevices 中的 registerVal 值
+									const updatedDevices = storedDevices.map(
+										storedDevice => {
+											const pendingDevice = pendingMap.get(
+												storedDevice
+												.sharerId);
+											if (!pendingDevice) return storedDevice;
+											const updatedDataPoints = storedDevice
+												.dataPoints
+												.flatMap(dp => {
+													const pendingDataPoints =
+														pendingDevice
+														.dataPoints.filter(pdp =>
+															pdp
+															.register === dp
+															.register);
+													if (pendingDataPoints.length >
+														0) {
+														// 为每个匹配的 pendingDataPoint 创建一个新的 dp 对象
+														return pendingDataPoints
+															.map(
+																pendingDataPoint =>
+																({
+																	...dp,
+																	registerVal: pendingDataPoint
+																		.registerVal
+																}));
+													} else {
+														// 如果没有匹配项，保留原始的 dp 对象
+														return dp;
+													}
 												});
-											// 如果数据发生变化，保存更新后的数据到本地存储
-											uni.setStorageSync("switchList", updatedDevices);
-											// 保存原始副本
-											const originalData = JSON.parse(JSON.stringify(
-												storedDevices));
-											// 检查数据是否发生变化
-											let hasDataChanged = false;
-											for (let i = 0; i < updatedDevices.length; i++) {
-												if (updatedDevices[i].swicth === true) {
-													// 找到原始数据中对应的设备
-													const originalDevice = originalData.find(
-														device =>
-														device.sharerId === updatedDevices[i]
-														.sharerId);
-													if (!originalDevice) {
-														// 如果原始数据中没有找到对应的设备，说明数据发生了变化
-														hasDataChanged = true;
-														break;
-													}
-													// 比较 dataPoints 是否发生变化
-													const originalDataPoints = originalDevice
-														.dataPoints;
-													const updatedDataPoints = updatedDevices[i]
-														.dataPoints;
+											return {
+												...storedDevice,
+												dataPoints: updatedDataPoints
+											};
+										});
+									// 如果数据发生变化，保存更新后的数据到本地存储
+									uni.setStorageSync("switchList", updatedDevices);
+									// 保存原始副本
+									const originalData = JSON.parse(JSON.stringify(
+										storedDevices));
+									// 检查数据是否发生变化
+									let hasDataChanged = false;
+									for (let i = 0; i < updatedDevices.length; i++) {
+										if (updatedDevices[i].swicth === true) {
+											// 找到原始数据中对应的设备
+											const originalDevice = originalData.find(
+												device =>
+												device.sharerId === updatedDevices[i]
+												.sharerId);
+											if (!originalDevice) {
+												// 如果原始数据中没有找到对应的设备，说明数据发生了变化
+												hasDataChanged = true;
+												break;
+											}
+											// 比较 dataPoints 是否发生变化
+											const originalDataPoints = originalDevice
+												.dataPoints;
+											const updatedDataPoints = updatedDevices[i]
+												.dataPoints;
 
-													if (originalDataPoints.length !==
-														updatedDataPoints
-														.length) {
-														// 如果 dataPoints 数组长度不同，说明数据发生了变化
-														hasDataChanged = true;
-														break;
-													}
-													for (let j = 0; j < originalDataPoints
-														.length; j++) {
-														const originalPoint = originalDataPoints[
-															j];
-														const updatedPoint = updatedDataPoints
-															.find(
-																point => point.register ===
-																originalPoint.register);
+											if (originalDataPoints.length !==
+												updatedDataPoints
+												.length) {
+												// 如果 dataPoints 数组长度不同，说明数据发生了变化
+												hasDataChanged = true;
+												break;
+											}
+											for (let j = 0; j < originalDataPoints
+												.length; j++) {
+												const originalPoint = originalDataPoints[
+													j];
+												const updatedPoint = updatedDataPoints
+													.find(
+														point => point.register ===
+														originalPoint.register);
 
-														if (!updatedPoint) {
-															// 如果更新后的 dataPoints 中没有找到对应的字段，说明数据发生了变化
-															hasDataChanged = true;
-															break;
-														}
+												if (!updatedPoint) {
+													// 如果更新后的 dataPoints 中没有找到对应的字段，说明数据发生了变化
+													hasDataChanged = true;
+													break;
+												}
 
-														if (originalPoint.registerVal !==
-															updatedPoint
-															.registerVal) {
-															// 如果字段值发生变化，说明数据发生了变化
-															hasDataChanged = true;
-															break;
-														}
-													}
-													if (hasDataChanged) {
-														break; // 如果发现变化，退出循环
-													}
+												if (originalPoint.registerVal !==
+													updatedPoint
+													.registerVal) {
+													// 如果字段值发生变化，说明数据发生了变化
+													hasDataChanged = true;
+													break;
 												}
 											}
 											if (hasDataChanged) {
-												let aaa = uni.getStorageSync("switchList")
-												let bbb = []
-												// 保存更新后的数据到本地存储
-												for (let i = 0; aaa.length > i; i++) {
-													for (let aa = 0; aaa[i].dataPoints.length >
-														aa; aa++) {
-														if (aaa[i].dataPoints[aa].register ===
-															"lowPressure") {
-															const lowPressure = parseInt(aaa[i]
-																.dataPoints[aa].registerVal);
-															if (shuzhangya1 <= lowPressure &&
-																shuzhangya2 >= lowPressure) {
-																aaa[i].jingbaoshow1 = false
-																aaa[i].jingbao1 = lowPressure +
-																	"mmHg"
-															} else {
-																aaa[i].jingbaoshow1 = true
-																aaa[i].jingbao1 = lowPressure +
-																	"mmHg"
-																that.notifyTriggered = true
-															}
-														}
-														if (aaa[i].dataPoints[aa].register ===
-															"highPressure") {
-															const highPressure = parseInt(aaa[i]
-																.dataPoints[aa].registerVal);
-															if (shousuoya1 <= highPressure &&
-																shousuoya2 >= highPressure) {
-																aaa[i].jingbaoshow2 = false
-																aaa[i].jingbao2 = highPressure +
-																	"mmHg"
-															} else {
-																aaa[i].jingbaoshow2 = true
-																aaa[i].jingbao2 = highPressure +
-																	"mmHg"
-																that.notifyTriggered = true
-															}
-														}
-														if (aaa[i].dataPoints[aa].register ===
-															"heartrate") {
-															const heartrate = parseInt(aaa[i]
-																.dataPoints[aa].registerVal);
-															if (maibo1 <= heartrate && maibo2 >=
-																heartrate) {
-																aaa[i].jingbaoshow3 = false
-																aaa[i].jingbao3 = heartrate + "BPM"
-															} else {
-																aaa[i].jingbaoshow3 = true
-																aaa[i].jingbao3 = heartrate + "BPM"
-																that.notifyTriggered = true
-															}
-														}
-														if (aaa[i].dataPoints[aa].register ===
-															"oxygen") {
-															const oxygen = parseInt(aaa[i]
-																.dataPoints[
-																	aa].registerVal);
-															if (xeuyang1 <= oxygen && xeuyang2 >=
-																oxygen) {
-																aaa[i].jingbaoshow4 = false
-																aaa[i].jingbao4 = oxygen + "%"
-															} else {
-																aaa[i].jingbaoshow4 = true
-																aaa[i].jingbao4 = oxygen + "%"
-																that.notifyTriggered = true
-															}
-														}
-													}
-													bbb.push(aaa[i])
-													uni.setStorageSync("switchList", bbb)
-												}
-												that.checkAndNotify()
+												break; // 如果发现变化，退出循环
 											}
 										}
-									} else {
-										let array1 = uni.getStorageSync("switchList");
-										let array2 = [];
-										// 遍历 pendingDevices
-										pendingDevices.forEach(item => {
-											item.swicth = false;
-											item.jingbaoshow1 = false;
-											item.jingbao1 = "";
-											item.jingbaoshow2 = false;
-											item.jingbao2 = "";
-											item.jingbaoshow3 = false;
-											item.jingbao3 = "";
-											item.dataPoints.forEach(dataPoint => {
-												let value = parseInt(dataPoint
-													.registerVal);
-												switch (dataPoint.register) {
-													case "lowPressure":
-														that.checkAlarm(item,
-															dataPoint
-															.register, value,
-															that
-															.shuzhangya1, that
-															.shuzhangya2,
-															"jingbaoshow1",
-															"jingbao1", "mmHg");
-														break;
-													case "highPressure":
-														that.checkAlarm(item,
-															dataPoint
-															.register, value,
-															that
-															.shousuoya1, that
-															.shousuoya2,
-															"jingbaoshow2",
-															"jingbao2", "mmHg");
-														break;
-													case "heartrate":
-														that.checkAlarm(item,
-															dataPoint
-															.register, value,
-															that
-															.maibo1, that
-															.maibo2,
-															"jingbaoshow3",
-															"jingbao3", "BPM");
-														break;
-													case "oxygen":
-														that.checkAlarm(item,
-															dataPoint
-															.register, value,
-															that
-															.xeuyang1, that
-															.xeuyang2,
-															"jingbaoshow4",
-															"jingbao4", "%");
-														break;
+									}
+									if (hasDataChanged) {
+										let aaa = uni.getStorageSync("switchList")
+										let bbb = []
+										// 保存更新后的数据到本地存储
+										for (let i = 0; aaa.length > i; i++) {
+											for (let aa = 0; aaa[i].dataPoints.length >
+												aa; aa++) {
+												if (aaa[i].dataPoints[aa].register ===
+													"lowPressure") {
+													const lowPressure = parseInt(aaa[i]
+														.dataPoints[aa].registerVal);
+													if (shuzhangya1 <= lowPressure &&
+														shuzhangya2 >= lowPressure) {
+														aaa[i].jingbaoshow1 = false
+														aaa[i].jingbao1 = lowPressure +
+															"mmHg"
+													} else {
+														aaa[i].jingbaoshow1 = true
+														aaa[i].jingbao1 = lowPressure +
+															"mmHg"
+														that.notifyTriggered = true
+													}
 												}
-											});
-											array2.push(item);
-										});
-										let combinedArray = array2.concat(
-											array1.filter(item => !array2.some(
-												longItem => longItem.id === item.id))
-										);
-										uni.setStorageSync("switchList", combinedArray)
+												if (aaa[i].dataPoints[aa].register ===
+													"highPressure") {
+													const highPressure = parseInt(aaa[i]
+														.dataPoints[aa].registerVal);
+													if (shousuoya1 <= highPressure &&
+														shousuoya2 >= highPressure) {
+														aaa[i].jingbaoshow2 = false
+														aaa[i].jingbao2 = highPressure +
+															"mmHg"
+													} else {
+														aaa[i].jingbaoshow2 = true
+														aaa[i].jingbao2 = highPressure +
+															"mmHg"
+														that.notifyTriggered = true
+													}
+												}
+												if (aaa[i].dataPoints[aa].register ===
+													"heartrate") {
+													const heartrate = parseInt(aaa[i]
+														.dataPoints[aa].registerVal);
+													if (maibo1 <= heartrate && maibo2 >=
+														heartrate) {
+														aaa[i].jingbaoshow3 = false
+														aaa[i].jingbao3 = heartrate + "BPM"
+													} else {
+														aaa[i].jingbaoshow3 = true
+														aaa[i].jingbao3 = heartrate + "BPM"
+														that.notifyTriggered = true
+													}
+												}
+												if (aaa[i].dataPoints[aa].register ===
+													"oxygen") {
+													const oxygen = parseInt(aaa[i]
+														.dataPoints[
+															aa].registerVal);
+													if (xeuyang1 <= oxygen && xeuyang2 >=
+														oxygen) {
+														aaa[i].jingbaoshow4 = false
+														aaa[i].jingbao4 = oxygen + "%"
+													} else {
+														aaa[i].jingbaoshow4 = true
+														aaa[i].jingbao4 = oxygen + "%"
+														that.notifyTriggered = true
+													}
+												}
+											}
+											bbb.push(aaa[i])
+											uni.setStorageSync("switchList", bbb)
+										}
+										that.checkAndNotify()
 									}
 								}
+							} else {
+								let array1 = uni.getStorageSync("switchList");
+								let array2 = [];
+								// 遍历 pendingDevices
+								pendingDevices.forEach(item => {
+									item.swicth = false;
+									item.jingbaoshow1 = false;
+									item.jingbao1 = "";
+									item.jingbaoshow2 = false;
+									item.jingbao2 = "";
+									item.jingbaoshow3 = false;
+									item.jingbao3 = "";
+									item.dataPoints.forEach(dataPoint => {
+										let value = parseInt(dataPoint
+											.registerVal);
+										switch (dataPoint.register) {
+											case "lowPressure":
+												that.checkAlarm(item,
+													dataPoint
+													.register, value,
+													that
+													.shuzhangya1, that
+													.shuzhangya2,
+													"jingbaoshow1",
+													"jingbao1", "mmHg");
+												break;
+											case "highPressure":
+												that.checkAlarm(item,
+													dataPoint
+													.register, value,
+													that
+													.shousuoya1, that
+													.shousuoya2,
+													"jingbaoshow2",
+													"jingbao2", "mmHg");
+												break;
+											case "heartrate":
+												that.checkAlarm(item,
+													dataPoint
+													.register, value,
+													that
+													.maibo1, that
+													.maibo2,
+													"jingbaoshow3",
+													"jingbao3", "BPM");
+												break;
+											case "oxygen":
+												that.checkAlarm(item,
+													dataPoint
+													.register, value,
+													that
+													.xeuyang1, that
+													.xeuyang2,
+													"jingbaoshow4",
+													"jingbao4", "%");
+												break;
+										}
+									});
+									array2.push(item);
+								});
+								let combinedArray = array2.concat(
+									array1.filter(item => !array2.some(
+										longItem => longItem.id === item.id))
+								);
+								uni.setStorageSync("switchList", combinedArray)
 							}
-						})
+						}
 					}
 				})
 			},
@@ -735,16 +943,24 @@
 			checkAndNotify() {
 				let that = this
 				console.log("hahhahah", that.notifyTriggered)
-				if (that.notifyTriggered === true) {
+				if (that.notifyTriggered === true && !that.sendnotifyTriggered) {
 					uni.getPushClientId({
 						success(res) {
 							console.log('获取到的推送客户端标识:', res.cid);
 							that.sendPushMessage(res.cid);
 							that.notifyTriggered = false
+							that.sendnotifyTriggered = true
+							setTimeout(() => {
+								that.sendnotifyTriggered = false
+							}, 5000)
 						},
 						fail(err) {
 							console.log("获取到的推送客户端标识失败", err)
 							that.notifyTriggered = false;
+							that.sendnotifyTriggered = true
+							setTimeout(() => {
+								that.sendnotifyTriggered = false
+							}, 5000)
 						}
 					});
 				}

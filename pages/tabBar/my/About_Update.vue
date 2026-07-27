@@ -5,6 +5,8 @@
 			<text style="margin-top: 20px;font-size: 18px; font-weight: bold;">JakobLife</text>
 			<text style="margin-top: 10px;font-size: 12px; color: gray;">{{version}}</text>
 			<text style="font-size: 12px; color: gray;" @click="beiandianji()">{{Record_number}}</text>
+			<text v-if="$url_APP_IP==='https://jakoblife-qa.jakob-techs.com'"
+				style="font-size: 12px; color: gray;">{{$t("测试服")}}</text>
 		</view>
 		<!-- <scroll-view class="log" scroll-y :scroll-top="scrollTop">
 			<view v-for="(l,i) in logs" :key="i" class="log-item">
@@ -208,9 +210,9 @@
 				failedBlocks: [],
 				skip4KChecks: false,
 				currentPartition: null,
-				deviceIdss: uni.getStorageSync("landeviceId"),
-				serviceIdss: uni.getStorageSync("lanserviceId"),
-				characteristicIdss: uni.getStorageSync("landcharacteristicId"),
+				deviceIdss: uni.getStorageSync("deviceIdwatch"),
+				serviceIdss: uni.getStorageSync("serviceIdwatch"),
+				// characteristicIdss: uni.getStorageSync("landcharacteristicId"),
 				updateIdChangedtimer: null,
 				processedIds: new Set(), // 使用Set存储已处理的ID
 				wactchtimerid: "",

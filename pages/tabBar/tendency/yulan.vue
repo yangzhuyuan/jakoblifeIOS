@@ -60,7 +60,7 @@
 						<view style="display: flex;flex-direction: row;width: 98%;">
 							<view style="width: 15%;">{{$t("时间")}}</view>
 							<view style="width: 20%">{{$t("设备")}}</view>
-							<view style="width: 20%">{{$t("体重")}}/kg</view>
+							<view style="width: 20%">{{$t("体重")}}/{{$t("千克")}}</view>
 							<view style="width: 20%;">BMI</view>
 							<view style="width: 13%;padding: 2px;">{{$t("平均")}}</view>
 						</view>

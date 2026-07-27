@@ -29,12 +29,12 @@
 					{
 						title: '身高',
 						key: 'danwei1',
-						array: ['inch', 'cm']
+						array: [this.$t("英寸"), this.$t("厘米")]
 					},
 					{
 						title: '体重',
 						key: 'danwei2',
-						array: ['kg', 'lb']
+						array: [this.$t("千克"), this.$t("英镑")]
 					}
 				],
 				unitMap: {}, // 保存单位值
@@ -98,11 +98,20 @@
 							const value = unitData[keyMap[key]];
 							const row = this.rows.find(r => r.key === key);
 							if (!row) return;
-							const idx = row.array.indexOf(value);
+							// 单位中英文映射
+							const unitAlias = {
+								'cm': '厘米',
+								'inch': '英寸'
+							};
+							// 尝试查找原始值，如果找不到且存在别名，则用别名查找
+							let idx = row.array.indexOf(value);
+							if (idx === -1 && unitAlias[value]) {
+								idx = row.array.indexOf(unitAlias[value]);
+							}
 							const safe = idx !== -1 ? idx : 0;
 							this.$set(this.unitMap, key, value);
 							this.$set(this.indexMap, key, safe);
-							uni.setStorageSync(key, safe); // 直接存索引
+							uni.setStorageSync(key, safe);
 						});
 					}
 				});
@@ -181,24 +190,31 @@
 	}
 
 	.context_btn2 {
-	    display: flex;
-	    flex-direction: row;
-	    background: white;
-	    align-items: center;
-	    height: auto;           /* 改为自动高度，支持多行 */
-	    min-height: 56px;       /* 最小高度保持原样 */
-	    margin: 30px 0;
-	    padding: 12px 20px;     /* 增加上下内边距 */
-	    border-radius: 10px;
-	    box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.15);
+		display: flex;
+		flex-direction: row;
+		background: white;
+		align-items: center;
+		height: auto;
+		/* 改为自动高度，支持多行 */
+		min-height: 56px;
+		/* 最小高度保持原样 */
+		margin: 30px 0;
+		padding: 12px 20px;
+		/* 增加上下内边距 */
+		border-radius: 10px;
+		box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.15);
 	}
-	
+
 	.context_title1 {
-	    flex: 1;                /* 占据剩余空间 */
-	    font-size: 16px;
-	    color: black;
-	    line-height: 1.4;       /* 设置合适的行高 */
-	    word-break: break-word; /* 允许断行 */
-	    padding-right: 12px;    /* 与switch保持间距 */
+		flex: 1;
+		/* 占据剩余空间 */
+		font-size: 16px;
+		color: black;
+		line-height: 1.4;
+		/* 设置合适的行高 */
+		word-break: break-word;
+		/* 允许断行 */
+		padding-right: 12px;
+		/* 与switch保持间距 */
 	}
 </style>

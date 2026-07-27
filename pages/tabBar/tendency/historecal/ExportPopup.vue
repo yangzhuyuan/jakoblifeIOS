@@ -76,8 +76,9 @@
 
 			return {
 				exportFormat: 'pdf',
-				startDate: today.toISOString().slice(0, 10),
-				endDate: nextYear.toISOString().slice(0, 10),
+				// 用本地日历日，避免 toISOString 在西时区偏一天
+				startDate: this.formatDate(today),
+				endDate: this.formatDate(nextYear),
 				minDate: minDate,
 				maxDate: maxDate
 			}

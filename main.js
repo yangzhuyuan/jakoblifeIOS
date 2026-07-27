@@ -23,8 +23,9 @@ import {
 	getRequest,
 	postRequest
 } from './pages/api/request.js'
-
-
+import {
+	refreshActiveAppBaseUrl
+} from './pages/api/appBaseHosts.js'
 
 Vue.config.productionTip = false
 Vue.prototype.$store = store
@@ -36,15 +37,7 @@ Vue.prototype.$globalTimers = {
 	heartbeatInterval: null
 };
 
-//测试域名
-// const APP_IP_CN = "https://jakoblife-qa.jakob-techs.com"; //中国测试服务器
-//正式域名
-const APP_IP_CN = 'https://jakoblife.jakob-techs.com' //中国正式服务器
-const APP_IP_US = 'https://jakoblife.us.jakob-techs.com' //美国正式服务器
-
-Vue.prototype.$APP_IP1 = APP_IP_CN
-Vue.prototype.$APP_IP2 = APP_IP_US
-
+refreshActiveAppBaseUrl(Vue)
 
 /**
  * 全局接口

@@ -146,7 +146,7 @@
 		},
 
 		methods: {
-			...mapMutations(['setacktypes']),
+			...mapMutations(['setacktypes', 'setacktypes6']),
 			getinfor() {
 				let that = this
 				uni.request({
@@ -253,7 +253,9 @@
 				uni.removeStorageSync("kapianlist2")
 				uni.removeStorageSync("listdadsa")
 				this.setacktypes("0")
+				this.setacktypes6("0")
 				uni.clearStorageSync()
+				uni.clearStorage()
 				uni.setStorageSync("last_app_version", systemInfo.appVersion)
 				uni.setStorageSync('agree', 1)
 				uni.reLaunch({
