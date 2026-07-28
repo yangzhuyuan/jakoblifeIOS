@@ -1388,7 +1388,7 @@ async function runOneBpw6QxMeasurement(deviceId) {
 	} catch (err) {
 		console.warn('[qxBle] BPW6 PPG通道准备失败', err)
 	}
-	const result = await u16proBLE.startPPGMeasurementWithDuration(30, targetDeviceId)
+	const result = await u16proBLE.startPPGMeasurementWithDuration(60, targetDeviceId)
 	if (!result || !result.success) {
 		throw new Error('BPW6 PPG启动失败')
 	}

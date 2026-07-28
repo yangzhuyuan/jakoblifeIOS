@@ -537,6 +537,30 @@ export class U16ProProtocol {
 	}
 
 	/**
+	 * 4.1 APP获取血压原始数据大小 — 0x2E
+	 */
+	static buildBPRawGetSize() {
+		return this.buildBcPacket(CMD.BP_RAW_GET_SIZE)
+	}
+
+	/**
+	 * 4.2 APP按偏移获取血压原始数据 — 0x2F
+	 * @param {number} offset - 偏移位置（bytes）
+	 */
+	static buildBPRawGetData(offset = 0) {
+		return this.buildBcPacket(CMD.BP_RAW_GET_DATA, this.uint32ToLittleEndian(offset >>> 0))
+	}
+
+	/**
+	 * 4.3 请求 RRI 数据 — 0x48
+	 * @param {number} groupCount - 获取最新 N 组，N<=24
+	 */
+	static buildRRIGetData(groupCount = 1) {
+		const n = Math.max(1, Math.min(BC_PACKET.RRI_MAX_GROUPS, groupCount | 0))
+		return this.buildBcPacket(CMD.RRI_GET_DATA, [n])
+	}
+
+	/**
 	 * 4.4 APP发起PPG测量并设置测量时长（10~60秒）
 	 */
 	static buildPPGStartWithDuration(seconds) {
@@ -641,6 +665,15 @@ export class U16ProProtocol {
 		}
 
 		switch (cmd) {
+			case CMD.BP_RAW_GET_SIZE:
+				result.parsed = this.parseBPRawSize(data)
+				break
+			case CMD.BP_RAW_GET_DATA:
+				result.parsed = this.parseBPRawChunk(data)
+				break
+			case CMD.RRI_GET_DATA:
+				result.parsed = this.parseRRIData(data)
+				break
 			case CMD.PPG_START_WITH_DURATION:
 			case CMD.PPG_START:
 			case CMD.PPG_STOP:
@@ -662,6 +695,73 @@ export class U16ProProtocol {
 		}
 
 		return result
+	}
+
+	/**
+	 * 解析血压原始数据大小应答（4字节小端）
+	 */
+	static parseBPRawSize(data) {
+		if (data.length < 4) {
+			return {
+				error: '血压原始数据大小格式错误',
+				type: 'bp_raw_size'
+			}
+		}
+		return {
+			size: this.littleEndianToUint32(data, 0),
+			type: 'bp_raw_size'
+		}
+	}
+
+	/**
+	 * 解析血压原始数据块应答
+	 * Data区：偏移(4) + 数据大小(1) + 数据(n)，n<=128
+	 */
+	static parseBPRawChunk(data) {
+		if (data.length < 5) {
+			return {
+				error: '血压原始数据块格式错误',
+				type: 'bp_raw_chunk'
+			}
+		}
+		const offset = this.littleEndianToUint32(data, 0)
+		const chunkSize = data[4]
+		const rawData = data.slice(5, 5 + chunkSize)
+		return {
+			offset,
+			chunkSize,
+			rawData: [...rawData],
+			type: 'bp_raw_chunk'
+		}
+	}
+
+	/**
+	 * 血压原始字节 → 小端 uint16 压力采样（单位 Pa，50Hz）
+	 */
+	static parseBPRawUint16Samples(bytes) {
+		const raw = Array.isArray(bytes) ? bytes : []
+		const sampleBytes = BC_PACKET.BP_RAW_SAMPLE_BYTES || 2
+		const usable = raw.length - (raw.length % sampleBytes)
+		const samples = []
+		for (let i = 0; i < usable; i += sampleBytes) {
+			samples.push(raw[i] + (raw[i + 1] << 8))
+		}
+		return samples
+	}
+
+	/**
+	 * 解析 RRI 应答；空包 dataLen=0 表示无数据
+	 * 数据区每个字节为 1 个间期，单位 10ms
+	 */
+	static parseRRIData(data) {
+		const raw = Array.isArray(data) ? [...data] : []
+		const unitMs = BC_PACKET.RRI_UNIT_MS || 10
+		return {
+			empty: raw.length === 0,
+			rriData: raw,
+			intervalsMs: raw.map((b) => (b & 0xFF) * unitMs),
+			type: 'rri_data'
+		}
 	}
 
 	/**
@@ -728,6 +828,26 @@ export class U16ProProtocol {
 			ppgData: [...ppgData],
 			type: 'ppg_chunk'
 		}
+	}
+
+	/**
+	 * 将 PPG 原始字节解析为 32 位有符号 ADC 采样（小端）
+	 * 协议：无单位 32 位 ADC 码，200Hz；不足 4 字节的尾部丢弃
+	 */
+	static parsePPGInt32Samples(bytes) {
+		const raw = Array.isArray(bytes) ? bytes : []
+		const sampleBytes = BC_PACKET.PPG_SAMPLE_BYTES || 4
+		const usable = raw.length - (raw.length % sampleBytes)
+		const samples = []
+		for (let i = 0; i < usable; i += sampleBytes) {
+			let v = raw[i] |
+				(raw[i + 1] << 8) |
+				(raw[i + 2] << 16) |
+				(raw[i + 3] << 24)
+			// JS 位运算为 32 位有符号，<<24 后已是 Int32
+			samples.push(v | 0)
+		}
+		return samples
 	}
 
 	// ==================== 响应解析 ====================

@@ -155,10 +155,10 @@
 		},
 
 		methods: {
-			/** 情绪定时测量开关（Reports_Alerts_new / QX_DATA → switchHER） */
+			/** 定时测量任一开关开启即保活/恢复（无感 switchHER + 情绪 switchEmotionHER，与 qxBleAlignedSchedule.isSwitchOn 一致） */
 			isQxKeepAliveEnabled() {
-				const sh = uni.getStorageSync('switchHER')
-				return sh === true || sh === 'true' || sh === 1 || sh === '1'
+				const isOn = (v) => v === true || v === 'true' || v === 1 || v === '1'
+				return isOn(uni.getStorageSync('switchHER')) || isOn(uni.getStorageSync('switchEmotionHER'))
 			},
 			/**
 			 * 严格按 keepAlive.js：开关开启时始终

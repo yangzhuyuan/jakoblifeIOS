@@ -30,6 +30,11 @@ export const CMD = {
 	FACTORY_RESET: 0xFF, //4.17 恢复出厂设置命令
 	RESTART: 0x08, //4.4重启手环
 
+	// 长包：血压原始数据 / RRI（0xBC自定义蓝牙服务，业务暂未启用）
+	BP_RAW_GET_SIZE: 0x2E, // 请求血压原始数据大小
+	BP_RAW_GET_DATA: 0x2F, // 按偏移请求血压原始数据
+	RRI_GET_DATA: 0x48, // 请求/返回 RRI 数据（心血管预警）
+
 	// PPG测量（0xBC自定义蓝牙服务）
 	PPG_START_WITH_DURATION: 0x49, // 开启PPG测量(带时长)
 	PPG_START: 0x4A, // 开启PPG测量
@@ -54,7 +59,20 @@ export const BC_PACKET = {
 	PPG_DURATION_MIN: 10,
 	PPG_DURATION_MAX: 60,
 	PPG_CHUNK_SIZE: 128,
+	// 协议备注：iOS MTU 偏小时建议 100~150ms，过快会导致手表/APP 变慢
 	PPG_READ_INTERVAL_MS: 120,
+	// 长包协议：PPG 为 32 位 ADC 码，采样 200Hz
+	PPG_SAMPLE_BYTES: 4,
+	PPG_SAMPLING_RATE: 100,
+	// 长包协议：血压原始压力过程数据，单位 Pa，采样 50Hz（按 16bit 小端解析）
+	BP_RAW_CHUNK_SIZE: 128,
+	BP_RAW_READ_INTERVAL_MS: 120,
+	BP_RAW_SAMPLE_BYTES: 2,
+	BP_RAW_SAMPLING_RATE: 50,
+	// 长包协议：RRI 间期，单位 10ms；最多 24 组
+	RRI_MAX_GROUPS: 24,
+	RRI_UNIT_MS: 10,
+	RRI_COLLECT_IDLE_MS: 800,
 	BC_NOTIFY_STALE_MS: 20000,
 }
 

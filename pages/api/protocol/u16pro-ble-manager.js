@@ -56,6 +56,9 @@ class U16ProBLEManager {
 			ppgData: [], // PPG原始数据
 			ppgDataSize: 0, // PPG数据总大小
 			ppgMeasuring: false, // 是否正在PPG测量
+			bpRawData: [], // 血压原始数据（长包，暂未启用业务）
+			bpRawDataSize: 0,
+			rriGroups: [], // RRI 组数据（长包，暂未启用业务）
 		}
 
 		// 读取状态
@@ -91,6 +94,18 @@ class U16ProBLEManager {
 			currentOffset: 0
 		}
 
+		// 血压原始数据读取状态（长包 0x2E/0x2F，业务暂未调用）
+		this.bpRawReadingState = {
+			isReading: false,
+			totalSize: 0,
+			buffer: [],
+			currentOffset: 0
+		}
+		this._bpRawManagedRead = false
+
+		// RRI 多包收集（长包 0x48，业务暂未调用）
+		this._rriCollector = null
+
 		// 0xBC命令等待队列（key -> { resolve, reject, timer, acceptCmds, expectedOffset }）
 		this._pendingBcRequests = {}
 		this.bcReceiveBuffer = []
@@ -118,6 +133,8 @@ class U16ProBLEManager {
 			onBPDynamicParamsChanged: null,
 			onPPGMeasurement: null,
 			onPPGData: null,
+			onBPRawData: null, // 长包血压原始数据（暂未使用）
+			onRRIData: null, // 长包 RRI（暂未使用）
 			onError: null,
 			onConnected: null,
 			onDisconnected: null
@@ -159,6 +176,8 @@ class U16ProBLEManager {
 		this.bcWriteType = 'write'
 		this.bcReceiveBuffer = []
 		this._lastBcNotifyTime = 0
+		this._resetBPRawReadingState()
+		this._clearRriCollector(new Error('BC服务已重置'))
 		Object.keys(this._pendingBcRequests).forEach((key) => {
 			this._rejectPendingBcRequest(key, new Error('BC服务已重置'))
 		})
@@ -215,10 +234,23 @@ class U16ProBLEManager {
 				continue
 			}
 
-			if (pending.expectedOffset !== undefined && result.cmd === CMD.PPG_GET_DATA) {
+			// 写入完成前到达的应答视为残留，避免首次绑定降级时瞬间 status:0
+			if (pending.armed === false) {
+				console.warn('【PPG】丢弃写入前残留应答', {
+					cmd: '0x' + (result.cmd != null ? result.cmd.toString(16) : '?'),
+					key
+				})
+				return false
+			}
+
+			if (pending.expectedOffset !== undefined && (
+					result.cmd === CMD.PPG_GET_DATA ||
+					result.cmd === CMD.BP_RAW_GET_DATA
+				)) {
 				const parsed = result.parsed || {}
 				if (parsed.offset !== pending.expectedOffset) {
-					console.log('【PPG】offset不匹配，继续等待', {
+					console.log('【BC】offset不匹配，继续等待', {
+						cmd: '0x' + result.cmd.toString(16),
 						expected: pending.expectedOffset,
 						received: parsed.offset
 					})
@@ -233,11 +265,14 @@ class U16ProBLEManager {
 		}
 		if (result && result.cmd !== undefined) {
 			const pendingKeys = Object.keys(this._pendingBcRequests)
-			const isUnsolicitedPpgNotify = !pendingKeys.length && (
+			const isUnsolicitedKnown = !pendingKeys.length && (
 				result.cmd === CMD.PPG_MEASUREMENT_COMPLETE ||
-				result.cmd === CMD.PPG_STOP
+				result.cmd === CMD.PPG_STOP ||
+				result.cmd === CMD.BP_RAW_GET_SIZE ||
+				result.cmd === CMD.BP_RAW_GET_DATA ||
+				result.cmd === CMD.RRI_GET_DATA
 			)
-			if (!isUnsolicitedPpgNotify) {
+			if (!isUnsolicitedKnown) {
 				console.warn('【PPG】收到BC应答但未匹配等待队列', {
 					cmd: '0x' + result.cmd.toString(16),
 					pendingKeys
@@ -690,6 +725,9 @@ class U16ProBLEManager {
 		}
 
 		this._tryResolvePendingBcRequest(result)
+		if (result.cmd === CMD.RRI_GET_DATA && this._rriCollector && this._rriCollector.active) {
+			this._handleRRICollectorPacket(result.parsed, deviceId)
+		}
 
 		const isPpgCmd = result.cmd === CMD.PPG_START_WITH_DURATION ||
 			result.cmd === CMD.PPG_START ||
@@ -697,12 +735,28 @@ class U16ProBLEManager {
 			result.cmd === CMD.PPG_GET_SIZE ||
 			result.cmd === CMD.PPG_GET_DATA ||
 			result.cmd === CMD.PPG_MEASUREMENT_COMPLETE
+		const isBpRawCmd = result.cmd === CMD.BP_RAW_GET_SIZE ||
+			result.cmd === CMD.BP_RAW_GET_DATA
+		const isRriCmd = result.cmd === CMD.RRI_GET_DATA
 
-		if (!isPpgCmd) {
+		if (!isPpgCmd && !isBpRawCmd && !isRriCmd) {
 			return
 		}
 
 		switch (result.cmd) {
+			case CMD.BP_RAW_GET_SIZE:
+				this.state.bpRawDataSize = result.parsed?.size || 0
+				return {
+					...result.parsed,
+					type: 'bp_raw_size'
+				}
+			case CMD.BP_RAW_GET_DATA:
+				return this._handleBPRawChunkResponse(result.parsed, deviceId)
+			case CMD.RRI_GET_DATA:
+				return {
+					...result.parsed,
+					type: 'rri_data'
+				}
 			case CMD.PPG_START_WITH_DURATION:
 			case CMD.PPG_START:
 			case CMD.PPG_STOP:
@@ -818,7 +872,11 @@ class U16ProBLEManager {
 	}
 	_waitForBcResponse(cmd, options = {}) {
 		const {
-			timeout = 10000, acceptCmds = [cmd], expectedOffset
+			timeout = 10000,
+			acceptCmds = [cmd],
+			expectedOffset,
+			// 默认已武装；启测路径可先 unarmed，写入成功后再 arm，防止残留应答抢答
+			armed = true
 		} = options
 		const key = this._getPendingBcRequestKey(cmd, expectedOffset)
 		return new Promise((resolve, reject) => {
@@ -836,7 +894,30 @@ class U16ProBLEManager {
 				timer,
 				acceptCmds,
 				expectedOffset,
-				requestCmd: cmd
+				requestCmd: cmd,
+				armed: !!armed,
+				armedAt: armed ? Date.now() : 0
+			}
+		})
+	}
+
+	_armPendingBcRequest(cmd, expectedOffset) {
+		const key = this._getPendingBcRequestKey(cmd, expectedOffset)
+		const pending = this._pendingBcRequests[key]
+		if (!pending) return
+		pending.armed = true
+		pending.armedAt = Date.now()
+	}
+
+	/** 启测前清空残留缓冲与未决等待，避免降级瞬间失败 */
+	_clearStaleBcStartState() {
+		this.bcReceiveBuffer = []
+		Object.keys(this._pendingBcRequests).forEach((key) => {
+			const pending = this._pendingBcRequests[key]
+			if (!pending) return
+			const cmd = pending.requestCmd
+			if (cmd === CMD.PPG_START || cmd === CMD.PPG_START_WITH_DURATION || cmd === CMD.PPG_STOP) {
+				this._rejectPendingBcRequest(key, new Error('PPG启测前清理残留等待'))
 			}
 		})
 	}
@@ -846,6 +927,113 @@ class U16ProBLEManager {
 		this.ppgReadingState.buffer = []
 		this.ppgReadingState.currentOffset = 0
 	}
+
+	_resetBPRawReadingState() {
+		this.bpRawReadingState.isReading = false
+		this.bpRawReadingState.totalSize = 0
+		this.bpRawReadingState.buffer = []
+		this.bpRawReadingState.currentOffset = 0
+		this._bpRawManagedRead = false
+	}
+
+	/**
+	 * 处理血压原始数据块（仅 managed read 时累积；不影响 PPG）
+	 */
+	_handleBPRawChunkResponse(parsed, deviceId) {
+		if (parsed.error) {
+			console.error('【BP原始】数据块错误', parsed.error)
+			this._resetBPRawReadingState()
+			if (this.callbacks.onError) this.callbacks.onError(parsed.error)
+			return {
+				type: 'bp_raw_chunk_error',
+				error: parsed.error
+			}
+		}
+		if (this.bpRawReadingState.isReading) {
+			this.bpRawReadingState.buffer.push(...parsed.rawData)
+			this.bpRawReadingState.currentOffset = parsed.offset + parsed.chunkSize
+		}
+		const isComplete = this.bpRawReadingState.isReading && (
+			this.bpRawReadingState.currentOffset >= this.bpRawReadingState.totalSize ||
+			parsed.chunkSize === 0
+		)
+		if (isComplete) {
+			this.state.bpRawData = [...this.bpRawReadingState.buffer]
+			const finalResult = {
+				type: this._bpRawManagedRead ? 'bp_raw_chunk' : 'bp_raw_data',
+				size: this.state.bpRawData.length,
+				rawData: this.state.bpRawData,
+				completed: true,
+				managedRead: this._bpRawManagedRead
+			}
+			if (!this._bpRawManagedRead && this.callbacks.onBPRawData) {
+				this.callbacks.onBPRawData({
+					...finalResult,
+					deviceId
+				})
+			}
+			this._resetBPRawReadingState()
+			return finalResult
+		}
+		return {
+			type: 'bp_raw_chunk',
+			...parsed,
+			totalReceived: this.bpRawReadingState.buffer.length
+		}
+	}
+
+	_clearRriCollector(error) {
+		const collector = this._rriCollector
+		if (!collector) return
+		if (collector.idleTimer) clearTimeout(collector.idleTimer)
+		if (collector.timer) clearTimeout(collector.timer)
+		this._rriCollector = null
+		if (error && collector.reject) {
+			collector.reject(error)
+		}
+	}
+
+	_finishRriCollector() {
+		const collector = this._rriCollector
+		if (!collector || !collector.active) return
+		collector.active = false
+		if (collector.idleTimer) clearTimeout(collector.idleTimer)
+		if (collector.timer) clearTimeout(collector.timer)
+		const groups = collector.groups || []
+		this.state.rriGroups = groups
+		const result = {
+			type: 'rri_data',
+			groups,
+			groupCount: groups.length,
+			empty: groups.length === 0 || groups.every((g) => g.empty),
+			completed: true
+		}
+		this._rriCollector = null
+		if (this.callbacks.onRRIData) {
+			this.callbacks.onRRIData(result)
+		}
+		if (collector.resolve) {
+			collector.resolve(result)
+		}
+	}
+
+	_handleRRICollectorPacket(parsed, deviceId) {
+		const collector = this._rriCollector
+		if (!collector || !collector.active || !parsed) return
+		collector.groups.push({
+			...parsed,
+			deviceId
+		})
+		if (parsed.empty || collector.groups.length >= collector.expected) {
+			this._finishRriCollector()
+			return
+		}
+		if (collector.idleTimer) clearTimeout(collector.idleTimer)
+		collector.idleTimer = setTimeout(() => {
+			this._finishRriCollector()
+		}, BC_PACKET.RRI_COLLECT_IDLE_MS || 800)
+	}
+
 	/**
 	 * 处理数据改变通知 (0x73)
 	 */
@@ -2188,13 +2376,24 @@ class U16ProBLEManager {
 			timeout = 15000
 		} = options
 		const targetDeviceId = deviceId || this.deviceId
+		// 先挂未武装等待，写入成功后再接收，避免上一轮超时后的迟到包瞬间抢答
 		const responsePromise = this._waitForBcResponse(waitCmd, {
 			acceptCmds,
-			timeout
+			timeout,
+			armed: false
 		})
-		await this.sendBcCommand(packet, targetDeviceId, {
-			skipPrepare: true
-		})
+		try {
+			await this.sendBcCommand(packet, targetDeviceId, {
+				skipPrepare: true
+			})
+		} catch (writeErr) {
+			this._rejectPendingBcRequest(
+				this._getPendingBcRequestKey(waitCmd),
+				writeErr instanceof Error ? writeErr : new Error(String(writeErr))
+			)
+			throw writeErr
+		}
+		this._armPendingBcRequest(waitCmd)
 		const result = await responsePromise
 		return result.parsed
 	}
@@ -2214,6 +2413,7 @@ class U16ProBLEManager {
 
 	/**
 	 * 带锁执行 PPG 启动并等待应答
+	 * prepareOptions.externalLock=true 时由外层持锁（如 0x49→裸0x4A 整段降级）
 	 */
 	async _executePpgStart(packet, waitCmd, acceptCmds, deviceId, logLabel, prepareOptions = {}) {
 		const targetDeviceId = deviceId || this.deviceId
@@ -2224,18 +2424,27 @@ class U16ProBLEManager {
 		const {
 			timeout,
 			skipRetry = false,
-			forceNotify
+			forceNotify,
+			externalLock = false,
+			skipPrepare = false,
+			skipIdleCheck = false
 		} = prepareOptions
 		const waitOptions = timeout ? {
 			timeout
 		} : {}
 
-		this._ppgOperationLock = true
+		if (!externalLock) {
+			this._ppgOperationLock = true
+		}
 		try {
-			await this._prepareBcChannel(targetDeviceId, {
-				forceNotify
-			})
-			await this._ensurePpgIdleBeforeStart(targetDeviceId)
+			if (!skipPrepare) {
+				await this._prepareBcChannel(targetDeviceId, {
+					forceNotify
+				})
+			}
+			if (!skipIdleCheck) {
+				await this._ensurePpgIdleBeforeStart(targetDeviceId)
+			}
 
 			console.log(`【PPG】等待${logLabel}应答 notify...`, U16ProProtocol.bytesToHex(packet))
 			let parsed
@@ -2277,7 +2486,9 @@ class U16ProBLEManager {
 			}
 			return parsed
 		} finally {
-			this._ppgOperationLock = false
+			if (!externalLock) {
+				this._ppgOperationLock = false
+			}
 		}
 	}
 
@@ -2307,6 +2518,7 @@ class U16ProBLEManager {
 	 * 优先 0x49（示例 BC 49 01 00 BF 51 3C，应答常为 0x4A）
 	 * 无应答/拒绝时按协议降级裸 0x4A（BC 4A 00 00 FF FF），勿先发 0x4A+时长（多数固件会 status=0 拒答）
 	 * 裸 0x4A 仍失败时再试 0x4A+时长（兼容少数串口实测固件）
+	 * 首次绑定后 BC 通道常未就绪：整段持锁 + 通道热身 + 写入后武装应答，避免瞬间发送失败
 	 */
 	async startPPGMeasurementWithDuration(seconds, deviceId, waitResponse = true) {
 		const packet49 = U16ProProtocol.buildPPGStartWithDuration(seconds)
@@ -2318,68 +2530,105 @@ class U16ProBLEManager {
 			return this.sendBcCommand(packet49, targetDeviceId)
 		}
 
+		const firstBcSession = !this._lastBcNotifyTime
+		this._ppgOperationLock = true
 		try {
-			const parsed = await this._executePpgStart(
-				packet49,
-				CMD.PPG_START,
-				[CMD.PPG_START, CMD.PPG_START_WITH_DURATION],
-				targetDeviceId,
-				'0x49(等0x4A)', {
-					timeout: 5000,
-					skipRetry: true,
-					forceNotify: true
-				}
-			)
-			if (parsed?.success) {
-				return parsed
-			}
-			console.warn('【PPG】0x49 设备拒绝', parsed)
-		} catch (err) {
-			console.warn('【PPG】0x49 无应答', err.message || err)
-		}
-
-		// 超时/拒答后重新订阅 BC notify，避免首次绑定通道未真正就绪
-		try {
-			await this._reSubscribeBcNotify(targetDeviceId)
-		} catch (err) {
-			console.warn('【PPG】降级前刷新BC notify失败', err && err.message ? err.message : err)
+			this._clearStaleBcStartState()
 			await this._prepareBcChannel(targetDeviceId, {
 				forceNotify: true
 			})
-		}
-		await this._sleep(300)
+			// 从未收到过 BC notify：强制重订阅并多等一会，覆盖首次绑定后立刻点测量
+			if (firstBcSession) {
+				console.log('【PPG】首次BC会话，强制热身通道')
+				try {
+					await this._reSubscribeBcNotify(targetDeviceId)
+				} catch (warmErr) {
+					console.warn('【PPG】首次热身失败，继续启测', warmErr && warmErr.message ? warmErr.message : warmErr)
+					await this._prepareBcChannel(targetDeviceId, {
+						forceNotify: true
+					})
+				}
+				await this._sleep(500)
+			}
 
-		const packet4a = U16ProProtocol.buildPPGStart()
-		console.log('【PPG】改用裸0x4A', U16ProProtocol.bytesToHex(packet4a))
-		try {
-			const parsed4a = await this._executePpgStart(
-				packet4a,
+			try {
+				const parsed = await this._executePpgStart(
+					packet49,
+					CMD.PPG_START,
+					[CMD.PPG_START, CMD.PPG_START_WITH_DURATION],
+					targetDeviceId,
+					'0x49(等0x4A)', {
+						// 首次通道不稳时缩短空等，更快进入裸 0x4A
+						timeout: firstBcSession ? 2500 : 5000,
+						skipRetry: true,
+						forceNotify: true,
+						externalLock: true,
+						skipPrepare: true
+					}
+				)
+				if (parsed?.success) {
+					return parsed
+				}
+				console.warn('【PPG】0x49 设备拒绝', parsed)
+			} catch (err) {
+				console.warn('【PPG】0x49 无应答', err.message || err)
+			}
+
+			// 吸收迟到拒答，再刷新通道后降级
+			this._clearStaleBcStartState()
+			await this._sleep(400)
+			try {
+				await this._reSubscribeBcNotify(targetDeviceId)
+			} catch (err) {
+				console.warn('【PPG】降级前刷新BC notify失败', err && err.message ? err.message : err)
+				await this._prepareBcChannel(targetDeviceId, {
+					forceNotify: true
+				})
+			}
+			await this._sleep(300)
+
+			const packet4a = U16ProProtocol.buildPPGStart()
+			console.log('【PPG】改用裸0x4A', U16ProProtocol.bytesToHex(packet4a))
+			try {
+				const parsed4a = await this._executePpgStart(
+					packet4a,
+					CMD.PPG_START,
+					[CMD.PPG_START],
+					targetDeviceId,
+					'裸0x4A', {
+						forceNotify: true,
+						externalLock: true,
+						skipPrepare: true,
+						skipIdleCheck: true
+					}
+				)
+				if (parsed4a?.success) {
+					return parsed4a
+				}
+				console.warn('【PPG】裸0x4A 设备拒绝', parsed4a)
+			} catch (err) {
+				console.warn('【PPG】裸0x4A 无应答', err.message || err)
+			}
+
+			this._clearStaleBcStartState()
+			await this._sleep(300)
+			const packet4aDur = U16ProProtocol.buildPPGStartWithDurationOn4A(seconds)
+			console.log('【PPG】改用0x4A+时长', U16ProProtocol.bytesToHex(packet4aDur))
+			return this._executePpgStart(
+				packet4aDur,
 				CMD.PPG_START,
 				[CMD.PPG_START],
 				targetDeviceId,
-				'裸0x4A', {
-					forceNotify: true
+				'0x4A+时长', {
+					forceNotify: true,
+					externalLock: true,
+					skipPrepare: true,
+					skipIdleCheck: true
 				}
 			)
-			if (parsed4a?.success) {
-				return parsed4a
-			}
-			console.warn('【PPG】裸0x4A 设备拒绝', parsed4a)
-		} catch (err) {
-			console.warn('【PPG】裸0x4A 无应答', err.message || err)
+		} finally {
+			this._ppgOperationLock = false
 		}
-
-		const packet4aDur = U16ProProtocol.buildPPGStartWithDurationOn4A(seconds)
-		console.log('【PPG】改用0x4A+时长', U16ProProtocol.bytesToHex(packet4aDur))
-		return this._executePpgStart(
-			packet4aDur,
-			CMD.PPG_START,
-			[CMD.PPG_START],
-			targetDeviceId,
-			'0x4A+时长', {
-				forceNotify: true
-			}
-		)
 	}
 
 	/**
@@ -2511,6 +2760,158 @@ class U16ProBLEManager {
 		}
 	}
 
+	// ==================== 长包：血压原始数据 / RRI（API 已就绪，业务暂未调用） ====================
+
+	/**
+	 * 4.1 请求血压原始数据大小 — 0x2E
+	 */
+	async getBPRawDataSize(deviceId, waitResponse = true) {
+		const packet = U16ProProtocol.buildBPRawGetSize()
+		if (!waitResponse) {
+			return this.sendBcCommand(packet, deviceId)
+		}
+		const responsePromise = this._waitForBcResponse(CMD.BP_RAW_GET_SIZE)
+		await this.sendBcCommand(packet, deviceId)
+		const result = await responsePromise
+		return result.parsed
+	}
+
+	/**
+	 * 4.2 按偏移请求血压原始数据（单包，最多128bytes）— 0x2F
+	 */
+	async getBPRawDataAtOffset(offset, deviceId, waitResponse = true) {
+		const packet = U16ProProtocol.buildBPRawGetData(offset)
+		if (!waitResponse) {
+			return this.sendBcCommand(packet, deviceId)
+		}
+		const responsePromise = this._waitForBcResponse(CMD.BP_RAW_GET_DATA, {
+			expectedOffset: offset,
+			timeout: 15000
+		})
+		await this.sendBcCommand(packet, deviceId)
+		const result = await responsePromise
+		return result.parsed
+	}
+
+	/**
+	 * 读取全部血压原始数据（0x2E 一次 + 0x2F 按序）
+	 * 注意：当前业务未调用，仅协议兼容预留
+	 */
+	async readAllBPRawData(deviceId) {
+		if (this.bpRawReadingState.isReading) {
+			throw new Error('正在读取血压原始数据，请稍候')
+		}
+		if (this.ppgReadingState.isReading || this._ppgManagedRead) {
+			throw new Error('PPG数据读取中，暂不可读血压原始数据')
+		}
+
+		const sizeResult = await this.getBPRawDataSize(deviceId)
+		if (sizeResult.error || !sizeResult.size) {
+			return {
+				size: 0,
+				rawData: [],
+				samplesPa: [],
+				empty: true
+			}
+		}
+
+		this.bpRawReadingState.isReading = true
+		this.bpRawReadingState.totalSize = sizeResult.size
+		this.bpRawReadingState.buffer = []
+		this.bpRawReadingState.currentOffset = 0
+		this._bpRawManagedRead = true
+
+		const allData = []
+		let offset = 0
+
+		try {
+			while (offset < sizeResult.size) {
+				const chunk = await this.getBPRawDataAtOffset(offset, deviceId)
+				if (chunk.error || !chunk.rawData) {
+					throw new Error(chunk.error || '血压原始数据块读取失败')
+				}
+				if (chunk.offset !== offset) {
+					throw new Error(`血压原始 offset不匹配: 期望${offset}, 收到${chunk.offset}`)
+				}
+				allData.push(...chunk.rawData)
+				if (chunk.chunkSize === 0) {
+					break
+				}
+				offset += chunk.chunkSize
+				if (offset < sizeResult.size) {
+					await this._sleep(BC_PACKET.BP_RAW_READ_INTERVAL_MS || BC_PACKET.PPG_READ_INTERVAL_MS)
+				}
+			}
+
+			this.state.bpRawData = allData
+			this.state.bpRawDataSize = sizeResult.size
+			this._resetBPRawReadingState()
+
+			return {
+				size: allData.length,
+				rawData: allData,
+				samplesPa: U16ProProtocol.parseBPRawUint16Samples(allData),
+				samplingRate: BC_PACKET.BP_RAW_SAMPLING_RATE,
+				completed: true
+			}
+		} catch (error) {
+			this._resetBPRawReadingState()
+			throw error
+		}
+	}
+
+	/**
+	 * 4.3 请求一组 RRI 应答（仅首包）— 0x48
+	 */
+	async getRRIData(groupCount = 1, deviceId, waitResponse = true) {
+		const packet = U16ProProtocol.buildRRIGetData(groupCount)
+		if (!waitResponse) {
+			return this.sendBcCommand(packet, deviceId)
+		}
+		const responsePromise = this._waitForBcResponse(CMD.RRI_GET_DATA, {
+			timeout: 15000
+		})
+		await this.sendBcCommand(packet, deviceId)
+		const result = await responsePromise
+		return result.parsed
+	}
+
+	/**
+	 * 读取最新 N 组 RRI（可能多包应答，空闲窗口结束后汇总）
+	 * 注意：当前业务未调用，仅协议兼容预留
+	 */
+	async readRRIData(groupCount = 1, deviceId) {
+		const n = Math.max(1, Math.min(BC_PACKET.RRI_MAX_GROUPS, groupCount | 0))
+		if (this._rriCollector && this._rriCollector.active) {
+			throw new Error('正在读取RRI数据，请稍候')
+		}
+
+		const targetDeviceId = deviceId || this.deviceId
+		const collectPromise = new Promise((resolve, reject) => {
+			this._rriCollector = {
+				active: true,
+				expected: n,
+				groups: [],
+				resolve,
+				reject,
+				timer: setTimeout(() => {
+					if (this._rriCollector && this._rriCollector.active) {
+						this._finishRriCollector()
+					}
+				}, 20000),
+				idleTimer: null
+			}
+		})
+
+		try {
+			await this.sendBcCommand(U16ProProtocol.buildRRIGetData(n), targetDeviceId)
+			return await collectPromise
+		} catch (error) {
+			this._clearRriCollector(error instanceof Error ? error : new Error(String(error)))
+			throw error
+		}
+	}
+
 	// ==================== 断开连接 ====================
 
 	async disconnect(deviceId) {
@@ -2580,6 +2981,15 @@ class U16ProBLEManager {
 				this.state.ppgDataSize = 0
 				this._resetPPGReadingState()
 				break
+			case 'bp_raw':
+				this.state.bpRawData = []
+				this.state.bpRawDataSize = 0
+				this._resetBPRawReadingState()
+				break
+			case 'rri':
+				this.state.rriGroups = []
+				this._clearRriCollector(new Error('RRI数据已清除'))
+				break
 			case 'all':
 				this.state.bloodPressureList = []
 				this.state.heartRateList = []
@@ -2588,6 +2998,11 @@ class U16ProBLEManager {
 				this.state.ppgData = []
 				this.state.ppgDataSize = 0
 				this._resetPPGReadingState()
+				this.state.bpRawData = []
+				this.state.bpRawDataSize = 0
+				this._resetBPRawReadingState()
+				this.state.rriGroups = []
+				this._clearRriCollector(new Error('RRI数据已清除'))
 				this.state.dailyInfo = null
 				break
 			default:

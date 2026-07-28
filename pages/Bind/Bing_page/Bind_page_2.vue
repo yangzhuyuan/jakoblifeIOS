@@ -322,6 +322,7 @@
 			 * 扫码样例：300001CBBF535F078A
 			 * → SN: 300001CBBF535F078A
 			 * → MAC: CB:BF:53:5F:07:8A
+			 * 注意：malink 短链（如 https://m.malink.cn/s/xxx）不含设备码，不能当 SN 解析
 			 */
 			applyBPW6DeviceCode(code) {
 				console.log('applyBPW6DeviceCode', code)
@@ -329,22 +330,29 @@
 				if (!raw) return false
 				const paraMatch = raw.match(/para=([^&]+)/i)
 				const payload = (paraMatch && paraMatch[1] ? paraMatch[1] : raw).trim()
+				// 纯下载/短链 URL 且无 para= 时直接拒绝，避免从 URL 里抠出假 hex
+				if (!paraMatch && /^https?:\/\//i.test(payload) && !/300001[0-9a-fA-F]{12}/i.test(payload) &&
+					!/[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}/i.test(payload)) {
+					console.warn('BPW6扫码为短链/下载链接，无设备码', payload)
+					return false
+				}
 				const hex = String(payload).replace(/[^a-fA-F0-9]/g, '').toUpperCase()
 
 				// 标准格式：300001 + 12位MAC
-				const snMatch = hex.match(/^300001([0-9A-F]{12})$/)
+				const snMatch = hex.match(/300001([0-9A-F]{12})/)
 				if (snMatch) {
-					this.context_msg = hex
+					this.context_msg = `300001${snMatch[1]}`
 					this.BPW6deviceId = this.formatMacAddress(snMatch[1])
-				} else if (hex.startsWith('300001') && hex.length > 6) {
-					this.context_msg = hex
-					this.BPW6deviceId = this.formatMacCustom(hex)
 				} else if (/^[0-9A-F]{12}$/.test(hex)) {
 					this.BPW6deviceId = this.formatMacAddress(hex)
 					this.context_msg = `300001${hex}`
-				} else if (payload.includes(':')) {
+				} else if (payload.includes(':') && /[0-9a-fA-F]{2}(:[0-9a-fA-F]{2}){5}/.test(payload)) {
 					this.BPW6deviceId = this.normalizeBPW6Mac(payload)
 					const cleanMac = this.BPW6deviceId.replace(/:/g, '')
+					if (cleanMac.length !== 12) {
+						console.warn('BPW6扫码MAC长度无效', payload)
+						return false
+					}
 					this.context_msg = `300001${cleanMac}`
 				} else {
 					console.warn('BPW6扫码格式无法识别', payload)
@@ -699,8 +707,33 @@
 				});
 			},
 			isBPW6BleName(name) {
-				const n = String(name || '')
-				return n === 'U19M' || n === 'BPW6' || n.includes('U19M') || n.includes('BPW6')
+				const n = String(name || '').trim().toUpperCase()
+				return n.includes('U19M') || n.includes('BPW6') || n.includes('U16H') || n.includes('U16')
+			},
+			/** 扫码 MAC 后 4 位，如 CA:BF:51:4F:14:0B → 140B */
+			getBPW6MacSuffix(mac) {
+				const hex = String(mac || '').replace(/[^a-fA-F0-9]/g, '').toUpperCase()
+				return hex.length >= 4 ? hex.slice(-4) : ''
+			},
+			/** 蓝牙名末尾 4 位十六进制，如 U16H_ZX_140B / U19M_ZX_078A → 140B / 078A */
+			getBPW6NameSuffix(name) {
+				const m = String(name || '').trim().toUpperCase().match(/([0-9A-F]{4})\s*$/)
+				return m ? m[1] : ''
+			},
+			/** 经典蓝牙与 BLE MAC 常差首字节最低位（CA ↔ CB） */
+			getBPW6MacCandidates(mac) {
+				const n = this.normalizeBPW6Mac(mac)
+				if (!n) return []
+				const parts = n.split(':')
+				const list = [n]
+				if (parts.length === 6) {
+					const b0 = parseInt(parts[0], 16)
+					if (!isNaN(b0)) {
+						const alt = (b0 ^ 0x01).toString(16).padStart(2, '0').toUpperCase()
+						list.push([alt, ...parts.slice(1)].join(':'))
+					}
+				}
+				return list
 			},
 			/**
 			 * 从 BPW6 广播 advertisData 解析 MAC
@@ -716,13 +749,74 @@
 					return ''
 				}
 			},
-			/** BPW6：用广播 MAC 与扫码 MAC 比对 */
+			/** Android 上 deviceId 常为 MAC；iOS 为 UUID，解析失败则返回空 */
+			parseBPW6DeviceIdMac(deviceId) {
+				const hex = String(deviceId || '').replace(/[^a-fA-F0-9]/g, '').toUpperCase()
+				if (hex.length < 12 || hex.length > 12 && hex.includes('-')) return ''
+				// 纯 12 位 hex 或带冒号的 MAC
+				if (/^[0-9A-F]{12}$/.test(hex)) return this.formatMacAddress(hex)
+				const raw = String(deviceId || '').trim().toUpperCase()
+				if (/^[0-9A-F]{2}(:[0-9A-F]{2}){5}$/.test(raw)) return raw
+				return ''
+			},
+			/**
+			 * BPW6 目标设备判定（兼容 U16H / U19M）
+			 * 1) 蓝牙名最后 4 位 == MAC 后 4 位
+			 * 2) 广播 MAC / deviceId MAC 全等（含 CA↔CB）
+			 * 3) 广播原始字节包含完整 MAC
+			 * 注意：name 为空时仍可用广播 MAC 匹配（iOS 常见）
+			 */
 			isBPW6TargetDevice(item, targetMac) {
 				const mac = this.normalizeBPW6Mac(targetMac)
 				if (!mac) return false
+				const macs = this.getBPW6MacCandidates(mac)
+				const targetSuffix = this.getBPW6MacSuffix(mac)
+				const bleName = item.name || item.localName || ''
+				const nameSuffix = this.getBPW6NameSuffix(bleName)
+				if (targetSuffix && nameSuffix && nameSuffix === targetSuffix) return true
+
 				const advMac = this.parseBPW6AdvMac(item.advertisData)
-				if (!advMac) return false
-				return advMac === mac
+				if (advMac && macs.indexOf(advMac) !== -1) return true
+
+				const idMac = this.parseBPW6DeviceIdMac(item.deviceId)
+				if (idMac && macs.indexOf(idMac) !== -1) return true
+
+				if (item.advertisData) {
+					try {
+						const hex = this.ab2hex(item.advertisData).replace(/[^a-fA-F0-9]/g, '').toUpperCase()
+						for (let i = 0; i < macs.length; i++) {
+							const compact = macs[i].replace(/:/g, '')
+							if (compact && hex.indexOf(compact) !== -1) return true
+						}
+					} catch (e) {}
+				}
+				return false
+			},
+			/** 尝试匹配并绑定一只候选；命中返回 true */
+			tryBindBPW6Candidate(item, targetMac, targetSuffix, seenIds) {
+				if (!this.stoponble) return false
+				const did = String(item.deviceId || '')
+				if (did && seenIds && seenIds[did]) return false
+				const bleName = item.name || item.localName || ''
+				const advHex = item.advertisData ? this.ab2hex(item.advertisData) : ''
+				const advMac = this.parseBPW6AdvMac(item.advertisData)
+				const idMac = this.parseBPW6DeviceIdMac(item.deviceId)
+				const nameSuffix = this.getBPW6NameSuffix(bleName)
+				const matched = this.isBPW6TargetDevice(item, targetMac)
+				// 有名字但不像手表、且未命中时跳过，避免刷屏
+				if (!matched && bleName && !this.isBPW6BleName(bleName)) return false
+				// 无名且无广播时跳过
+				if (!matched && !bleName && !advMac && !idMac) return false
+				if (did && seenIds) seenIds[did] = true
+				// console.log('搜索到BPW6候选', bleName || '(空名)', nameSuffix, targetSuffix, advHex || idMac,
+				// 	advMac || idMac, targetMac, matched ? '匹配' : '不匹配')
+				if (!matched) return false
+				this.stoponble = false
+				uni.hideLoading()
+				uni.stopBluetoothDevicesDiscovery()
+				this.BPW6UUID = item.deviceId
+				this.BPW6binddevice(this.context_msg1, item.deviceId, this.BPW6model)
+				return true
 			},
 			onBluetoothDeviceFound() {
 				let BPW1timeer = null
@@ -777,6 +871,8 @@
 				let BPW6timeer = null
 				let BPW6time = 0
 				const targetMac = this.normalizeBPW6Mac(this.BPW6deviceId)
+				const targetSuffix = this.getBPW6MacSuffix(targetMac)
+				const seenIds = {}
 				uni.showLoading({
 					title: this.$t("搜索中"),
 					mask: true
@@ -785,23 +881,21 @@
 					if (!this.stoponble) return
 					const deviceArray = res.devices || []
 					for (const item of deviceArray) {
-						const bleName = item.name || item.localName || ''
-						if (!this.isBPW6BleName(bleName)) continue
-						const advHex = item.advertisData ? this.ab2hex(item.advertisData) : ''
-						const advMac = this.parseBPW6AdvMac(item.advertisData)
-						const matched = advMac && targetMac && advMac === targetMac
-						console.log('搜索到BPW6候选', bleName, advHex, advMac, targetMac, matched ? '匹配' :
-							'不匹配')
-						if (matched) {
-							this.stoponble = false
-							uni.hideLoading()
-							uni.stopBluetoothDevicesDiscovery()
-							this.BPW6UUID = item.deviceId
-							this.BPW6binddevice(this.context_msg1, item.deviceId, this.BPW6model)
-							break
-						}
+						if (this.tryBindBPW6Candidate(item, targetMac, targetSuffix, seenIds)) break
 					}
 				});
+				const pollFoundDevices = () => {
+					if (!this.stoponble) return
+					uni.getBluetoothDevices({
+						success: (res) => {
+							if (!this.stoponble) return
+							const list = res.devices || []
+							for (const item of list) {
+								if (this.tryBindBPW6Candidate(item, targetMac, targetSuffix, seenIds)) break
+							}
+						}
+					})
+				}
 				BPW6timeer = setInterval(() => {
 					BPW6time++
 					if (!this.stoponble) {
@@ -809,8 +903,9 @@
 						clearInterval(BPW6timeer)
 						BPW6timeer = null
 					} else {
-						console.log("BPW6搜索低功耗蓝牙", BPW6time)
-						if (BPW6time === 15) {
+						console.log("BPW6搜索低功耗蓝牙", BPW6time, "目标后缀", targetSuffix, targetMac)
+						pollFoundDevices()
+						if (BPW6time === 20) {
 							uni.hideLoading()
 							uni.stopBluetoothDevicesDiscovery()
 							clearInterval(BPW6timeer)

@@ -668,7 +668,11 @@
 		u16proBLE
 	} from '../../api/protocol/u16pro-ble-manager.js'
 	import {
+		U16ProProtocol
+	} from '../../api/protocol/u16pro-protocol.js'
+	import {
 		BC_BLE_UUID,
+		BC_PACKET,
 		DATA_TYPE
 	} from '../../api/protocol/u16pro-constants.js'
 	//BPW1手表对应蓝牙参数值
@@ -3435,6 +3439,8 @@
 						await u16proBLE.ensureBcServiceReady(targetDeviceId, {
 							force: true
 						})
+						// 给 CCCD/notify 一点稳定时间，降低首次写入无应答概率
+						await new Promise((resolve) => setTimeout(resolve, 400))
 					} catch (prepErr) {
 						console.warn('【BPW6】PPG通道预就绪失败，继续尝试启动', prepErr)
 					}
@@ -8969,8 +8975,18 @@
 								}, 1000);
 								// 预启用 PPG 自定义 BC 服务 notify，避免首次立即测量无应答
 								setTimeout(() => {
-									u16proBLE.ensureBcServiceReady(deviceId).catch((err) => {
+									u16proBLE.ensureBcServiceReady(deviceId, {
+										force: true
+									}).catch((err) => {
 										console.warn('【BPW6】预启用PPG通道失败', err)
+										// 再试一次，覆盖首次绑定连接抖动
+										setTimeout(() => {
+											u16proBLE.ensureBcServiceReady(deviceId, {
+												force: true
+											}).catch((err2) => {
+												console.warn('【BPW6】预启用PPG通道重试失败', err2)
+											})
+										}, 1200)
 									})
 								}, 1500);
 							} catch (notifyerr) {
@@ -10592,7 +10608,9 @@
 					this.bpw6PpgSilentAfterBp = true
 					this._bpw6EmotionMeasureStartedAt = Date.now()
 					this.setSleepAlertDisabled(true)
-					const result = await u16proBLE.startPPGMeasurement(targetDeviceId)
+					// const result = await u16proBLE.startPPGMeasurement(targetDeviceId)
+					const result = await u16proBLE.startPPGMeasurementWithDuration(60, targetDeviceId)
+					
 					if (!result || !result.success) {
 						this.bpw6PpgSilentAfterBp = false
 						this._bpw6EmotionMeasureStartedAt = 0
@@ -10773,9 +10791,18 @@
 					})
 					return
 				}
-				const samples = rawBytes.map(b => (b > 127 ? b - 256 : b))
+				// 长包协议：PPG 为小端 32 位 ADC（200Hz）；仍按 INT16 上传以兼容现有云端接口
+				const samples = U16ProProtocol.parsePPGInt32Samples(rawBytes)
+				if (!samples.length) {
+					console.warn('【BPW6】PPG字节无法组成Int32采样，跳过上传', rawBytes.length)
+					this.recoverBpw6PpgSessionUi('upload empty', {
+						failToast: this.shouldToastBpw6ManualFail()
+					})
+					return
+				}
 				const binary = this.packInt16(samples)
-				console.log('【BPW6】上传PPG原始数据, samples:', samples.length)
+				console.log('【BPW6】上传PPG原始数据, bytes:', rawBytes.length, 'samples:', samples.length,
+					'rate:', BC_PACKET.PPG_SAMPLING_RATE)
 				this.bpw6PpgRawData(binary, deviceSn, deviceId)
 				this.bpw6PpgRawBuffer = []
 				this.bpw6PpgTotalSize = 0
@@ -10785,7 +10812,8 @@
 					patientId: uni.getStorageSync("userid"),
 					deviceSn: deviceSn,
 					deviceModel: "U19M",
-					samplingRate: 100,
+					// 协议：PPG 采样频率 200Hz（32位ADC）；payload 仍为 INT16 以兼容分析服务
+					samplingRate: BC_PACKET.PPG_SAMPLING_RATE || 200,
 					startTime: this.getTimeAllJSON().YMDHMS,
 					dataFormat: "INT16",
 					signalRange: 0,
@@ -12893,6 +12921,7 @@
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					if (res.code === 200) {
+						// console.log("list_recipe",res)
 						uni.setStorageSync("temperature", this.getRegisterVal(res.data, 'register',
 							'temperature'));//根据体温判断是否显示无感报告的提示，超过100则显示
 						this.sleep_time = this.getUpdateTime(res.data, 'register', 'sleep')
