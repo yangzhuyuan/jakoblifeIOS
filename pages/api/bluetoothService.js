@@ -55,7 +55,7 @@ export default class BluetoothService {
 					resolve(res.services);
 				},
 				fail: (err) => {
-					console.log("获取设备服务失败", err)
+					// console.log("获取设备服务失败", err)
 					reject(err);
 				},
 			});

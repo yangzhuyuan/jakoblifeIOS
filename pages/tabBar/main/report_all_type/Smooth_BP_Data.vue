@@ -99,23 +99,48 @@
 		},
 		onShow() {
 			const modeltipsbool = uni.getStorageSync("temperature")
-			console.log("modeltipsbool",modeltipsbool)
+			console.log("modeltipsbool", modeltipsbool)
 			uni.setNavigationBarTitle({
 				title: this.$t('无感血压报告')
 			})
+			// this.ppgdatalist()
 			this.get_retVarList()
 			if (modeltipsbool && modeltipsbool !== '-/-' && Number(modeltipsbool) >= 500) this.modeltips = false
 
 		},
 		methods: {
+			//根据患者ID查询PPG信号最新分析结果
+			ppgdatalist() {
+				let that = this
+				let ppgdata = {
+					patientId: uni.getStorageSync("userid"),
+				}
+				that.$get(that.$url_APP_IP + "/prod-api/device/ppgresults/get_result_by_patient_id",
+					ppgdata, {
+						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+						'content-type': 'application/json;charset=UTF-8'
+					}).then((ppgdatalist) => {
+					console.log("ppgdatalist", ppgdatalist)
+					if (ppgdatalist.code === 200) {
+						if (ppgdatalist.data.remark) {
+							that.modeltips = false
+						} else {
+							that.modeltips = true
+						}
+					} else {
+						that.modeltips = true
+					}
+				})
+			},
 			switchTab(tab) {
 				this.currentTab = tab
 			},
 			isInvalidValue(value) {
 				const v = String(value == null ? '' : value).trim()
-				return !v || v >= '999999990.00' || v === 'NA'
+				if (!v || v === 'NA') return true
+				const n = Number(v)
+				return Number.isFinite(n) && n >= 999999990
 			},
-
 			getPeriod(timeStr) {
 				const parsed = this.parseMeasureDateTime(timeStr)
 				const clock = parsed.clock || ''

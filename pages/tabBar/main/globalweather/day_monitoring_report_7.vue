@@ -943,7 +943,9 @@
 			},
 			isInvalidValue(value) {
 				const v = String(value == null ? '' : value).trim();
-				return !v || v >= '999999990.00' || v === 'NA';
+				if (!v || v === 'NA') return true;
+				const n = Number(v);
+				return Number.isFinite(n) && n >= 999999990;
 			},
 			/** 统一解析测量时间：兼容空格/T、重复日期、unix 秒/毫秒；时分与日期分开匹配 */
 			parseMeasureDateTime(raw) {

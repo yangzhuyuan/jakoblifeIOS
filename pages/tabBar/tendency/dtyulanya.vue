@@ -1268,7 +1268,9 @@
 				}
 				const isInvalid = (value) => {
 					const v = String(value == null ? '' : value).trim()
-					return !v || v >= '999999990.00' || v === 'NA'
+					if (!v || v === 'NA') return true
+					const n = Number(v)
+					return Number.isFinite(n) && n >= 999999990
 				}
 				const isHighBpHit = (lp, hp) => {
 					return (lp >= 81 && lp <= 90) || (hp >= 121 && hp <= 140) ||
@@ -1449,7 +1451,10 @@
 							if (get_finalRetVarList.data.data.retVarList !== "") {
 								let resultArray = get_finalRetVarList.data.data.retVarList.split(";");
 								const checkAndAssign = (value) => {
-									return value >= "999999990.00" ? "NA" : value;
+									const v = String(value == null ? '' : value).trim()
+									if (!v || v === 'NA') return 'NA'
+									const n = Number(v)
+									return Number.isFinite(n) && n >= 999999990 ? 'NA' : value
 								};
 								for (let i = 0; i < resultArray.length; i++) {
 									let resultArray1 = resultArray[i].split(",");
