@@ -63,7 +63,7 @@ export const BC_PACKET = {
 	PPG_READ_INTERVAL_MS: 120,
 	// 长包协议：PPG 为 32 位 ADC 码，采样 200Hz
 	PPG_SAMPLE_BYTES: 4,
-	PPG_SAMPLING_RATE: 100,
+	PPG_SAMPLING_RATE: 200,
 	// 长包协议：血压原始压力过程数据，单位 Pa，采样 50Hz（按 16bit 小端解析）
 	BP_RAW_CHUNK_SIZE: 128,
 	BP_RAW_READ_INTERVAL_MS: 120,

@@ -6161,12 +6161,12 @@
 					startTime: this.getTimeAllJSON().YMD + " 00:00:00",
 					endTime: this.getTimeAllJSON().YMD + " 23:59:59",
 				}
-				console.log("情绪页面图表传参数", ppgdata)
+				// console.log("情绪页面图表传参数", ppgdata)
 				this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id", ppgdata, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				}).then((ppgresultslist) => {
-					console.log("情绪页面图表返回的值",ppgresultslist)
+					// console.log("情绪页面图表返回的值", ppgresultslist)
 					if (ppgresultslist.code === 200 && ppgresultslist.data.length > 0) {
 						this.chartDataPPG.categories = []
 						this.chartDataPPG.series = [{
@@ -11348,6 +11348,35 @@
 				}
 			},
 			/**
+			 * BPW6 PPG：设备侧已是小端 32 位 ADC 字节流，按 INT32 原样打包为 base64（不做 Int16 缩放）
+			 * @param {number[]} bytesOrSamples - 原始字节(0~255)或已解析的 Int32 采样点
+			 */
+			packBpw6PpgInt32(bytesOrSamples) {
+				const list = Array.isArray(bytesOrSamples) ? bytesOrSamples : []
+				if (!list.length) {
+					return uni.arrayBufferToBase64(new ArrayBuffer(0))
+				}
+				// 输入已是原始字节流：对齐到 4 字节后原样上传
+				const looksLikeBytes = list.every((v) => Number.isInteger(v) && v >= 0 && v <= 255)
+				if (looksLikeBytes) {
+					const usable = list.length - (list.length % 4)
+					const ab = new ArrayBuffer(usable)
+					const view = new Uint8Array(ab)
+					for (let i = 0; i < usable; i++) {
+						view[i] = list[i] & 0xFF
+					}
+					return uni.arrayBufferToBase64(ab)
+				}
+				// 输入已是 Int32 采样点：小端写入
+				const n = list.length
+				const ab = new ArrayBuffer(n * 4)
+				const view = new DataView(ab)
+				for (let i = 0; i < n; i++) {
+					view.setInt32(i * 4, list[i] | 0, true)
+				}
+				return uni.arrayBufferToBase64(ab)
+			},
+			/**
 			 * BPW6 定时测量兜底：调度在时长结束后仍未收到 0x58 时主动拉取并上报
 			 * （立即测量不走此路径；已在读则跳过，避免与 0x58 双触发冲突）
 			 */
@@ -11397,7 +11426,8 @@
 					})
 					return
 				}
-				const binary = this.packInt16(samples)
+				const binary = this.packInt16(rawBytes)
+				// const binary = this.packBpw6PpgInt32(rawBytes)
 				console.log('【BPW6】上传PPG原始数据, bytes:', rawBytes.length, 'samples:', samples.length,
 					'rate:', BC_PACKET.PPG_SAMPLING_RATE)
 				this.bpw6PpgRawData(binary, deviceSn, deviceId)
@@ -11410,9 +11440,9 @@
 					deviceSn: deviceSn,
 					deviceModel: "U19M",
 					// 协议：PPG 采样频率 200Hz（32位ADC）；payload 仍为 INT16 以兼容分析服务
-					samplingRate: BC_PACKET.PPG_SAMPLING_RATE || 200,
+					samplingRate: 200,
 					startTime: this.getTimeAllJSON().YMDHMS,
-					dataFormat: "INT16",
+					dataFormat: "INT32",
 					signalRange: 0,
 					rawData: rawData,
 					dataLength: "",
