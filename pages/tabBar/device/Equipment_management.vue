@@ -283,11 +283,14 @@
 				}
 			},
 			unbindDevice() {
-				this.setacktypes("0")
 				if (this.deviceModelId === '30000') {
 					this.calculateChecksumsss(this.mac);
+					this.setacktypes("0")
+					uni.removeStorageSync('deviceIdwatch');
 				} else if (this.deviceModelId === '30001') {
 					this.calculateChecksumsss1(this.mac);
+					that.setacktypes6("0")
+					uni.removeStorageSync('BPW6devicemac');
 				}
 				this.getunbind(this.deviceSn, this.mac, this.deviceModelId);
 			},

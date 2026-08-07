@@ -5929,7 +5929,8 @@
 								this.setSleepAlertDisabled(false)
 							}, 60 * 1000)
 						}
-						this.deviceppgdatalist(deviceSn, deviceId)
+						// keepCloudUi：上传时已清 immediateEmotionMeasure，轮询结果仍需能弹 LOW_QUALITY 等
+						this.deviceppgdatalist(deviceSn, deviceId, 0, showCloudComputingLoading)
 					} else {
 						this.immediateEmotionMeasure = false
 						this.sleep_alertid = 0
@@ -5947,7 +5948,8 @@
 				})
 			},
 			//查询PPG原始波形数据存储列表
-			deviceppgdatalist(deviceSn, deviceId, pollCount = 0) {
+			// keepCloudUi：BPW1 手动立即测量上传成功后已清 immediateEmotionMeasure，需透传以保留结果弹窗
+			deviceppgdatalist(deviceSn, deviceId, pollCount = 0, keepCloudUi = false) {
 				let that = this
 				let dataparin = {
 					patientId: uni.getStorageSync("userid"), //患者id
@@ -5961,7 +5963,7 @@
 				}).then((deviceppgdatalist) => {
 					console.log("deviceppgdatalist", deviceppgdatalist)
 					const showCloudComputingLoading = that.QX_HIDE && (that.immediateEmotionMeasure ||
-						that.bpw6PpgCloudLoadingActive)
+						that.bpw6PpgCloudLoadingActive || keepCloudUi)
 					if (deviceppgdatalist.code === 200 && deviceppgdatalist.rows.length > 0) {
 						switch (deviceppgdatalist.rows[deviceppgdatalist.total - 1].processingStatus) {
 							case "ANALYZED":
@@ -6042,7 +6044,7 @@
 									return
 								}
 								setTimeout(() => {
-									that.deviceppgdatalist(deviceSn, deviceId, pollCount + 1)
+									that.deviceppgdatalist(deviceSn, deviceId, pollCount + 1, keepCloudUi)
 								}, 1000)
 								console.log("PPG 波形正在分析中，请稍后...")
 								break
@@ -6056,7 +6058,7 @@
 							return
 						}
 						setTimeout(() => {
-							that.deviceppgdatalist(deviceSn, deviceId, pollCount + 1)
+							that.deviceppgdatalist(deviceSn, deviceId, pollCount + 1, keepCloudUi)
 						}, 1000)
 					}
 				}).catch((err) => {
@@ -6068,7 +6070,7 @@
 						return
 					}
 					setTimeout(() => {
-						that.deviceppgdatalist(deviceSn, deviceId, pollCount + 1)
+						that.deviceppgdatalist(deviceSn, deviceId, pollCount + 1, keepCloudUi)
 					}, 1000)
 				})
 			},
@@ -9503,10 +9505,10 @@
 										that.bpw6RealtimeUploadKey = ''
 										that.bpw6BpHistorySyncing = true
 										try {
-											await u16proBLE.readDailyInfo(0, deviceId) //读取运动/睡眠信息
-											await u16proBLE.readLatestBPHistory(50, deviceId)
-											await u16proBLE.readLatestHRHistory(deviceId)
-											// await u16proBLE.readLatestSpO2History(deviceId)
+											await u16proBLE.readDailyInfo(0, deviceId) //读取运动&睡眠数据
+											await u16proBLE.readLatestBPHistory(50, deviceId)//读取血压历史记录
+											await u16proBLE.readLatestHRHistory(deviceId)//读取心率历史记录
+											// await u16proBLE.readLatestSpO2History(deviceId)//读取血氧历史记录
 										} catch (err) {
 											that.bpw6BpHistorySyncing = false
 											console.error('BPW6历史同步失败:', err)
@@ -9528,7 +9530,6 @@
 							const targetHour = activeMode === '7d' ? 8 : 6
 							const lastSend = uni.getStorageSync('bpw6_bp_dynamic_params_daily_send') || {}
 							const alreadySentToday = lastSend.date === todayKey && lastSend.hour === targetHour
-
 							if (currentHour === targetHour && !alreadySentToday) {
 								if (activeMode === '24h') {
 									await u16proBLE.setBPDynamicParams({
@@ -9558,7 +9559,6 @@
 								})
 							}
 						}
-
 						// 蓝牙消息通知
 						if (item.properties.notify) {
 							try {
