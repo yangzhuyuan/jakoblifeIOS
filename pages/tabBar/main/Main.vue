@@ -56,19 +56,6 @@
 				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
 					<view style="background: white;">
 						<view class="title_zs_ppg">{{$t("本页面显示均为最近测量数据")}}</view>
-						<!-- <view class="bp-log-panel">
-							<view class="bp-log-header">
-								<text class="bp-log-title">调试日志(历史/实时/qxBle)</text>
-								<view class="bp-log-header-actions">
-									<text class="bp-log-copy-btn" @click.stop="copyBpLogs">一键复制</text>
-									<text class="bp-log-clear-btn" @click.stop="clearBpLogs">一键清除</text>
-								</view>
-							</view>
-							<scroll-view scroll-y class="bp-log-content" @click="copyBpLogs">
-								<text class="bp-log-text">{{ bpLogText || '暂无日志' }}</text>
-							</scroll-view>
-						</view> -->
-						<!-- <view class="title_zs_ppg_2">{{$t("分析置信度")}}:{{signal_quality_score}}/1</view> -->
 						<EmotionSwiperItem :sleep_alertdisabled="sleep_alertdisabled" :ppgnewpoint="ppgnewpoint"
 							:mood_Description="mood_Description" :mood_level="mood_level"
 							:depression_risk_score="depression_risk_score" :baoggaodisabled="baoggaodisabled"
@@ -1467,6 +1454,9 @@
 				bpw1PendingHrDevice: null,
 				bpw1PendingBpHistory: [], // 历史同步：血压先到时暂存，等心率到齐后合并同报
 				bpw1PendingBpDevice: null,
+				// 历史同步/宽限期内先入队，安静后倒序串行上报（避免设备分包旧→新导致先报旧数据）
+				bpw1DeferredHistoryUploads: [],
+				bpw1DeferredFlushTimer: null,
 				// 本轮同步收到的全部心率（墙钟键）。flush 清 pending 后仍保留，供血压尾包/异步 merge 配对
 				bpw1SyncSessionHrMap: null,
 				bpw1HistoryGraceUntil: 0, // 同步结束后宽限期：尾包仍按历史全量处理
@@ -1542,6 +1532,12 @@
 				const busy = val === true || val === 'true' || val === 1 || val === '1'
 				// 手动立即测量进行中：忽略调度侧解锁，避免前后台切换把按钮提前恢复
 				if (!busy && this.isBpw6ManualEmotionSession()) {
+					this.sleep_alertdisabled = true
+					uni.setStorageSync('sleep_alertdisabled', true)
+					return
+				}
+				// BPW1 PPG 会话中：忽略调度侧解锁
+				if (!busy && this.shouldBlockBpw1PpgButtonRecover()) {
 					this.sleep_alertdisabled = true
 					uni.setStorageSync('sleep_alertdisabled', true)
 					return
@@ -2579,6 +2575,12 @@
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
 					if (res.code === 200) {
+						// 解绑后服务端列表已无 BPW1 时，清掉内存中的旧 SN，避免后续上传回退到 BPW1
+						const hasBpw1 = (res.rows || []).some(r => String(r.deviceModelId) === '30000')
+						if (!hasBpw1) {
+							that.shoubiaosn = '0'
+							that.shoubiaomac = '0'
+						}
 						for (let rowIndex = 0; rowIndex < res.rows.length; rowIndex++) {
 							const row = res.rows[rowIndex];
 							for (let deviceIndex = 0; deviceIndex < devicesArray.length; deviceIndex++) {
@@ -2604,7 +2606,7 @@
 									that.shoubiaosn = row.deviceSn
 									that.shoubiaomac = device.deviceId
 								}
-								if (row.deviceModelId === 30001) {
+								if (row.deviceModelId === "30001") {
 									that.deviceIdwatch6 = device.deviceId
 									that.deviceIdwatch6_SN = row.deviceSn
 									uni.setStorageSync("BPW6devicemac", device.deviceId)
@@ -2664,8 +2666,14 @@
 					}
 				}).catch(err => {
 					const res = uni.getStorageSync("lixianlist");
-					for (let rowIndex = 0; rowIndex < res.rows.length; rowIndex++) {
-						const row = res.rows[rowIndex];
+					const offlineRows = (res && res.rows) ? res.rows : []
+					const hasBpw1Offline = offlineRows.some(r => String(r.deviceModelId) === '30000')
+					if (!hasBpw1Offline) {
+						that.shoubiaosn = '0'
+						that.shoubiaomac = '0'
+					}
+					for (let rowIndex = 0; rowIndex < offlineRows.length; rowIndex++) {
+						const row = offlineRows[rowIndex];
 						for (let deviceIndex = 0; deviceIndex < devicesArray
 							.length; deviceIndex++) {
 							const device = devicesArray[deviceIndex];
@@ -2690,7 +2698,7 @@
 								that.shoubiaosn = row.deviceSn
 								that.shoubiaomac = device.deviceId
 							}
-							if (row.deviceModelId === 30001) {
+							if (row.deviceModelId === "30001") {
 								that.deviceIdwatch6 = device.deviceId
 								that.deviceIdwatch6_SN = row.deviceSn
 								uni.setStorageSync("BPW6devicemac", device.deviceId)
@@ -2732,6 +2740,7 @@
 								case 4:
 									if (device.services[0].uuid === BPW6SERVICE) {
 										that.deviceIdwatch6 = device.deviceId
+										that.deviceIdwatch6_SN = row.deviceSn
 										uni.setStorageSync("BPW6devicemac", device.deviceId)
 										that.getBLEDeviceCharacteristics6(device.deviceId, BPW6SERVICE, row
 											.deviceSn);
@@ -2889,6 +2898,19 @@
 					this._bpw6LastLoadingPhase = ''
 				}
 			},
+			/** BPW1 PPG 进行中：仅用于挡 queryDevices/调度误恢复，不拦截业务主动收尾 */
+			shouldBlockBpw1PpgButtonRecover() {
+				if (this.shouldUseBpw6PpgForEmotion()) {
+					return false
+				}
+				const sendwatch = uni.getStorageSync('sendwatch')
+				return !!(
+					this.bpw1PpgSessionActive ||
+					this.sleep_alertid === 1 ||
+					this.immediateEmotionMeasure ||
+					sendwatch === 1 || sendwatch === '1'
+				)
+			},
 			clearBpw6EmotionWatchdog() {
 				if (this._bpw6EmotionBtnWatchdog) {
 					clearTimeout(this._bpw6EmotionBtnWatchdog)
@@ -3023,11 +3045,11 @@
 				if (!this.QX_HIDE) {
 					return
 				}
-				uni.showToast({
-					title: this.$t('数据传输失败'),
-					icon: 'none',
-					duration: 2000
-				})
+				// uni.showToast({
+				// 	title: this.$t('数据传输失败'),
+				// 	icon: 'none',
+				// 	duration: 2000
+				// })
 			},
 			/** 仅主页前台：请检查设备连接 */
 			toastBpw6CheckDeviceConnection() {
@@ -3191,28 +3213,18 @@
 						clearInterval(that.watchtimer)
 						that.watchtimer = null
 						uni.hideLoading()
+						// 先清会话标记，再恢复按钮（否则 shouldBlockBpw1PpgButtonRecover 会挡住）
+						that.bpw1PpgSessionActive = false
+						that.yalixueyatype = false
+						that.immediateEmotionMeasure = false
+						that.sleep_alertid = 0
 						that.setSleepAlertDisabled(false)
-						if (that.yalixueyatype) {
-							that.sleep_alertid = 0
-							that.setSleepAlertDisabled(false)
-						} else {
-							that.immediateEmotionMeasure = false
-							if (showCloudComputingLoading) {
-								uni.showModal({
-									content: that.$t("这个功能需要手表软件版本在"),
-									confirmText: that.$t('确定'),
-									showCancel: false,
-									success(modal) {
-										if (modal.confirm) {
-											that.sleep_alertid = 0
-											that.setSleepAlertDisabled(false)
-										}
-									}
-								})
-							} else {
-								that.sleep_alertid = 0
-								that.setSleepAlertDisabled(false)
-							}
+						if (showCloudComputingLoading) {
+							uni.showModal({
+								content: that.$t("这个功能需要手表软件版本在"),
+								confirmText: that.$t('确定'),
+								showCancel: false,
+							})
 						}
 					}
 				}, 1000)
@@ -3766,12 +3778,20 @@
 					clearTimeout(this.bpw1HistoryFlushTimer)
 					this.bpw1HistoryFlushTimer = null
 				}
+				if (this.bpw1DeferredFlushTimer) {
+					clearTimeout(this.bpw1DeferredFlushTimer)
+					this.bpw1DeferredFlushTimer = null
+				}
 				// 同步结束包偶发丢失时，避免长期卡住无法自动测 PPG
 				if (syncing) {
 					this.bpw1PendingHrHistory = []
 					this.bpw1PendingHrDevice = null
 					this.bpw1PendingBpHistory = []
 					this.bpw1PendingBpDevice = null
+					this.bpw1DeferredHistoryUploads = []
+					this._bpw1DeferredBpTimeSet = null
+					this._bpw1DeferredHrTimeSet = null
+					this._bpw1DeferredSpO2TimeSet = null
 					this.bpw1PendingBpAfterPpg = false
 					this.bpw1SyncSessionHrMap = new Map()
 					this.bpw1HistoryGraceUntil = 0
@@ -3795,6 +3815,8 @@
 					this.flushBPW1PendingHistoryMergeAndHr({
 						finalDiscard: false
 					})
+					// 同步刚结束：已入队的历史尽快倒序上报，不等 15s 宽限结束
+					this.scheduleBPW1DeferredHistoryFlush(800)
 					if (this.bpw1HistoryFlushTimer) {
 						clearTimeout(this.bpw1HistoryFlushTimer)
 					}
@@ -3898,7 +3920,13 @@
 					this.bpw1PendingBpHistory = (this.bpw1PendingBpHistory || []).filter(bp => {
 						const key = this.normalizeDateTimeKey(`${bp.date} ${bp.time}`)
 						const timeTs = String(this.datatime(key))
-						return !(this.bpw1UploadedBpTimeSet && this.bpw1UploadedBpTimeSet.has(timeTs))
+						if (this.bpw1UploadedBpTimeSet && this.bpw1UploadedBpTimeSet.has(timeTs)) {
+							return false
+						}
+						if (this._bpw1DeferredBpTimeSet && this._bpw1DeferredBpTimeSet.has(timeTs)) {
+							return false
+						}
+						return true
 					})
 				}
 				const mergePendingBpWithTol = (tolSec, tag) => {
@@ -3939,8 +3967,14 @@
 				}
 				this.bpw1PendingBpHistory = []
 				this.bpw1PendingBpDevice = null
-				// 独立心率/PPG 心率仍走原补报逻辑，不会生成血压
-				this.flushBPW1PendingHrHistory()
+				// 先倒序串行上报本轮汇总的历史，再补报未配血压的独立心率
+				const that = this
+				this.flushBPW1DeferredHistoryUploads().then(() => {
+					that.flushBPW1PendingHrHistory()
+				}).catch(e => {
+					console.error('BPW1历史倒序上报失败', e)
+					that.flushBPW1PendingHrHistory()
+				})
 			},
 			/** 历史同步：心率缓存按时间点合并，避免同一包重复入队 */
 			appendBPW1PendingHrHistory(hrRecords, deviceId, deviceSn) {
@@ -4067,11 +4101,134 @@
 					if (this.bpw1UploadedBpTimeSet && this.bpw1UploadedBpTimeSet.has(timeTs)) {
 						return false
 					}
+					if (this._bpw1DeferredBpTimeSet && this._bpw1DeferredBpTimeSet.has(timeTs)) {
+						return false
+					}
 					if (this.hasServerBloodPressureAt(key)) {
 						return false
 					}
 					return true
 				})
+			},
+			/** 同步/宽限期内历史上报入队（跨包汇总后倒序串行） */
+			enqueueBPW1DeferredHistoryUpload(item) {
+				if (!item || item.timess === '' || item.timess == null) {
+					return
+				}
+				if (!this.bpw1DeferredHistoryUploads) {
+					this.bpw1DeferredHistoryUploads = []
+				}
+				const kind = item.kind || 'bp'
+				const tsKey = String(item.timess)
+				if (kind === 'bp') {
+					if (!this._bpw1DeferredBpTimeSet) {
+						this._bpw1DeferredBpTimeSet = new Set()
+					}
+					if (this._bpw1DeferredBpTimeSet.has(tsKey)) {
+						return
+					}
+					this._bpw1DeferredBpTimeSet.add(tsKey)
+				} else if (kind === 'hr') {
+					if (!this._bpw1DeferredHrTimeSet) {
+						this._bpw1DeferredHrTimeSet = new Set()
+					}
+					const hrKey = `${tsKey}|${item.hr}`
+					if (this._bpw1DeferredHrTimeSet.has(hrKey)) {
+						return
+					}
+					this._bpw1DeferredHrTimeSet.add(hrKey)
+				} else if (kind === 'spo2') {
+					if (!this._bpw1DeferredSpO2TimeSet) {
+						this._bpw1DeferredSpO2TimeSet = new Set()
+					}
+					const o2Key = `${tsKey}|${item.spo2}`
+					if (this._bpw1DeferredSpO2TimeSet.has(o2Key)) {
+						return
+					}
+					this._bpw1DeferredSpO2TimeSet.add(o2Key)
+				}
+				this.bpw1DeferredHistoryUploads.push(item)
+				// 入队后防抖上报：跨包汇一小会儿再倒序串行，避免一直等到宽限结束才报
+				this.scheduleBPW1DeferredHistoryFlush(2000)
+			},
+			scheduleBPW1DeferredHistoryFlush(delayMs = 2000) {
+				if (this.bpw1DeferredFlushTimer) {
+					clearTimeout(this.bpw1DeferredFlushTimer)
+					this.bpw1DeferredFlushTimer = null
+				}
+				const wait = Math.max(0, Number(delayMs) || 0)
+				this.bpw1DeferredFlushTimer = setTimeout(() => {
+					this.bpw1DeferredFlushTimer = null
+					this.flushBPW1DeferredHistoryUploads().catch(e => {
+						console.error('BPW1历史防抖上报失败', e)
+					})
+				}, wait)
+			},
+			/** 历史上报倒序串行：新→旧（先报最新） */
+			async flushBPW1HistoryUploadList(list) {
+				const uploads = Array.isArray(list) ? list.slice() : []
+				if (!uploads.length) {
+					return
+				}
+				uploads.sort((a, b) => Number(b.timess) - Number(a.timess))
+				for (const item of uploads) {
+					const kind = item.kind || 'bp'
+					try {
+						if (kind === 'spo2') {
+							await this.jakoblife_fat_scale3(item.deviceId, item.spo2, item.deviceSn, '血氧', item
+								.timess)
+						} else {
+							await this.Watch_Historical_data(
+								item.deviceId,
+								item.high || '',
+								item.low || '',
+								item.hr || '',
+								item.deviceSn,
+								item.timess,
+								item.opts || {}
+							)
+						}
+					} catch (e) {
+						console.error('BPW1历史上报失败', kind, item.timess, e)
+					}
+				}
+			},
+			async flushBPW1DeferredHistoryUploads() {
+				if (this.bpw1DeferredFlushTimer) {
+					clearTimeout(this.bpw1DeferredFlushTimer)
+					this.bpw1DeferredFlushTimer = null
+				}
+				const list = this.bpw1DeferredHistoryUploads || []
+				this.bpw1DeferredHistoryUploads = []
+				// 仅清本批已取出的去重键；flush 期间新入队的键仍保留在新 Set
+				const flushingBp = new Set()
+				const flushingHr = new Set()
+				const flushingSpO2 = new Set()
+				list.forEach(item => {
+					const tsKey = String(item.timess)
+					const kind = item.kind || 'bp'
+					if (kind === 'bp') {
+						flushingBp.add(tsKey)
+					} else if (kind === 'hr') {
+						flushingHr.add(`${tsKey}|${item.hr}`)
+					} else if (kind === 'spo2') {
+						flushingSpO2.add(`${tsKey}|${item.spo2}`)
+					}
+				})
+				if (this._bpw1DeferredBpTimeSet && flushingBp.size) {
+					flushingBp.forEach(k => this._bpw1DeferredBpTimeSet.delete(k))
+				}
+				if (this._bpw1DeferredHrTimeSet && flushingHr.size) {
+					flushingHr.forEach(k => this._bpw1DeferredHrTimeSet.delete(k))
+				}
+				if (this._bpw1DeferredSpO2TimeSet && flushingSpO2.size) {
+					flushingSpO2.forEach(k => this._bpw1DeferredSpO2TimeSet.delete(k))
+				}
+				if (!list.length) {
+					return
+				}
+				console.log('BPW1历史倒序串行上报', list.length, '条')
+				await this.flushBPW1HistoryUploadList(list)
 			},
 			/** 墙钟 key ±N 秒的归一化集合（血压/心率分包差 1 秒时合并用） */
 			addNearDateTimeKeys(targetSet, dateTimeKey, tolSec = 1) {
@@ -4666,6 +4823,8 @@
 					that.bpw1PpgUploadDone = false
 					that.bpw1PpgStatus02Handled = false
 					that.QX_FAIL = false
+					// 启动 PPG 即置灰，仅写失败/成功收尾/中断恢复再解开
+					that.setSleepAlertDisabled(true)
 					console.log('BPW1下发PPG测量命令', that.yalixueyatype ? '血压后' : '情绪/其它')
 					uni.writeBLECharacteristicValue({
 						deviceId: that.deviceIdwatch ? that.deviceIdwatch : deviceIdwatchBPW1,
@@ -4674,7 +4833,7 @@
 						writeType: 'write',
 						value: buffer2,
 						complete(complete) {
-							if (complete.code === 10007) {
+							if (that.isBPW1BleWriteOk(complete)) {
 								uni.hideLoading()
 								that.setSleepAlertDisabled(true)
 								if (!that.yalixueyatype) {
@@ -4688,6 +4847,7 @@
 							} else {
 								uni.hideLoading()
 								that.bpw1PpgSessionActive = false
+								that.yalixueyatype = false
 								that.immediateEmotionMeasure = false
 								that.sleep_alertid = 0
 								that.setSleepAlertDisabled(false)
@@ -5260,7 +5420,8 @@
 						const isBcService = res.serviceId && res.serviceId.toUpperCase() === BC_BLE_UUID
 							.SERVICE.toUpperCase()
 						if (parsedResult && (res.serviceId === BPW6SERVICE || isBcService)) {
-							const BPW6SN = that.deviceIdwatch6_SN || deviceSn
+							// 优先内存/本地当前 SN，避免解绑 BPW1 后仍回退到旧 handler 闭包 SN
+							const BPW6SN = that.deviceIdwatch6_SN || uni.getStorageSync("deviceSn") || deviceSn
 							const BPW6MAC = res.deviceId
 							that.deviceIdwatch6 = BPW6MAC
 							uni.setStorageSync("BPW6devicemac", BPW6MAC)
@@ -5884,6 +6045,8 @@
 				if (!rawData || (typeof rawData === 'string' && rawData.length === 0)) {
 					console.warn('BPW1 PPG 上传跳过：rawData 为空')
 					this.immediateEmotionMeasure = false
+					this.yalixueyatype = false
+					this.bpw1PpgSessionActive = false
 					this.sleep_alertid = 0
 					this.setSleepAlertDisabled(false)
 					uni.hideLoading()
@@ -5926,6 +6089,9 @@
 							})
 							setTimeout(() => {
 								uni.hideLoading()
+								this.yalixueyatype = false
+								this.bpw1PpgSessionActive = false
+								this.sleep_alertid = 0
 								this.setSleepAlertDisabled(false)
 							}, 60 * 1000)
 						}
@@ -5933,6 +6099,8 @@
 						this.deviceppgdatalist(deviceSn, deviceId, 0, showCloudComputingLoading)
 					} else {
 						this.immediateEmotionMeasure = false
+						this.yalixueyatype = false
+						this.bpw1PpgSessionActive = false
 						this.sleep_alertid = 0
 						uni.hideLoading()
 						this.setSleepAlertDisabled(false)
@@ -5940,6 +6108,8 @@
 				}).catch((err) => {
 					console.error('BPW1 PPG上传失败', err)
 					this.immediateEmotionMeasure = false
+					this.yalixueyatype = false
+					this.bpw1PpgSessionActive = false
 					this.sleep_alertid = 0
 					uni.hideLoading()
 					this.setSleepAlertDisabled(false)
@@ -5973,12 +6143,17 @@
 								that.ppgdatalist(deviceSn, deviceId)
 								break;
 							case "LOW_QUALITY": {
-								const bpw6ManualFail = that.shouldToastBpw6ManualFail()
+								// 立即测量：无论黑屏都弹窗；仅定时(sendwatch)/血压后静默不弹
+								const sendwatchOn = uni.getStorageSync('sendwatch') === 1 ||
+									uni.getStorageSync('sendwatch') === '1'
+								const inManualUi = !!(that.immediateEmotionMeasure ||
+									that.bpw6ManualEmotionUiPhase === 'measuring' ||
+									that.bpw6ManualEmotionUiPhase === 'cloud')
+								const wasSilentPpg = sendwatchOn || (that.bpw6PpgSilentAfterBp && !inManualUi)
 								that.recoverBpw6PpgSessionUi('low_quality', {
-									failToast: bpw6ManualFail
+									failToast: false
 								})
-								// BPW1 等非 BPW6 手动立即测量：保留原弹窗
-								if (!bpw6ManualFail && showCloudComputingLoading) {
+								if (!wasSilentPpg && (inManualUi || showCloudComputingLoading)) {
 									uni.showModal({
 										content: that.$t("波形质量不足峰值无法可靠分析"),
 										confirmText: that.$t('确定'),
@@ -5992,11 +6167,16 @@
 							}
 							break;
 							case "INVALID_DATA": {
-								const bpw6ManualFail = that.shouldToastBpw6ManualFail()
+								const sendwatchOn = uni.getStorageSync('sendwatch') === 1 ||
+									uni.getStorageSync('sendwatch') === '1'
+								const inManualUi = !!(that.immediateEmotionMeasure ||
+									that.bpw6ManualEmotionUiPhase === 'measuring' ||
+									that.bpw6ManualEmotionUiPhase === 'cloud')
+								const wasSilentPpg = sendwatchOn || (that.bpw6PpgSilentAfterBp && !inManualUi)
 								that.recoverBpw6PpgSessionUi('invalid_data', {
-									failToast: bpw6ManualFail
+									failToast: false
 								})
-								if (!bpw6ManualFail && showCloudComputingLoading) {
+								if (!wasSilentPpg && (inManualUi || showCloudComputingLoading)) {
 									uni.showModal({
 										content: that.$t("原始为空或解析失败"),
 										confirmText: that.$t('确定'),
@@ -6010,11 +6190,16 @@
 							}
 							break;
 							case "ERROR": {
-								const bpw6ManualFail = that.shouldToastBpw6ManualFail()
+								const sendwatchOn = uni.getStorageSync('sendwatch') === 1 ||
+									uni.getStorageSync('sendwatch') === '1'
+								const inManualUi = !!(that.immediateEmotionMeasure ||
+									that.bpw6ManualEmotionUiPhase === 'measuring' ||
+									that.bpw6ManualEmotionUiPhase === 'cloud')
+								const wasSilentPpg = sendwatchOn || (that.bpw6PpgSilentAfterBp && !inManualUi)
 								that.recoverBpw6PpgSessionUi('error', {
-									failToast: bpw6ManualFail
+									failToast: false
 								})
-								if (!bpw6ManualFail && showCloudComputingLoading) {
+								if (!wasSilentPpg && (inManualUi || showCloudComputingLoading)) {
 									uni.showModal({
 										content: that.$t("测试质量不够好"),
 										confirmText: that.$t('确定'),
@@ -6088,6 +6273,8 @@
 					if (ppgdatalist.code === 200) {
 						that.hideBPW6PpgCloudLoading();
 						that.immediateEmotionMeasure = false
+						that.yalixueyatype = false
+						that.bpw1PpgSessionActive = false
 						that.sleep_alertid = 0
 						that.setSleepAlertDisabled(false)
 						let aaa = {
@@ -6133,7 +6320,7 @@
 					slaveData: aaa,
 					time: timeFields.time,
 					measurementTs: this.UTCdatatime().timestampSec,
-					measurementTimezone: timeFields.measurementTimezone,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
 				}
 				console.log("上报手表情绪数据参数", data)
 				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
@@ -6143,11 +6330,6 @@
 					if (sharedatafatscaleres.code === 200 && this._bpw6ShowManualUploadSuccessToast && this
 						.QX_HIDE) {
 						this._bpw6ShowManualUploadSuccessToast = false
-						uni.showToast({
-							title: this.$t("成功"),
-							icon: 'none',
-							duration: 1500
-						})
 					} else {
 						this._bpw6ShowManualUploadSuccessToast = false
 					}
@@ -8089,7 +8271,8 @@
 					const timeTs = String(that.datatime(normalizedKey))
 					const skipExisting = !!(existingTimes.has(normalizedKey) || existingTimes.has(key) ||
 						that.hasServerBloodPressureAt(normalizedKey) ||
-						(that.bpw1UploadedBpTimeSet && that.bpw1UploadedBpTimeSet.has(timeTs)))
+						(that.bpw1UploadedBpTimeSet && that.bpw1UploadedBpTimeSet.has(timeTs)) ||
+						(that._bpw1DeferredBpTimeSet && that._bpw1DeferredBpTimeSet.has(timeTs)))
 					return {
 						bp,
 						key,
@@ -8117,6 +8300,9 @@
 					sameDateOnly: true,
 					excludeKeys: localBpKeySet
 				})
+				// 历史上报倒序：新→旧（先报最新）；配对完成后再排，不影响匹配
+				bpItems.sort((a, b) => Number(b.timeTs) - Number(a.timeTs))
+				const readyUploads = []
 				// Pass4：上报 / 跳过 / 暂存（只处理血压历史，不单独上报心率）
 				bpItems.forEach(item => {
 					const {
@@ -8142,22 +8328,18 @@
 						}
 						matchedHrKeysToRemove.push(matchedNear.key)
 						const bpUploadTs = that.datatime(normalizedKey)
-						// that.addlog('上传血压+心率:', key, {
-						// 	bp: `${bp.highPressure}/${bp.lowPressure}`,
-						// 	hr: hrVal,
-						// 	hrKey: matchedNear.key,
-						// 	uploadTs: bpUploadTs
-						// })
-						that.Watch_Historical_data(
-							uploadMac,
-							bp.highPressure,
-							bp.lowPressure,
-							hrVal,
-							uploadSn,
-							bpUploadTs, {
+						readyUploads.push({
+							kind: 'bp',
+							deviceId: uploadMac,
+							deviceSn: uploadSn,
+							high: bp.highPressure,
+							low: bp.lowPressure,
+							hr: hrVal,
+							timess: bpUploadTs,
+							opts: {
 								requireBpWithHr: true
 							}
-						);
+						})
 						// 仅标记已配对的血压/心率墙钟附近，避免宽窗误杀邻近独立心率补报
 						that.markSessionHrUploadedNear(String(bpUploadTs), hrVal, HR_MATCH_TOL)
 						if (matchedNear.key !== normalizedKey) {
@@ -8175,6 +8357,18 @@
 				}
 				if (skippedBp) {
 					console.log(`BPW1血压历史上报去重：跳过血压${skippedBp}条`)
+				}
+				// 同步中也先入队再防抖倒序串行，跨包汇齐后先报最新；非同步则本包立即倒序串行
+				if (readyUploads.length) {
+					if (that.isBPW1HistorySyncingOrGrace()) {
+						readyUploads.forEach(item => that.enqueueBPW1DeferredHistoryUpload(item))
+					} else {
+						that.flushBPW1HistoryUploadList(readyUploads)
+					}
+				} else if (that.isBPW1HistorySyncingOrGrace() && (that.bpw1DeferredHistoryUploads || [])
+					.length) {
+					// 本包全是重发去重跳过，但队列里还有待报，催促 flush
+					that.scheduleBPW1DeferredHistoryFlush(800)
 				}
 			},
 			/**血压和心率历史数据查询
@@ -8381,6 +8575,11 @@
 										}
 										clearInterval(that.watchtimer2);
 										that.watchtimer2 = null;
+										// 传输超时中断：先清会话再恢复按钮
+										that.bpw1PpgSessionActive = false
+										that.yalixueyatype = false
+										that.immediateEmotionMeasure = false
+										that.sleep_alertid = 0
 										that.setSleepAlertDisabled(false)
 										uni.hideLoading();
 										that.resetDataState("6");
@@ -8410,6 +8609,8 @@
 									}, 500)
 								}
 								that.sleep_alertid = 0
+								// 传输中仍保持置灰（sleep_alertid 已清，靠 bpw1PpgSessionActive）
+								that.setSleepAlertDisabled(true)
 								that.resetDataState("5");
 								break
 							case "02":
@@ -8436,20 +8637,27 @@
 									that.bpw1PpgUploadDone = true
 									const binary = that.packInt16(that.bufferPPG)
 									that.ppgdata(binary, deviceSn)
+									// 上传/云端分析期间保持置灰与会话锁
+									that.setSleepAlertDisabled(true)
 								} else if (!that.bpw1PpgUploadDone) {
 									if (!allowPpgUpload) {
 										console.log('BPW1非情绪PPG会话 Status02，跳过上传')
+										that.bpw1PpgSessionActive = false
 									} else {
 										console.warn('BPW1 PPG Status02：buffer 为空，跳过上传')
 										// 空数据无法上传：立刻恢复情绪按钮，避免 Status02 清掉计时器后按钮一直灰
 										that.immediateEmotionMeasure = false
 										that.yalixueyatype = false
+										that.bpw1PpgSessionActive = false
 										that.setSleepAlertDisabled(false)
 									}
 									that.bpw1PpgUploadDone = true
 								}
 								that.bufferPPG = []
-								that.bpw1PpgSessionActive = false
+								// 有上传时保留 bpw1PpgSessionActive，等 ppgdata/结果收尾再清
+								if (!(allowPpgUpload && that._bpw1PpgPosting)) {
+									that.bpw1PpgSessionActive = false
+								}
 								if (allowPpgUpload) {
 									uni.removeStorageSync("sendwatch")
 									onQxBleWatchCollectionEnded('手表采集结束')
@@ -9438,6 +9646,11 @@
 				let that = this;
 				try {
 					if (that.characteristicsCache.has(deviceId)) {
+						// 缓存命中时仍刷新 SN/handler，避免换绑后沿用旧闭包 SN
+						if (deviceSn) {
+							that.deviceIdwatch6_SN = deviceSn
+							that.installBleForwardHandler(deviceSn)
+						}
 						uni.openBluetoothAdapter({
 							success: () => {
 								uni.onBLEConnectionStateChange(
@@ -9506,8 +9719,8 @@
 										that.bpw6BpHistorySyncing = true
 										try {
 											await u16proBLE.readDailyInfo(0, deviceId) //读取运动&睡眠数据
-											await u16proBLE.readLatestBPHistory(50, deviceId)//读取血压历史记录
-											await u16proBLE.readLatestHRHistory(deviceId)//读取心率历史记录
+											await u16proBLE.readLatestBPHistory(50, deviceId) //读取血压历史记录
+											await u16proBLE.readLatestHRHistory(deviceId) //读取心率历史记录
 											// await u16proBLE.readLatestSpO2History(deviceId)//读取血氧历史记录
 										} catch (err) {
 											that.bpw6BpHistorySyncing = false
@@ -9641,7 +9854,6 @@
 					});
 				});
 			},
-
 			/** 服务端该时刻是否已有血压（高压/低压），纯心率记录不算 */
 			/** 服务端血压是否已存在：兼容墙钟键与 unix timestamp（BPW6 上报 time 用设备 timestamp） */
 			hasServerBloodPressureAt(timeKeyOrTs) {
@@ -10351,8 +10563,9 @@
 				try {
 					await that.queryBloodPressureDataAsync(that.deviceSnuserID);
 					const existingTimes = that.getExistingBloodPressureTimeSet();
-					const localBpRecords = [...that.bpw6BpBuffer].sort((a, b) => that.datatime(a.dateTimeKey) - that
-						.datatime(b.dateTimeKey)
+					// 历史上报倒序：新→旧（先报最新）
+					const localBpRecords = [...that.bpw6BpBuffer].sort((a, b) => that.datatime(b.dateTimeKey) - that
+						.datatime(a.dateTimeKey)
 					);
 					const uploadedKeys = new Set();
 					let uploadedCount = 0
@@ -10401,7 +10614,9 @@
 							bp.heartRate,
 							deviceSn,
 							timeTs, {
-								bypassSessionDedupe: true
+								bypassSessionDedupe: true,
+								// 与实时一致：time 原样用设备 timestamp
+								rawDeviceTimestamp: true
 							}
 						);
 						that.markBpw6BpUploaded(key, timeTs, hasRecordTs ? recordTs : '');
@@ -10493,12 +10708,13 @@
 					return best;
 				}, null);
 			},
-			// BPW6 心率历史去重上传（旧→新串行，最新一条由 jakoblife_fat_scale22 单独上报）
+			// BPW6 心率历史去重上传（新→旧串行，最新一条由 jakoblife_fat_scale22 单独上报）
 			async uploadBPW6HrHistoryWithDeduplication(deviceId, deviceSn) {
 				const that = this;
 				await that.queryBloodPressureDataAsync(that.deviceSnuserID);
-				const localHrRecords = [...that.bpw6HrBuffer].sort((a, b) => that.datatime(a.dateTimeKey) - that
-					.datatime(b.dateTimeKey)
+				// 历史上报倒序：新→旧（先报最新）
+				const localHrRecords = [...that.bpw6HrBuffer].sort((a, b) => that.datatime(b.dateTimeKey) - that
+					.datatime(a.dateTimeKey)
 				);
 				const uploadedKeys = new Set();
 				for (const hr of localHrRecords) {
@@ -10587,6 +10803,11 @@
 				const existingHrMap = that.getExistingHeartRateMap()
 				const existingBpTimes = that.getExistingBloodPressureTimeSet();
 				let skipped = 0
+				// 历史上报倒序：新→旧（先报最新）
+				uniqueRecords.sort((a, b) => that.datatime(`${b.date} ${b.time}`) - that.datatime(
+					`${a.date} ${a.time}`))
+				const deferUpload = that.isBPW1HistorySyncingOrGrace()
+				const readyUploads = []
 				uniqueRecords.forEach(hr => {
 					const key = that.normalizeDateTimeKey(`${hr.date} ${hr.time}`)
 					const timeTs = String(that.datatime(key))
@@ -10603,15 +10824,33 @@
 						return
 					}
 					if (that.hasSessionHrUploadedNear(timeTs, hrVal, 3) ||
-						that.hasBPW1BpUploadedNearTs(timeTs, 3)) {
+						that.hasBPW1BpUploadedNearTs(timeTs, 3) ||
+						(that._bpw1DeferredBpTimeSet && that._bpw1DeferredBpTimeSet.has(timeTs))) {
 						skipped++
 						return
 					}
 					console.log('上传BPW1历史心率:', key, hrVal)
-					that.Watch_Historical_data(uploadMac, '', '', hrVal, uploadSn, that.datatime(key))
+					const uploadItem = {
+						kind: 'hr',
+						deviceId: uploadMac,
+						deviceSn: uploadSn,
+						high: '',
+						low: '',
+						hr: hrVal,
+						timess: that.datatime(key),
+						opts: {}
+					}
+					if (deferUpload) {
+						that.enqueueBPW1DeferredHistoryUpload(uploadItem)
+					} else {
+						readyUploads.push(uploadItem)
+					}
 				})
 				if (skipped) {
 					console.log(`BPW1历史心率去重：跳过${skipped}条`)
+				}
+				if (!deferUpload && readyUploads.length) {
+					that.flushBPW1HistoryUploadList(readyUploads)
 				}
 			},
 			/** BPW1 历史血氧：对照服务端去重上报 */
@@ -10630,7 +10869,15 @@
 				const uploadSn = (that.shoubiaosn && that.shoubiaosn !== '0') ? that.shoubiaosn : deviceSn
 				const existingOxygenMap = that.getExistingOxygenMap();
 				let skipped = 0;
-				(localSpO2Records || []).forEach(item => {
+				// 历史上报倒序：新→旧（先报最新）
+				const spo2Records = [...(localSpO2Records || [])].sort((a, b) => {
+					const keyA = that.normalizeDateTimeKey(a.dateTimeKey || `${a.date} ${a.time}`)
+					const keyB = that.normalizeDateTimeKey(b.dateTimeKey || `${b.date} ${b.time}`)
+					return that.datatime(keyB) - that.datatime(keyA)
+				})
+				const deferUpload = that.isBPW1HistorySyncingOrGrace()
+				const readyUploads = []
+				spo2Records.forEach(item => {
 					const key = that.normalizeDateTimeKey(item.dateTimeKey || `${item.date} ${item.time}`)
 					const timeTs = String(that.datatime(key))
 					const oxygenItem = {
@@ -10647,10 +10894,24 @@
 						return
 					}
 					console.log('上传BPW1历史血氧:', key, item.spO2)
-					that.jakoblife_fat_scale3(uploadMac, item.spO2, uploadSn, "血氧", that.datatime(key))
+					const uploadItem = {
+						kind: 'spo2',
+						deviceId: uploadMac,
+						deviceSn: uploadSn,
+						spo2: item.spO2,
+						timess: that.datatime(key)
+					}
+					if (deferUpload) {
+						that.enqueueBPW1DeferredHistoryUpload(uploadItem)
+					} else {
+						readyUploads.push(uploadItem)
+					}
 				})
 				if (skipped) {
 					console.log(`BPW1历史血氧去重：跳过${skipped}条`)
+				}
+				if (!deferUpload && readyUploads.length) {
+					that.flushBPW1HistoryUploadList(readyUploads)
 				}
 			},
 			// BPW6 血氧不上报历史：仅 DATA_CHANGED 实时最新整点；保留方法避免旧调用报错
@@ -10832,11 +11093,8 @@
 						const recordTimeKey = hasRecordTs ? that.formatTimestampKey(recordTs) : ((data.date && data.date
 							.formatted) ? data.date.formatted : that.getTimeAllJSON().YMDHMS)
 						const normalizedKey = that.normalizeDateTimeKey(recordTimeKey)
-						// 实时血压：与血氧一致，上报 time 用手机本地当前时间（不用设备中国时区戳）
-						// 历史：仍用设备测量时间戳 / 本地墙钟解析
-						const uploadTs = (that.bpw6RealtimeBpPending && !that.bpw6BpHistorySyncing) ?
-							that.resolveRealtimeUploadTimeSec() :
-							(hasRecordTs ? recordTs : that.datatime(normalizedKey))
+						// 实时/历史血压：上报 time 均用设备返回的测量时间（无则墙钟）
+						const uploadTs = hasRecordTs ? recordTs : that.datatime(normalizedKey)
 						const isNewestRecord = that.bpw6BpBuffer.length === 0;
 						const isRealtimeMeasure = that.bpw6RealtimeBpPending && !that.bpw6BpHistorySyncing
 						that.bpw6BpBuffer.push({
@@ -10855,7 +11113,6 @@
 							(hasRecordTs && that.hasBpw6BpUploaded(recordTs)) ||
 							(that.bpw6RealtimeUploadKey && that.buildBpw6BpDedupeKeys(that.bpw6RealtimeUploadKey)
 								.some(k => k === normalizedKey || (hasRecordTs && k === String(recordTs))))) {
-							console.log('BPW6血压本会话已实时处理，跳过重复上报:', normalizedKey, uploadTs)
 							break;
 						}
 						// 设备按新→旧推送，实时测量时首页只展示最新一条（且须不早于接口）
@@ -10923,7 +11180,9 @@
 												data.pulse,
 												deviceSn,
 												uploadTs, {
-													bypassSessionDedupe: true
+													bypassSessionDedupe: true,
+													// BPW6 实时血压：time 原样用设备 timestamp，不再经 china 墙钟重编码
+													rawDeviceTimestamp: true
 												}
 											);
 											that.markBpw6BpUploaded(normalizedKey, uploadTs, hasRecordTs ?
@@ -11183,9 +11442,11 @@
 			recoverBpw6PpgSessionUi(reason, opts = {}) {
 				const failToast = !!(opts && opts.failToast)
 				const canToast = failToast && this.QX_HIDE && this.shouldToastBpw6ManualFail()
-				// 先清手动会话标记，再恢复按钮（否则 setSleepAlertDisabled 会挡恢复）
+				// 先清会话标记，再恢复按钮（BPW1/BPW6 共用 deviceppgdatalist 收尾）
 				this.immediateEmotionMeasure = false
 				this.sleep_alertid = 0
+				this.bpw1PpgSessionActive = false
+				this.yalixueyatype = false
 				this._bpw6EmotionMeasureStartedAt = 0
 				this._bpw6EmotionPullOnShowTried = false
 				this.hideBPW6PpgCloudLoading()
@@ -11670,7 +11931,7 @@
 					slaveData: aaa,
 					time: timeFields.time,
 					measurementTs: this.UTCdatatime().timestampSec,
-					measurementTimezone: timeFields.measurementTimezone,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
 				}
 				uni.setStorageSync("xueyadatatype", "0")
 				uni.setStorageSync("xueyadata", data)
@@ -11706,7 +11967,7 @@
 					},
 					time: timeFields.time,
 					measurementTs: this.UTCdatatime().timestampSec,
-					measurementTimezone: timeFields.measurementTimezone,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
 				}
 				uni.setStorageSync("tizhidata", data)
 				console.log("上报体脂秤数据", data)
@@ -11739,7 +12000,7 @@
 					slaveData: aaa,
 					time: timeFields.time,
 					measurementTs: this.UTCdatatime().timestampSec,
-					measurementTimezone: timeFields.measurementTimezone,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
 				}
 				this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
@@ -11819,7 +12080,13 @@
 					}
 					this.markSessionHrUploadedNear(hrTimeKey, hrNum, 3)
 				}
-				const timeFields = this.buildUploadTimeFields(timess)
+				// rawDeviceTimestamp：BPW6 实时血压 time 原样用设备 timestamp，不做 china 墙钟重编码
+				const timeFields = (opts && opts.rawDeviceTimestamp && timess !== '' && timess != null &&
+						Number(timess) > 1e9) ? {
+						time: Math.floor(Number(timess)),
+						measurementTimezone: this.formatTimestampKey(Math.floor(Number(timess)))
+					} :
+					this.buildUploadTimeFields(timess)
 				let data = {
 					deviceSn: !deviceSn ? uni.getStorageSync("deviceSn") : deviceSn,
 					mac: deviceId,
@@ -11827,7 +12094,7 @@
 					slaveData: aaa,
 					time: timeFields.time,
 					measurementTs: this.UTCdatatime().timestampSec,
-					measurementTimezone: timeFields.measurementTimezone,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
 				}
 				uni.setStorageSync("xueyadatatype", "1")
 				uni.setStorageSync("xueyadata", data)
@@ -11937,7 +12204,13 @@
 					}
 					this.markSessionHrUploadedNear(hrTimeKey, hrNum, 3)
 				}
-				const timeFields = this.buildUploadTimeFields(timess)
+				// rawDeviceTimestamp：与实时一致，time 原样用设备 timestamp
+				const timeFields = (opts && opts.rawDeviceTimestamp && timess !== '' && timess != null &&
+						Number(timess) > 1e9) ? {
+						time: Math.floor(Number(timess)),
+						measurementTimezone: this.formatTimestampKey(Math.floor(Number(timess)))
+					} :
+					this.buildUploadTimeFields(timess)
 				let data = {
 					deviceSn: !deviceSn ? uni.getStorageSync("deviceSn") : deviceSn,
 					mac: deviceId,
@@ -11945,7 +12218,7 @@
 					slaveData: aaa,
 					time: timeFields.time,
 					measurementTs: this.UTCdatatime().timestampSec,
-					measurementTimezone: timeFields.measurementTimezone,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
 				}
 				return this.$post(this.$url_APP_IP + this.$url_jakoblife_fat_scale, data, {
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
@@ -12002,7 +12275,7 @@
 					// 有测量时间用测量时间；血氧/步数/睡眠等统一走同一规则（本地墙钟）
 					time: timeFields.time,
 					measurementTs: self.UTCdatatime().timestampSec,
-					measurementTimezone: timeFields.measurementTimezone,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
 				}
 				console.log("jakoblife_fat_scale3" + type, data)
 				return self.$post(self.$url_APP_IP + self.$url_jakoblife_fat_scale, data, {
@@ -12513,8 +12786,8 @@
 							// BPW1(30000) 或 BPW6(30001) 绑定后均可点击情绪立即测量
 							if (allElementsNot3000 && allElementsNot3001) {
 								that.setSleepAlertDisabled(true)
-							} else if (!that.isBpw6PpgButtonBusy()) {
-								// 测量会话中勿重置，避免 onShow→queryDevices 冲掉置灰
+							} else if (!that.isBpw6PpgButtonBusy() && !that.shouldBlockBpw1PpgButtonRecover()) {
+								// 测量会话中勿重置，避免 onShow→queryDevices 冲掉置灰（含 BPW1 PPG）
 								that.setSleepAlertDisabled(false)
 							}
 							if (!allElementsNot3000) {
@@ -14739,9 +15012,7 @@
 			 * @param {Object} type
 			 */
 			xueyaclicklink(type) {
-
 				let that = this
-				console.log(that.devicetype, that.devicetypelist)
 				if (that.devicetype === 10001 && that.devicetypelist.length <= 1) {
 					uni.showToast({
 						title: that.$t('遥控测试功能只支持在手表上使用请确认手表和已连接'),

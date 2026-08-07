@@ -270,6 +270,11 @@
 		color: white;
 	}
 
+	.btnstyle[disabled] {
+		background: #c0c0c0 !important;
+		color: #ffffff !important;
+	}
+
 	.data_bg_ppg_set {
 		border-top-left-radius: 20px;
 		border-top-right-radius: 20px;

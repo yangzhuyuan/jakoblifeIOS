@@ -273,7 +273,7 @@ class U16ProBLEManager {
 				result.cmd === CMD.RRI_GET_DATA
 			)
 			if (!isUnsolicitedKnown) {
-				console.warn('【PPG】收到BC应答但未匹配等待队列', {
+				console.log('【PPG】收到BC应答但未匹配等待队列', {
 					cmd: '0x' + result.cmd.toString(16),
 					pendingKeys
 				})
@@ -2134,8 +2134,6 @@ class U16ProBLEManager {
 			})
 			return
 		}
-
-		console.log('【PPG】BC notify 重新订阅（先关后开）')
 		await new Promise((resolve) => {
 			uni.notifyBLECharacteristicValueChange({
 				deviceId: targetDeviceId,
@@ -2349,7 +2347,6 @@ class U16ProBLEManager {
 	async _ensurePpgIdleBeforeStart(deviceId) {
 		const targetDeviceId = deviceId || this.deviceId
 		if (!targetDeviceId || !this.state.ppgMeasuring) {
-			console.log('【PPG】设备未在测量中，跳过预停止')
 			return
 		}
 
@@ -2361,7 +2358,6 @@ class U16ProBLEManager {
 				skipPrepare: true
 			})
 			const stopResult = await stopPromise
-			console.log('【PPG】预停止结果', stopResult.parsed)
 			if (stopResult.parsed?.success) {
 				this.state.ppgMeasuring = false
 			}
@@ -2539,11 +2535,9 @@ class U16ProBLEManager {
 			})
 			// 从未收到过 BC notify：强制重订阅并多等一会，覆盖首次绑定后立刻点测量
 			if (firstBcSession) {
-				console.log('【PPG】首次BC会话，强制热身通道')
 				try {
 					await this._reSubscribeBcNotify(targetDeviceId)
 				} catch (warmErr) {
-					console.warn('【PPG】首次热身失败，继续启测', warmErr && warmErr.message ? warmErr.message : warmErr)
 					await this._prepareBcChannel(targetDeviceId, {
 						forceNotify: true
 					})
@@ -2710,6 +2704,10 @@ class U16ProBLEManager {
 			}
 		}
 
+		console.log('【PPG】开始分块拉数', {
+			size: sizeResult.size,
+			deviceId: deviceId || this.deviceId
+		})
 		this.ppgReadingState.isReading = true
 		this.ppgReadingState.totalSize = sizeResult.size
 		this.ppgReadingState.buffer = []
@@ -2722,7 +2720,6 @@ class U16ProBLEManager {
 
 		try {
 			while (offset < sizeResult.size) {
-				// console.log(`【PPG】请求第${chunkIndex}包 offset=${offset}`)
 				const chunk = await this.getPPGDataAtOffset(offset, deviceId)
 				if (chunk.error || !chunk.ppgData) {
 					throw new Error(chunk.error || 'PPG数据块读取失败')
@@ -2736,6 +2733,15 @@ class U16ProBLEManager {
 				}
 				offset += chunk.chunkSize
 				chunkIndex++
+				this.ppgReadingState.currentOffset = offset
+				if (chunkIndex === 1 || chunkIndex % 50 === 0 || offset >= sizeResult.size) {
+					console.log('【PPG】拉数进度', {
+						chunkIndex,
+						offset,
+						total: sizeResult.size,
+						pct: Math.round(offset * 100 / sizeResult.size)
+					})
+				}
 				if (offset < sizeResult.size) {
 					await this._sleep(BC_PACKET.PPG_READ_INTERVAL_MS)
 				}
@@ -2745,6 +2751,10 @@ class U16ProBLEManager {
 			this.state.ppgDataSize = sizeResult.size
 			this._resetPPGReadingState()
 
+			console.log('【PPG】分块拉数完成', {
+				bytes: allData.length,
+				chunks: chunkIndex
+			})
 			const finalResult = {
 				size: allData.length,
 				ppgData: allData,

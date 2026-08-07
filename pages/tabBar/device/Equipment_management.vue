@@ -69,7 +69,7 @@
 			this.unregisterBleConnectionListener();
 		},
 		methods: {
-			...mapMutations(['setacktypes']),
+			...mapMutations(['setacktypes','setacktypes6']),
 			normalizeBleDeviceId(id) {
 				if (!id) return '';
 				return String(id).trim().toUpperCase();
@@ -289,8 +289,12 @@
 					uni.removeStorageSync('deviceIdwatch');
 				} else if (this.deviceModelId === '30001') {
 					this.calculateChecksumsss1(this.mac);
-					that.setacktypes6("0")
+					this.setacktypes6("0")
 					uni.removeStorageSync('BPW6devicemac');
+				}
+				// 仅当本地缓存 SN 与当前解绑设备一致时清除，避免上传仍带旧 SN
+				if (uni.getStorageSync('deviceSn') === this.deviceSn) {
+					uni.removeStorageSync('deviceSn');
 				}
 				this.getunbind(this.deviceSn, this.mac, this.deviceModelId);
 			},
