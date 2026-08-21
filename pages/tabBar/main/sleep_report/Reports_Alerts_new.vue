@@ -177,7 +177,6 @@
 				// 情绪页 / 未传参：只显示情绪定时
 				this.scheduleMode = 'emotion'
 			}
-			console.log('devicetype', this.devicetype, 'scheduleMode', this.scheduleMode)
 			this.persistBpw6EmotionMeasureFlag()
 		},
 		methods: {
@@ -200,7 +199,6 @@
 					Authorization: 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json'
 				}).then(res => {
-					console.log('获取情绪定时测量配置', res)
 					if (res.code !== 200 || !res.rows || !res.rows.length || !res.rows[0].data) return
 					const row = this.parseQxDataRow(res.rows[0].data)
 					if (!row) return

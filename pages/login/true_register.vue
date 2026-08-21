@@ -276,8 +276,6 @@
 			// 处理注册响应
 			handleRegisterResponse(res) {
 				uni.hideLoading()
-				console.log("App用户名密码注册res：" + JSON.stringify(res))
-
 				switch (res.code) {
 					case 200:
 						this.handleRegisterSuccess(res)
@@ -308,6 +306,7 @@
 				setTimeout(() => {
 					const navigationTarget = (this.location === "境内") ?
 						'../login/Bind_phone' : "/pages/login/true_register_email"
+					// const navigationTarget = "/pages/login/true_register_email"
 					uni.navigateTo({
 						url: navigationTarget
 					})

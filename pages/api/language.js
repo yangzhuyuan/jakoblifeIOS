@@ -1,5 +1,7 @@
 export default {
 	'zh-CN': {
+		验证码错误或以失效:"验证码错误或以失效",
+		您的AI无感血压模型已经建立:'您的AI无感血压模型已经建立',
 		连续血压监控详细风险报告: '连续血压监控详细风险报告',
 		无感血压报告: '无感血压报告',
 		动态监测报告填写路径提示: '测试结果请在AI报告里查看（AI->报告-〉无感血压报告）\nU19M手表设置无感测量的同时需在手表上打开勿扰模式',
@@ -1435,6 +1437,8 @@ export default {
 
 	},
 	'en-US': {
+		验证码错误或以失效:'The verification code is incorrect or has expired.',
+		您的AI无感血压模型已经建立:'Your personal AI inflation-free blood pressure model is now ready.',
 		连续血压监控详细风险报告: "Detailed Risk Report for Continuous Blood Pressure Monitoring",
 		无感血压报告: 'inflation free blood pressure report',
 		动态监测报告填写路径提示: 'Please view the test results in the AI Report (AI → Reports → inflation free blood pressure report).\nWhen enabling cuffless measurement on the U19M watch, please also turn on Do Not Disturb mode on the watch.',

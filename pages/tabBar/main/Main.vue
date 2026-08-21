@@ -910,7 +910,7 @@
 						red: true
 					}
 				],
-				types_index: uni.getStorageSync("types_index") || 0,
+				types_index: Number(uni.getStorageSync("types_index") || 0),
 				types_array: [this.$t("心情指数"), this.$t("抑郁风险评分"), this.$t("压力指数"), this.$t("疲劳指数"), this.$t("恢复指数")],
 				ppgnewpoint: "",
 				mood_Description: '',
@@ -1133,30 +1133,40 @@
 					series: [{
 							legendShape: "none",
 							name: "",
-							data: []
+							data: [],
+							textOffset: -18,
+							textColor: "#000000"
 						},
 						{
 							legendShape: "none",
 							name: "",
-							data: []
+							data: [],
+							textOffset: -18,
+							textColor: "#000000"
 						}, {
 							legendShape: "none",
 							name: "",
 							data: [],
+							textOffset: -18,
+							textColor: "#000000"
 						}, {
 							legendShape: "none",
 							name: "",
 							data: [],
+							textOffset: -18,
+							textColor: "#000000"
 						}, {
 							legendShape: "none",
 							name: "",
 							data: [],
+							textOffset: -18,
+							textColor: "#000000"
 						}
 					]
 				},
 				optsPPG: {
 					color: ["#3298F7", "#3298F7", "#3298F7", "#3298F7", "#3298F7"],
-					padding: [15, 15, 0, 5],
+					padding: [28, 15, 0, 5],
 					enableScroll: false,
 					xAxis: {
 						disableGrid: true,
@@ -1236,28 +1246,38 @@
 					series: [{
 						legendShape: "none",
 						name: "",
-						data: []
-					}, {
-						legendShape: "none",
-						name: "",
-						data: []
+						data: [],
+						textOffset: -18,
+						textColor: "#000000"
 					}, {
 						legendShape: "none",
 						name: "",
 						data: [],
+						textOffset: -18,
+						textColor: "#000000"
 					}, {
 						legendShape: "none",
 						name: "",
 						data: [],
+						textOffset: -18,
+						textColor: "#000000"
 					}, {
 						legendShape: "none",
 						name: "",
 						data: [],
+						textOffset: -18,
+						textColor: "#000000"
+					}, {
+						legendShape: "none",
+						name: "",
+						data: [],
+						textOffset: -18,
+						textColor: "#000000"
 					}]
 				},
 				optsPPG2: {
 					color: ["#3298F7", "#3298F7", "#3298F7", "#3298F7", "#3298F7"],
-					padding: [15, 15, 0, 5],
+					padding: [28, 15, 0, 5],
 					enableScroll: false,
 					xAxis: {
 						disableGrid: true,
@@ -1429,6 +1449,7 @@
 				bpw6PpgCloudLoadingActive: false,
 				bpw6ManualEmotionUiPhase: 'idle', // idle | measuring | cloud — 仅手动立即测量
 				bpw6PpgSilentAfterBp: false, // 血压测完自动启 PPG：不弹 loading/toast
+				bpw6AwaitingPpgAfterBp: false, // 血压后等 20s 启 PPG：仅此期间挡调度误恢复
 				bpw6BpHistorySyncing: false,
 				bpw6RealtimeBpPending: false, // 手表实时测完血压后置 true，仅此时启 PPG
 				bpw6RealtimeSpO2Pending: false, // 手表实时测完血氧后置 true，上报用手机本地时间
@@ -1454,7 +1475,7 @@
 				bpw1PendingHrDevice: null,
 				bpw1PendingBpHistory: [], // 历史同步：血压先到时暂存，等心率到齐后合并同报
 				bpw1PendingBpDevice: null,
-				// 历史同步/宽限期内先入队，安静后倒序串行上报（避免设备分包旧→新导致先报旧数据）
+				// 历史同步/宽限期内先入队，安静后正序串行上报（跨包汇总后旧→新）
 				bpw1DeferredHistoryUploads: [],
 				bpw1DeferredFlushTimer: null,
 				// 本轮同步收到的全部心率（墙钟键）。flush 清 pending 后仍保留，供血压尾包/异步 merge 配对
@@ -1536,6 +1557,12 @@
 					uni.setStorageSync('sleep_alertdisabled', true)
 					return
 				}
+				// 血压后等 20s 启 PPG：禁止调度侧提前恢复立即测量按钮
+				if (!busy && this.bpw6AwaitingPpgAfterBp) {
+					this.sleep_alertdisabled = true
+					uni.setStorageSync('sleep_alertdisabled', true)
+					return
+				}
 				// BPW1 PPG 会话中：忽略调度侧解锁
 				if (!busy && this.shouldBlockBpw1PpgButtonRecover()) {
 					this.sleep_alertdisabled = true
@@ -1553,9 +1580,9 @@
 					this.armBPW6EmotionButtonWatchdog(120)
 					return
 				}
-				// 调度启动失败等：未进入读取/云端时解除静默
+				// 调度启动失败等：未进入读取/云端时解除静默（不含血压后等 20s）
 				if (!busy && !this.immediateEmotionMeasure && !this.bpw6PpgReading && !this
-					.bpw6PpgCloudLoadingActive) {
+					.bpw6PpgCloudLoadingActive && !this.bpw6AwaitingPpgAfterBp) {
 					this.bpw6PpgSilentAfterBp = false
 					this.clearBpw6EmotionWatchdog()
 					this._bpw6EmotionMeasureStartedAt = 0
@@ -1598,11 +1625,6 @@
 
 		onShow() {
 			let that = this
-			//获取手机时区开始
-			// const gmtOffset = getGMTTimezoneStrict() // GMT+08:00
-			// const timeZoneId = getDeviceTimeZone() // Asia/Shanghai
-			// console.log("onShow", gmtOffset, timeZoneId)
-			//获取手机时区结束
 			that.sethuilian(true)
 			that.syncBloodCardListFromStorage()
 			uni.removeStorageSync("jiance")
@@ -2888,6 +2910,20 @@
 					uni.setStorageSync('sleep_alertdisabled', true)
 					return
 				}
+				// 血压后/24h·7d 动态血压后静默 PPG：未清会话前禁止误恢复
+				if (!val && this.bpw6PpgSilentAfterBp) {
+					console.log('【BPW6】血压后PPG未结束，忽略恢复按钮')
+					this.sleep_alertdisabled = true
+					uni.setStorageSync('sleep_alertdisabled', true)
+					return
+				}
+				// BPW1 PPG 会话中：禁止 queryDevices/调度误恢复（业务收尾会先清会话标记）
+				if (!val && this.shouldBlockBpw1PpgButtonRecover()) {
+					console.log('【BPW1】PPG未结束，忽略恢复按钮')
+					this.sleep_alertdisabled = true
+					uni.setStorageSync('sleep_alertdisabled', true)
+					return
+				}
 				this.sleep_alertdisabled = val
 				uni.setStorageSync("sleep_alertdisabled", val)
 				// 按钮已恢复时清掉 BPW6 手动测量兜底计时
@@ -2897,6 +2933,21 @@
 					this._bpw6EmotionPullOnShowTried = false
 					this._bpw6LastLoadingPhase = ''
 				}
+			},
+			/** 血压后自动测情绪开关（与 BPW1 判定一致，兼容 true/'true'/1） */
+			isYaliSwitchHerOn() {
+				const yaliSw = uni.getStorageSync('yaliswitchHER')
+				return yaliSw === true || yaliSw === 'true' || yaliSw === 1 || yaliSw === '1'
+			},
+			/** 实时/24h·7d 动态血压后准备启 PPG：等 20s 期间先置灰立即测量，失败/成功/中断再恢复 */
+			prepareBpw6PpgAfterBpButtonLock() {
+				this.bpw6PpgSilentAfterBp = true
+				this.bpw6AwaitingPpgAfterBp = true
+				if (!this._bpw6EmotionMeasureStartedAt) {
+					this._bpw6EmotionMeasureStartedAt = Date.now()
+				}
+				this.setSleepAlertDisabled(true)
+				this.armBPW6EmotionButtonWatchdog(120)
 			},
 			/** BPW1 PPG 进行中：仅用于挡 queryDevices/调度误恢复，不拦截业务主动收尾 */
 			shouldBlockBpw1PpgButtonRecover() {
@@ -3202,7 +3253,9 @@
 						if (that.isBPW1PpgTransferInProgress() && ppgWaitExtendCount < 4) {
 							ppgWaitExtendCount++
 							watchtime = 30
-							if (!that.yalixueyatype) {
+							// 仅立即测量续弹「测量中」；定时(sendwatch)/血压后静默
+							if (!that.yalixueyatype && (that.immediateEmotionMeasure || that
+									.sleep_alertid === 1)) {
 								uni.showLoading({
 									title: that.$t("测量中"),
 									mask: true,
@@ -3815,7 +3868,7 @@
 					this.flushBPW1PendingHistoryMergeAndHr({
 						finalDiscard: false
 					})
-					// 同步刚结束：已入队的历史尽快倒序上报，不等 15s 宽限结束
+					// 同步刚结束：已入队的历史尽快正序上报，不等 15s 宽限结束
 					this.scheduleBPW1DeferredHistoryFlush(800)
 					if (this.bpw1HistoryFlushTimer) {
 						clearTimeout(this.bpw1HistoryFlushTimer)
@@ -3967,12 +4020,12 @@
 				}
 				this.bpw1PendingBpHistory = []
 				this.bpw1PendingBpDevice = null
-				// 先倒序串行上报本轮汇总的历史，再补报未配血压的独立心率
+				// 先正序串行上报本轮汇总的历史，再补报未配血压的独立心率
 				const that = this
 				this.flushBPW1DeferredHistoryUploads().then(() => {
 					that.flushBPW1PendingHrHistory()
 				}).catch(e => {
-					console.error('BPW1历史倒序上报失败', e)
+					console.error('BPW1历史正序上报失败', e)
 					that.flushBPW1PendingHrHistory()
 				})
 			},
@@ -4110,7 +4163,7 @@
 					return true
 				})
 			},
-			/** 同步/宽限期内历史上报入队（跨包汇总后倒序串行） */
+			/** 同步/宽限期内历史上报入队（跨包汇总后正序串行） */
 			enqueueBPW1DeferredHistoryUpload(item) {
 				if (!item || item.timess === '' || item.timess == null) {
 					return
@@ -4148,7 +4201,7 @@
 					this._bpw1DeferredSpO2TimeSet.add(o2Key)
 				}
 				this.bpw1DeferredHistoryUploads.push(item)
-				// 入队后防抖上报：跨包汇一小会儿再倒序串行，避免一直等到宽限结束才报
+				// 入队后防抖上报：跨包汇一小会儿再正序串行，避免一直等到宽限结束才报
 				this.scheduleBPW1DeferredHistoryFlush(2000)
 			},
 			scheduleBPW1DeferredHistoryFlush(delayMs = 2000) {
@@ -4164,14 +4217,18 @@
 					})
 				}, wait)
 			},
-			/** 历史上报倒序串行：新→旧（先报最新） */
+			/** 历史上报正序串行：旧→新；每条间隔 10ms */
 			async flushBPW1HistoryUploadList(list) {
 				const uploads = Array.isArray(list) ? list.slice() : []
 				if (!uploads.length) {
 					return
 				}
-				uploads.sort((a, b) => Number(b.timess) - Number(a.timess))
-				for (const item of uploads) {
+				uploads.sort((a, b) => Number(a.timess) - Number(b.timess))
+				for (let i = 0; i < uploads.length; i++) {
+					if (i > 0) {
+						await new Promise(resolve => setTimeout(resolve, 10))
+					}
+					const item = uploads[i]
 					const kind = item.kind || 'bp'
 					try {
 						if (kind === 'spo2') {
@@ -4227,7 +4284,7 @@
 				if (!list.length) {
 					return
 				}
-				console.log('BPW1历史倒序串行上报', list.length, '条')
+				console.log('BPW1历史正序串行上报', list.length, '条')
 				await this.flushBPW1HistoryUploadList(list)
 			},
 			/** 墙钟 key ±N 秒的归一化集合（血压/心率分包差 1 秒时合并用） */
@@ -4796,7 +4853,7 @@
 				}
 				let deviceIdwatchBPW1 = uni.getStorageSync("deviceIdwatch")
 				that.OTAdata(that.deviceIdwatch ? that.deviceIdwatch : deviceIdwatchBPW1, BPW1serviceId, BPW1write)
-				// 血压后 PPG：外层已等 3s，短延迟下发；情绪立即测量仍 5s
+				// 血压后 PPG：外层已等 20s，短延迟下发；情绪立即测量仍 5s
 				const writeDelayMs = that.yalixueyatype ? 800 : 5000
 				setTimeout(() => {
 					// 延迟发送前再次确认，避免同步期间预约的启动在同步结束后误触发
@@ -4836,7 +4893,10 @@
 							if (that.isBPW1BleWriteOk(complete)) {
 								uni.hideLoading()
 								that.setSleepAlertDisabled(true)
-								if (!that.yalixueyatype) {
+								// 仅立即测量弹「测量中」；定时(sendwatch)/血压后静默
+								const sendwatchOn = uni.getStorageSync('sendwatch') === 1 ||
+									uni.getStorageSync('sendwatch') === '1'
+								if (!that.yalixueyatype && !sendwatchOn) {
 									uni.showLoading({
 										title: that.$t("测量中"),
 										mask: true,
@@ -6340,6 +6400,7 @@
 			},
 
 			ppgresultslist(recordId) {
+				recordId = Number(recordId)
 				let ppgdata = {
 					patientId: uni.getStorageSync("userid"),
 					startTime: this.getTimeAllJSON().YMD + " 00:00:00",
@@ -6357,39 +6418,48 @@
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7'
-							},
-							{
-								legendShape: "none",
-								name: "",
-								legendShape: "none",
-								name: "",
-								data: [],
-								color: '#3298F7'
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							},
 							{
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7'
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							},
 							{
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7'
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							},
 							{
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7'
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
+							},
+							{
+								legendShape: "none",
+								name: "",
+								data: [],
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							}
 						]
 						for (let p = ppgresultslist.data.length - 1; p >= 0; p--) {
 							this.chartDataPPG.categories.push(ppgresultslist.data.length - p);
 							if (recordId === 1) {
-								this.chartDataPPG.series[1].data.push(ppgresultslist.data[p].depressionRiskScore);
+								this.chartDataPPG.series[1].data.push(Number(ppgresultslist.data[p]
+									.depressionRiskScore));
 								this.optsPPG.extra.markLine.data[0].value = 8
 								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 								this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6445,8 +6515,8 @@
 								this.optsPPG.extra.markLine.data[3].borderRadius = 4
 								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							} else if (recordId === 2) {
-								this.chartDataPPG.series[2].data.push(ppgresultslist.data[p]
-									.stressIndex);
+								this.chartDataPPG.series[2].data.push(Number(ppgresultslist.data[p]
+									.stressIndex));
 								this.optsPPG.extra.markLine.data[0].value = 5
 								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 								this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6500,8 +6570,8 @@
 								this.optsPPG.extra.markLine.data[3].borderRadius = 4
 								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							} else if (recordId === 3) {
-								this.chartDataPPG.series[3].data.push(ppgresultslist.data[p]
-									.fatigueIndex);
+								this.chartDataPPG.series[3].data.push(Number(ppgresultslist.data[p]
+									.fatigueIndex));
 								this.optsPPG.extra.markLine.data[0].value = 5
 								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 								this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6555,8 +6625,8 @@
 								this.optsPPG.extra.markLine.data[3].borderRadius = 4
 								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							} else if (recordId === 4) {
-								this.chartDataPPG.series[4].data.push(ppgresultslist.data[p]
-									.recoveryIndex);
+								this.chartDataPPG.series[4].data.push(Number(ppgresultslist.data[p]
+									.recoveryIndex));
 								this.optsPPG.extra.markLine.data[0].value = 5
 								this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 								this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6610,7 +6680,7 @@
 								this.optsPPG.extra.markLine.data[3].borderRadius = 4
 								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							} else {
-								this.chartDataPPG.series[0].data.push(ppgresultslist.data[p].moodIndex);
+								this.chartDataPPG.series[0].data.push(Number(ppgresultslist.data[p].moodIndex));
 								this.optsPPG.extra.markLine.data[0].value = 8
 								this.optsPPG.extra.markLine.data[0].lineColor = "#41EB08"
 								this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6669,9 +6739,21 @@
 								this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							}
 						}
+						// 只保留当前指标 series，避免空系列干扰坐标
+						const activeIdx = [0, 1, 2, 3, 4].includes(recordId) ? recordId : 0
+						this.chartDataPPG.series = [this.chartDataPPG.series[activeIdx]]
 					} else {
+						// 无数据：重置为空图（与有数据后裁成单 series 结构一致，避免越界）
+						this.chartDataPPG.categories = []
+						this.chartDataPPG.series = [{
+							legendShape: "none",
+							name: "",
+							data: [],
+							color: '#3298F7',
+							textOffset: -18,
+							textColor: "#000000"
+						}]
 						if (recordId === 0) {
-							this.chartDataPPG.series[0].data = [];
 							this.optsPPG.extra.markLine.data[0].value = 8
 							this.optsPPG.extra.markLine.data[0].lineColor = "#41EB08"
 							this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6733,7 +6815,6 @@
 							this.optsPPG.extra.markLine.data[3].borderRadius = 4
 							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 						} else if (recordId === 1) {
-							this.chartDataPPG.series[1].data = [];
 							this.optsPPG.extra.markLine.data[0].value = 8
 							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 							this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6789,7 +6870,6 @@
 							this.optsPPG.extra.markLine.data[3].borderRadius = 4
 							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 						} else if (recordId === 2) {
-							this.chartDataPPG.series[2].data = [];
 							this.optsPPG.extra.markLine.data[0].value = 5
 							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 							this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6843,7 +6923,6 @@
 							this.optsPPG.extra.markLine.data[3].borderRadius = 4
 							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 						} else if (recordId === 3) {
-							this.chartDataPPG.series[3].data = [];
 							this.optsPPG.extra.markLine.data[0].value = 5
 							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 							this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6897,7 +6976,6 @@
 							this.optsPPG.extra.markLine.data[3].borderRadius = 4
 							this.optsPPG.extra.markLine.data[3].padding = [4, 8, 4, 8]
 						} else if (recordId === 4) {
-							this.chartDataPPG.series[4].data = [];
 							this.optsPPG.extra.markLine.data[0].value = 5
 							this.optsPPG.extra.markLine.data[0].lineColor = "#FF6B6B"
 							this.optsPPG.extra.markLine.data[0].showLabel = true
@@ -6957,6 +7035,7 @@
 			},
 			//两周平均分
 			ppgresultslist2(recordId) {
+				recordId = Number(recordId)
 				let endTime = this.getTimeAllJSON().YMD + " 23:59:59"
 				let initialDate = new Date(endTime)
 				let minusOneWeek = new Date(initialDate)
@@ -7021,31 +7100,41 @@
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7' // 蓝色表示心情指数
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							},
 							{
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7' // 红色表示抑郁风险
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							},
 							{
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7' // 红色表示抑郁风险
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							},
 							{
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7' // 红色表示抑郁风险
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							},
 							{
 								legendShape: "none",
 								name: "",
 								data: [],
-								color: '#3298F7' // 红色表示抑郁风险
+								color: '#3298F7',
+								textOffset: -18,
+								textColor: "#000000"
 							}
 						]
 						// 5. 填充图表数据
@@ -7057,7 +7146,7 @@
 								datesfd); // 或使用 item.date.slice(5) 显示月日
 							if (recordId === 0) {
 								// 心情指数数据
-								const avgMoodScore = item.averageMoodIndex.toFixed(1);
+								const avgMoodScore = Number(item.averageMoodIndex.toFixed(1));
 								this.chartDataPPG2.series[0].data.push(avgMoodScore);
 								this.optsPPG2.extra.markLine.data[0].value = 8
 								this.optsPPG2.extra.markLine.data[0].lineColor = "#41EB08"
@@ -7133,7 +7222,7 @@
 								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							} else if (recordId === 1) {
 								// 抑郁风险数据
-								const avgRiskScore = item.averageDepressionRisk.toFixed(1);
+								const avgRiskScore = Number(item.averageDepressionRisk.toFixed(1));
 								this.chartDataPPG2.series[1].data.push(avgRiskScore);
 								this.optsPPG2.extra.markLine.data[0].value = 8
 								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
@@ -7204,7 +7293,7 @@
 								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							} else if (recordId === 2) {
 								// 压力指数
-								const avgRiskScore = item.averagestressIndex.toFixed(1);
+								const avgRiskScore = Number(item.averagestressIndex.toFixed(1));
 								this.chartDataPPG2.series[2].data.push(avgRiskScore);
 								this.optsPPG2.extra.markLine.data[0].value = 5
 								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
@@ -7270,8 +7359,8 @@
 								this.optsPPG2.extra.markLine.data[3].padding = [4, 8, 4, 8]
 							} else if (recordId === 3) {
 								// 疲劳指数
-								const avgRiskScore = item.averagesumfatigueIndex.toFixed(
-									1);
+								const avgRiskScore = Number(item.averagesumfatigueIndex.toFixed(
+									1));
 								this.chartDataPPG2.series[3].data.push(avgRiskScore);
 								this.optsPPG2.extra.markLine.data[0].value = 5
 								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
@@ -7338,8 +7427,8 @@
 
 							} else if (recordId === 4) {
 								// 恢复指数
-								const avgRiskScore = item.averagesumrecoveryIndex.toFixed(
-									1);
+								const avgRiskScore = Number(item.averagesumrecoveryIndex.toFixed(
+									1));
 								this.chartDataPPG2.series[4].data.push(avgRiskScore);
 								this.optsPPG2.extra.markLine.data[0].value = 5
 								this.optsPPG2.extra.markLine.data[0].lineColor = "#FF6B6B"
@@ -7406,6 +7495,9 @@
 							}
 							dayCount++;
 						});
+						// 只保留当前指标 series，避免空系列干扰坐标
+						const activeIdx2 = [0, 1, 2, 3, 4].includes(recordId) ? recordId : 0
+						this.chartDataPPG2.series = [this.chartDataPPG2.series[activeIdx2]]
 						// 6. 处理最新一条记录的详细信息
 						const latestRecord = ppgresultslist.data[0];
 						// 可选：输出每日平均分用于调试
@@ -7442,11 +7534,23 @@
 								}
 							})
 						}
+					} else {
+						// 两周无数据：重置为空图，避免裁剪后残留旧点
+						this.chartDataPPG2.categories = []
+						this.chartDataPPG2.series = [{
+							legendShape: "none",
+							name: "",
+							data: [],
+							color: '#3298F7',
+							textOffset: -18,
+							textColor: "#000000"
+						}]
 					}
 				})
 			},
 
 			ppgresultslist3(recordId) {
+				recordId = Number(recordId)
 				let endTime = this.getTimeAllJSON().YMD + " 23:59:59"
 				let initialDate = new Date(endTime)
 				let minusOneWeek = new Date(initialDate)
@@ -7615,7 +7719,7 @@
 			},
 			//情绪页面数据类型选择按钮
 			types_change(e) {
-				this.types_index = e.detail.value
+				this.types_index = Number(e.detail.value)
 				this.ppgresultslist(this.types_index)
 				this.ppgresultslist2(this.types_index)
 				this.ppgresultslist3(this.types_index)
@@ -7847,7 +7951,6 @@
 										return
 									}
 									// 手表端单独测心率（未走 App 纯心率标记）也需上报；延迟给血压包合并窗口
-									console.log('BPW1手动心率无邻近血压，延迟单独上报:', hrDelayWallKey)
 									setTimeout(() => {
 										uni.getNetworkType({
 											success: async function(netRes) {
@@ -7983,17 +8086,21 @@
 								return
 							}
 							console.log('BPW1实时血压后准备启动PPG')
+							// 等 20s 期间先置灰立即测量（其它流程不变）；会话标记挡住调度误恢复
+							that.yalixueyatype = true
+							that.sleep_alertid = 1
 							that.setSleepAlertDisabled(true)
 							setTimeout(() => {
 								if (that.isBPW1HistorySyncing() ||
 									Date.now() < Number(that.bpw1HistoryGraceUntil || 0)) {
 									console.log('BPW1延迟启PPG时处于历史路径，取消')
+									that.yalixueyatype = false
+									that.sleep_alertid = 0
+									that.setSleepAlertDisabled(false)
 									return
 								}
-								that.yalixueyatype = true
-								that.sleep_alertid = 1
 								that.sendstartheartwatch(BPW1write, 1)
-							}, 3000)
+							}, 20000)
 						}
 						if (!isHistoryBpPath) {
 							that.queueBPW1BpHrCombinedUpload({
@@ -8300,8 +8407,8 @@
 					sameDateOnly: true,
 					excludeKeys: localBpKeySet
 				})
-				// 历史上报倒序：新→旧（先报最新）；配对完成后再排，不影响匹配
-				bpItems.sort((a, b) => Number(b.timeTs) - Number(a.timeTs))
+				// 历史上报正序：旧→新；配对完成后再排，不影响匹配
+				bpItems.sort((a, b) => Number(a.timeTs) - Number(b.timeTs))
 				const readyUploads = []
 				// Pass4：上报 / 跳过 / 暂存（只处理血压历史，不单独上报心率）
 				bpItems.forEach(item => {
@@ -8358,7 +8465,7 @@
 				if (skippedBp) {
 					console.log(`BPW1血压历史上报去重：跳过血压${skippedBp}条`)
 				}
-				// 同步中也先入队再防抖倒序串行，跨包汇齐后先报最新；非同步则本包立即倒序串行
+				// 同步中也先入队再防抖正序串行，跨包汇齐后旧→新上报；非同步则本包立即正序串行
 				if (readyUploads.length) {
 					if (that.isBPW1HistorySyncingOrGrace()) {
 						readyUploads.forEach(item => that.enqueueBPW1DeferredHistoryUpload(item))
@@ -8563,9 +8670,9 @@
 											that.quotientPPG && ppgTransferExtendCount < 6) {
 											ppgTransferExtendCount++
 											watchtime2 = 30
+											// 仅立即测量续弹「测量中」；定时(sendwatch)/血压后静默
 											if (!that.yalixueyatype && (that.immediateEmotionMeasure || that
-													.sleep_alertid === 1 || uni.getStorageSync("sendwatch") ===
-													1)) {
+													.sleep_alertid === 1)) {
 												uni.showLoading({
 													title: that.$t("测量中"),
 													mask: true,
@@ -8594,9 +8701,9 @@
 									that.resetDataState("5");
 									break
 								}
-								// 传输开始后保持测量中 loading，直到 Status02 传完再关
+								// 仅立即测量保持「测量中」；定时(sendwatch)/血压后静默，按钮仍置灰
 								if (!that.yalixueyatype && (that.sleep_alertid === 1 || that
-										.immediateEmotionMeasure || uni.getStorageSync("sendwatch") === 1)) {
+										.immediateEmotionMeasure)) {
 									uni.showLoading({
 										title: that.$t("测量中"),
 										mask: true,
@@ -10563,9 +10670,9 @@
 				try {
 					await that.queryBloodPressureDataAsync(that.deviceSnuserID);
 					const existingTimes = that.getExistingBloodPressureTimeSet();
-					// 历史上报倒序：新→旧（先报最新）
-					const localBpRecords = [...that.bpw6BpBuffer].sort((a, b) => that.datatime(b.dateTimeKey) - that
-						.datatime(a.dateTimeKey)
+					// 历史上报正序：旧→新
+					const localBpRecords = [...that.bpw6BpBuffer].sort((a, b) => that.datatime(a.dateTimeKey) - that
+						.datatime(b.dateTimeKey)
 					);
 					const uploadedKeys = new Set();
 					let uploadedCount = 0
@@ -10607,6 +10714,9 @@
 						}
 						uploadedKeys.add(key);
 						uploadedKeys.add(sessionTsKey);
+						if (uploadedCount > 0) {
+							await new Promise(resolve => setTimeout(resolve, 10))
+						}
 						await that.Watch_Historical_data(
 							deviceId,
 							bp.highPressure,
@@ -10708,15 +10818,16 @@
 					return best;
 				}, null);
 			},
-			// BPW6 心率历史去重上传（新→旧串行，最新一条由 jakoblife_fat_scale22 单独上报）
+			// BPW6 心率历史去重上传（旧→新串行，最新一条由 jakoblife_fat_scale22 单独上报）；每条间隔 10ms
 			async uploadBPW6HrHistoryWithDeduplication(deviceId, deviceSn) {
 				const that = this;
 				await that.queryBloodPressureDataAsync(that.deviceSnuserID);
-				// 历史上报倒序：新→旧（先报最新）
-				const localHrRecords = [...that.bpw6HrBuffer].sort((a, b) => that.datatime(b.dateTimeKey) - that
-					.datatime(a.dateTimeKey)
+				// 历史上报正序：旧→新
+				const localHrRecords = [...that.bpw6HrBuffer].sort((a, b) => that.datatime(a.dateTimeKey) - that
+					.datatime(b.dateTimeKey)
 				);
 				const uploadedKeys = new Set();
+				let uploadedCount = 0
 				for (const hr of localHrRecords) {
 					const key = that.normalizeDateTimeKey(hr.dateTimeKey);
 					if (uploadedKeys.has(key)) {
@@ -10738,6 +10849,9 @@
 						hr: hr.heartRate,
 						slotTs
 					});
+					if (uploadedCount > 0) {
+						await new Promise(resolve => setTimeout(resolve, 10))
+					}
 					await that.Watch_Historical_data(
 						deviceId,
 						'',
@@ -10748,6 +10862,7 @@
 							bypassSessionDedupe: true
 						}
 					);
+					uploadedCount++
 				}
 				that.bpw6HrBuffer = [];
 			},
@@ -10803,9 +10918,9 @@
 				const existingHrMap = that.getExistingHeartRateMap()
 				const existingBpTimes = that.getExistingBloodPressureTimeSet();
 				let skipped = 0
-				// 历史上报倒序：新→旧（先报最新）
-				uniqueRecords.sort((a, b) => that.datatime(`${b.date} ${b.time}`) - that.datatime(
-					`${a.date} ${a.time}`))
+				// 历史上报正序：旧→新
+				uniqueRecords.sort((a, b) => that.datatime(`${a.date} ${a.time}`) - that.datatime(
+					`${b.date} ${b.time}`))
 				const deferUpload = that.isBPW1HistorySyncingOrGrace()
 				const readyUploads = []
 				uniqueRecords.forEach(hr => {
@@ -10869,11 +10984,11 @@
 				const uploadSn = (that.shoubiaosn && that.shoubiaosn !== '0') ? that.shoubiaosn : deviceSn
 				const existingOxygenMap = that.getExistingOxygenMap();
 				let skipped = 0;
-				// 历史上报倒序：新→旧（先报最新）
+				// 历史上报正序：旧→新
 				const spo2Records = [...(localSpO2Records || [])].sort((a, b) => {
 					const keyA = that.normalizeDateTimeKey(a.dateTimeKey || `${a.date} ${a.time}`)
 					const keyB = that.normalizeDateTimeKey(b.dateTimeKey || `${b.date} ${b.time}`)
-					return that.datatime(keyB) - that.datatime(keyA)
+					return that.datatime(keyA) - that.datatime(keyB)
 				})
 				const deferUpload = that.isBPW1HistorySyncingOrGrace()
 				const readyUploads = []
@@ -10943,6 +11058,7 @@
 					return;
 				}
 				uni.setStorageSync("BPW6devicemac", deviceId)
+				// console.log("[BPW6设备数据]", data)
 				switch (data.type) {
 					case 'heartRate': {
 						if (!data.allList || data.allList.length === 0) {
@@ -11188,10 +11304,12 @@
 											that.markBpw6BpUploaded(normalizedKey, uploadTs, hasRecordTs ?
 												recordTs : '')
 										}
-										if (uni.getStorageSync('yaliswitchHER') === true) {
+										// 实时血压 / 24h·7d 动态血压：拿到数据后延时 20s 再发 PPG，按钮置灰与恢复一致
+										if (that.isYaliSwitchHerOn()) {
+											that.prepareBpw6PpgAfterBpButtonLock()
 											setTimeout(() => {
 												that.startBpw6PpgAfterBpMeasurement(deviceId)
-											}, 3000)
+											}, 20000)
 										}
 									} catch (err) {
 										that.unmarkBpw6BpUploaded(normalizedKey, uploadTs, hasRecordTs ?
@@ -11326,8 +11444,7 @@
 					case 'pulse_empty':
 						uni.setStorageSync("Taking_pulse", that.Taking_pulse)
 						setTimeout(() => {
-							console.log('无脉诊数据或完毕:',
-								uni.getStorageSync("Taking_pulse"));
+							console.log('无脉诊数据或完毕:', uni.getStorageSync("Taking_pulse"));
 							that.Taking_pulse = []
 							if (that.$refs.pulseDiagnosisRef) {
 								that.$refs.pulseDiagnosisRef.loadRealData()
@@ -11429,6 +11546,7 @@
 			hideBPW6PpgCloudLoading() {
 				this.bpw6PpgCloudLoadingActive = false
 				this.bpw6PpgSilentAfterBp = false
+				this.bpw6AwaitingPpgAfterBp = false
 				if (this.bpw6ManualEmotionUiPhase === 'measuring' || this.bpw6ManualEmotionUiPhase ===
 					'cloud') {
 					this.bpw6ManualEmotionUiPhase = 'idle'
@@ -11453,24 +11571,27 @@
 				this.setSleepAlertDisabled(false)
 				if (canToast) {
 					this.toastBpw6ManualTransferFail()
-				} else {
-					console.log('【BPW6】PPG会话收尾', reason)
 				}
 			},
 			async startBpw6PpgAfterBpMeasurement(deviceId) {
 				const targetDeviceId = deviceId || this.deviceIdwatch6 || uni.getStorageSync('BPW6devicemac')
+				// 20s 等待结束，进入真正启测；失败再清静默并恢复按钮
+				this.bpw6AwaitingPpgAfterBp = false
 				if (!targetDeviceId) {
 					console.warn('【BPW6】无设备，跳过PPG测量')
+					this.bpw6PpgSilentAfterBp = false
+					this._bpw6EmotionMeasureStartedAt = 0
+					this.setSleepAlertDisabled(false)
 					return
 				}
 				try {
 					// 血压后自动测 PPG：静默，不弹提示、不进入手动测量 phase；按钮置灰至结束
-					this.bpw6PpgSilentAfterBp = true
-					this._bpw6EmotionMeasureStartedAt = Date.now()
-					this.setSleepAlertDisabled(true)
+					this.prepareBpw6PpgAfterBpButtonLock()
+					this.bpw6AwaitingPpgAfterBp = false
 					const result = await u16proBLE.startPPGMeasurementWithDuration(60, targetDeviceId)
 					if (!result || !result.success) {
 						this.bpw6PpgSilentAfterBp = false
+						this.bpw6AwaitingPpgAfterBp = false
 						this._bpw6EmotionMeasureStartedAt = 0
 						this.setSleepAlertDisabled(false)
 						console.warn('【BPW6】PPG启动失败', u16proBLE.getPpgStartHint(result))
@@ -11479,6 +11600,7 @@
 					}
 				} catch (err) {
 					this.bpw6PpgSilentAfterBp = false
+					this.bpw6AwaitingPpgAfterBp = false
 					this._bpw6EmotionMeasureStartedAt = 0
 					this.setSleepAlertDisabled(false)
 					console.error('【BPW6】PPG启动失败', err)
@@ -11494,6 +11616,10 @@
 						if ((data.cmd === 0x49 || data.cmd === 0x4A) && data.success) {
 							this.bpw6PpgRawBuffer = []
 							this.bpw6PpgTotalSize = 0
+							// 动态血压/手表侧启 PPG：启动成功即置灰（与实时血压后一致）
+							if (!this.immediateEmotionMeasure) {
+								this.prepareBpw6PpgAfterBpButtonLock()
+							}
 						}
 						// 启动失败：startPPG 内部重试/降级期间勿提前收尾（含 0x49→0x4A 间隙）
 						if ((data.cmd === 0x49 || data.cmd === 0x4A || data.cmd === 0x4B) && data.success === false) {
@@ -11563,7 +11689,6 @@
 			},
 			async fetchBPW6PPGRawData(deviceSn, deviceId) {
 				if (this.bpw6PpgReading) {
-					console.log('【BPW6】PPG数据正在读取中，跳过重复请求')
 					return
 				}
 				this.bpw6PpgReading = true
@@ -11582,7 +11707,6 @@
 				this.setSleepAlertDisabled(true)
 				this.showBPW6PpgCloudLoading()
 				try {
-					console.log('【BPW6】开始拉取PPG原始数据: 0x4C一次 + 0x4D按序')
 					const result = await u16proBLE.readAllPPGData(deviceId)
 					if (result && result.ppgData && result.ppgData.length > 0) {
 						this.bpw6PpgRawBuffer = [...result.ppgData]
@@ -12224,7 +12348,10 @@
 					'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 				}).then(res => {
 					console.log("Watch_Historical_data上报手表历史数据成功", data)
-					if (res && res.code !== 200) {
+					if (res && res.code === 200) {
+						// 历史上报成功后立刻拉概览，避免仅依赖 8s 轮询导致首页血压偏慢
+						this.list_recipe()
+					} else if (res && res.code !== 200) {
 						if (isBpUpload && this.bpw1UploadedBpTimeSet) {
 							this.bpw1UploadedBpTimeSet.delete(bpTimeKey)
 							if (hasHr) {
@@ -15002,8 +15129,6 @@
 				} else if (item.title === "血氧" || item.title === "SpO₂") {
 					console.log("点击了列表血氧数据");
 					this.xueyaclicklink(2);
-				} else {
-					console.log("点击了列表其他数据");
 				}
 			},
 
@@ -15076,7 +15201,6 @@
 								icon: 'none',
 								duration: 2000,
 							})
-							console.log("血压指令发送成功", BPW6success)
 						},
 						fail(BPW6fail) {
 							uni.showToast({
@@ -15288,7 +15412,6 @@
 					console.log("手环信息更新", bytes)
 					uni.setStorageSync("otadatares", bytes.toUpperCase())
 					uni.setStorageSync("otaBP", bytes.toUpperCase())
-					console.log("手环信息更新", that.sleep_alertid)
 					if (that.sleep_alertid === 1 || uni.getStorageSync("sendwatch") === 1) {
 						that.resetDataState("情绪测量")
 						return

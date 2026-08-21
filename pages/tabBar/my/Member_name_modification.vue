@@ -12,8 +12,8 @@
 				<input type="number" :placeholder="$t('请输入验证码')" style="margin-left: 10px;" maxlength="6"
 					v-model="yanzhengma" />
 			</view>
-			<button class="linear_btn" style="background: #3298F7; color: white;"
-				@tap="huoqu">{{yanzheng?$t('获取验证码'): codetime+msg}}</button>
+			<button class="linear_btn" :disabled="codeCounting" :style="codeBtnStyle"
+				@tap="huoqu">{{yanzheng ? $t('获取验证码') : codetime + msg}}</button>
 		</view>
 		<button class="button_back" @tap="btn_next">{{$t('完成')}}</button>
 
@@ -55,7 +55,10 @@
 	import {
 		isInChinaByIP
 	} from '../../api/isInChinaByIP.js';
+	import codeCountdownMixin from '../../api/codeCountdownMixin.js'
+
 	export default {
+		mixins: [codeCountdownMixin],
 		computed: {
 			...mapState(['uuid'])
 		},
@@ -112,6 +115,7 @@
 				return reg.test(email);
 			},
 
+
 			huoqu() {
 				if (this.unername == "" || this.unername == undefined) {
 					uni.showToast({
@@ -119,7 +123,7 @@
 						icon: 'none'
 					})
 					return
-				} else if (this.codetime > 0) {
+				} else if (this.codeCounting) {
 					uni.showToast({
 						title: this.$t('不能重复获取'),
 						icon: "none"
@@ -129,6 +133,11 @@
 					// this.tanchuang = true
 					// this.yzm = ''
 					// this.captchaImage();
+					this.startCodeCountdown(120)
+					uni.showLoading({
+						title: this.$t('发送中'),
+						mask: true
+					})
 					if (this.loact === "境内") {
 						this.send_phone_reset_code()
 					} else if (this.loact === "境外") {
@@ -265,33 +274,24 @@
 					success(res) {
 						console.log("发送重置密码短信", res)
 						if (res.statusCode == 200) {
+							uni.hideLoading();
 							if (res.data.code == 200) {
-								that.yanzheng = 0
-								if (that.codetime > 0) {
-									uni.showToast({
-										title: that.$t('不能重复获取'),
-										icon: "none"
-									})
-									return
-								} else {
-									that.codetime = 120
-									that.msg = that.$t('s后可重发')
-									let timer = setInterval(() => {
-										that.codetime-- + that.msg;
-										if (that.codetime < 1) {
-											clearInterval(timer);
-											that.msg = ''
-											that.codetime = that.$t('重新获取')
-										}
-									}, 1000)
-								}
+								uni.hideLoading()
 							} else {
+								that.resetCodeCountdown()
 								uni.showToast({
 									title: res.data.msg,
 									icon: 'none'
 								})
 							}
+						} else {
+							that.resetCodeCountdown()
+							uni.hideLoading();
 						}
+					},
+					fail() {
+						that.resetCodeCountdown()
+						uni.hideLoading();
 					}
 				})
 			},
@@ -311,31 +311,19 @@
 					success(res) {
 						console.log("发送重置密码短信", res)
 						if (res.data.code == 200) {
-							that.yanzheng = 0
-							if (that.codetime > 0) {
-								uni.showToast({
-									title: that.$t('不能重复获取'),
-									icon: "none"
-								})
-								return
-							} else {
-								that.codetime = 120
-								that.msg = that.$t('s后可重发')
-								let timer = setInterval(() => {
-									that.codetime-- + that.msg;
-									if (that.codetime < 1) {
-										clearInterval(timer);
-										that.msg = ''
-										that.codetime = that.$t('重新获取')
-									}
-								}, 1000)
-							}
+							uni.hideLoading();
 						} else {
+							that.resetCodeCountdown()
+							uni.hideLoading();
 							uni.showToast({
 								title: res.data.msg,
 								icon: 'none'
 							})
 						}
+					},
+					fail() {
+						that.resetCodeCountdown()
+						uni.hideLoading();
 					}
 				})
 			},
@@ -477,6 +465,13 @@
 		background: #3298F7;
 		color: white;
 	}
+
+	.linear_btn[disabled] {
+		background: #BDBDBD !important;
+		color: #ffffff !important;
+		opacity: 1;
+	}
+
 
 
 	.container_bg {

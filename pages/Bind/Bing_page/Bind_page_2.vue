@@ -140,7 +140,6 @@
 		},
 
 		onLoad(res) {
-			console.log(res)
 			this.SELECT_TYPE = res.SELECT_TYPE
 			this.modelConnectType = res.modelConnectType
 			this.modelname = res.name
@@ -158,7 +157,6 @@
 			let that = this
 			uni.openBluetoothAdapter({
 				success: res => {
-					console.log("初始化低功耗蓝牙成功")
 					that.resetState();
 					that.$refs.popupblequanixan.close()
 				},
@@ -325,7 +323,6 @@
 			 * 注意：malink 短链（如 https://m.malink.cn/s/xxx）不含设备码，不能当 SN 解析
 			 */
 			applyBPW6DeviceCode(code) {
-				console.log('applyBPW6DeviceCode', code)
 				const raw = String(code || '').trim()
 				if (!raw) return false
 				const paraMatch = raw.match(/para=([^&]+)/i)
@@ -445,7 +442,6 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
-					console.log("获取设备基础信息", res)
 					if (res.code == 200) {
 						const serverModel = String(res.data.model || '')
 						const modelMatched = serverModel === this.modelname ||
@@ -532,7 +528,6 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
-					console.log("查询设备", res)
 					if (res.code == 200) {
 						if (res.rows.length === 0) {
 							this.navigateTo(this.modelId);
@@ -575,7 +570,6 @@
 						this.stoponble = true
 						this.initBluetooth()
 					} else if (this.modelname === "BPW6") {
-						console.log("BPW6手表连接修改")
 						this.BPW6model = modelId
 						this.stoponble = true
 						this.initBluetooth6()
@@ -903,7 +897,6 @@
 						clearInterval(BPW6timeer)
 						BPW6timeer = null
 					} else {
-						console.log("BPW6搜索低功耗蓝牙", BPW6time, "目标后缀", targetSuffix, targetMac)
 						pollFoundDevices()
 						if (BPW6time === 20) {
 							uni.hideLoading()
@@ -996,7 +989,6 @@
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
-					console.log("BPW6绑定结果", res)
 					if (res.code === 200) {
 						uni.setStorageSync("appQX", "1")
 						uni.setStorageSync("deviceSn", sn);

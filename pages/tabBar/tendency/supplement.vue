@@ -194,7 +194,6 @@
 				this.profDate = e.detail.value
 			},
 			bindTimeChange(e) {
-				console.log(e)
 				this.time = e.detail.value
 				uni.setStorageSync("bindTimeChange", this.time)
 			},

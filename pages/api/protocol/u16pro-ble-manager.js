@@ -2242,16 +2242,6 @@ class U16ProBLEManager {
 								success: () => {
 									this.bcDeviceId = targetDeviceId
 									this.isBcNotifying = true
-									console.log(
-										'【PPG】自定义蓝牙服务notify已启用', {
-											serviceId: resolvedServiceId,
-											notifyCharId: notifyChar
-												.uuid,
-											writeCharId: writeChar
-												.uuid,
-											writeType: this
-												.bcWriteType
-										})
 									setTimeout(resolve, 200)
 								},
 								fail: (err) => {

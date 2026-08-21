@@ -484,6 +484,7 @@
 				console.log('开始搜索蓝牙')
 				let that = this;
 				uni.startBluetoothDevicesDiscovery({
+					allowDuplicatesKey: true,
 					success() {
 						uni.onBluetoothDeviceFound(res => {
 							var deviceArray = res.devices;
@@ -494,6 +495,9 @@
 										index;
 								});
 								let uniqueArr1 = uniqueArr.filter((item, index, self) => {
+									if (item.name) {
+										return true;
+									}
 									return self.findIndex(t => t.name === item.name) === index;
 								});
 								that.bluetoothList = uniqueArr1

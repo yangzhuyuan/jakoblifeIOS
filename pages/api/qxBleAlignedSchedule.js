@@ -190,6 +190,11 @@ async function ensureQxBleDeviceConnected(deviceId) {
 }
 
 function isBpw6EmotionMeasure() {
+	const bpw6 = uni.getStorageSync('BPW6devicemac')
+	const bpw1 = uni.getStorageSync('deviceIdwatch')
+	// 仅绑 BPW6：自动走 BPW6（解绑 BPW1 再绑 BPW6 无需重进设置页）
+	if (bpw6 && !bpw1) return true
+	// 双绑 / 仅 BPW1：仍以设置页写入的标记为准，行为不变
 	const v = uni.getStorageSync(QX_BPW6_EMOTION_MEASURE_KEY)
 	return v === true || v === 'true' || v === 1 || v === '1'
 }
@@ -224,9 +229,9 @@ function formatQxLogDetail(value) {
 function logQx(tag, ...details) {
 	const ts = formatLocalDateTime()
 	if (details.length === 0) {
-		console.log(`[qxBle][${ts}] ${tag}`)
+		// console.log(`[qxBle][${ts}] ${tag}`)
 	} else {
-		console.log(`[qxBle][${ts}] ${tag}`, ...details)
+		// console.log(`[qxBle][${ts}] ${tag}`, ...details)
 	}
 	try {
 		const detailStr = details.map(formatQxLogDetail).filter(Boolean).join(' ')
@@ -902,7 +907,6 @@ function armJsTimerForNextFireAt(reason = '') {
 		return true
 	}
 	const delay = Math.max(1000, nextAt - Date.now())
-	logQx('挂载下一槽定时器', reason || '-', formatSlotTime(nextAt), `${Math.round(delay / 1000)}秒后`)
 	qxArmedFireAt = nextAt
 	schedulePlanNext(delay)
 	return true
@@ -1078,7 +1082,7 @@ function runOneQxBpw1Measurement(deviceId, serviceId, characteristicId) {
 						logQx('探测帧写入成功')
 						setTimeout(() => {
 							const otaBP = uni.getStorageSync('otaBP')
-							let bufferPpg = hexToArrayBuffer('e00006F3060104000101')
+							let bufferPpg = hexToArrayBuffer('e00006f3060104000101')
 							if (OTA_DATA_RES_WATCH_CMD_IDS.has(otaBP)) {
 								bufferPpg = hexToArrayBuffer('e0000611030125000101')
 							}
@@ -1182,7 +1186,6 @@ function armBpw6ScheduledPpgPullFallback(deviceId) {
 		const sendwatch = uni.getStorageSync('sendwatch')
 		if (sendwatch !== 1 && sendwatch !== '1') return
 		const targetDeviceId = deviceId || uni.getStorageSync('BPW6devicemac') || ''
-		logQx('BPW6定时测量兜底拉取PPG', targetDeviceId || '-')
 		try {
 			uni.$emit('qx:keepalive:renew')
 		} catch (e) {}
@@ -1263,9 +1266,7 @@ function tickScheduleHeartbeat(tag = '') {
 		// 新槽位到点且未下发过：必须唤醒执行（可打断上一轮采集）
 		if (isNewSlotDueNeedingDispatch(nextAt)) {
 			const hbTag = tag ? `心跳-${tag}` : '心跳-新槽必发'
-			logQx('时段内心跳', '新槽位到点必须下发', formatSlotTime(nextAt))
 			runQxBleScheduleWakeTick(hbTag).then((r) => {
-				logQx('时段内心跳唤醒结果', r || '-', formatSlotTime(readNextFireAt()))
 				if (r === 'slot-skipped') {
 					armJsTimerForNextFireAt('心跳-已跳槽')
 				} else if (r === 'dispatch-skipped') {
@@ -1302,7 +1303,6 @@ function tickScheduleHeartbeat(tag = '') {
 		}
 		const hbTag = tag ? `心跳-${tag}` : '心跳-已过槽位'
 		runQxBleScheduleWakeTick(hbTag).then((r) => {
-			logQx('时段内心跳唤醒结果', r || '-', formatSlotTime(readNextFireAt()))
 			if (r === 'slot-skipped') {
 				armJsTimerForNextFireAt('心跳-已跳槽')
 			} else if (r === 'dispatch-skipped') {
@@ -1538,7 +1538,6 @@ export async function runQxBleScheduleWakeTick(source = 'wake') {
 }
 
 async function runQxBleScheduleWakeTickInner(source = 'wake') {
-	logQx('唤醒检查', `来源=${source}`)
 	reconcileQxScheduleBusyState()
 	if (!isSwitchOn()) {
 		logQx('唤醒跳过', '开关关闭')
@@ -1569,16 +1568,13 @@ async function runQxBleScheduleWakeTickInner(source = 'wake') {
 		return 'needs-plan'
 	}
 	if (now < nextAt - 500) {
-		logQx('唤醒未到点', `下一槽位${formatSlotTime(nextAt)}`, `剩余${(nextAt - now) / 1000}s`)
 		return 'not-due'
 	}
 	if (shouldSkipQxSlotCatchup(nextAt)) {
-		logQx('唤醒跳过已过槽位', source, formatSlotTime(nextAt))
 		rescheduleQxToNextAlignedSlot(source)
 		const freshAt = readNextFireAt()
 		// 跳过过期槽后，若当前对齐槽已到点且未下发，必须立刻发一次
 		if (isNewSlotDueNeedingDispatch(freshAt)) {
-			logQx('跳槽后新槽位必须下发', formatSlotTime(freshAt))
 			if (hasQxRealMeasureSession() || isQxScheduleMeasureBusy() || isQxInternalDispatchBusy()) {
 				abortQxBleMeasurementForNewSlot('跳槽后新槽强制下发')
 				clearQxScheduledEmotionBusyFlags()
@@ -1591,7 +1587,6 @@ async function runQxBleScheduleWakeTickInner(source = 'wake') {
 	}
 	// 本槽已成功下发过：不重复发
 	if (hasDispatchedCurrentSlot(nextAt)) {
-		logQx('唤醒到点', '本槽已下发过，跳过重复', formatSlotTime(nextAt))
 		return 'already-running'
 	}
 	if (isQxScheduleMeasureBusy() || isSameQxSlotAlreadyClaimed(nextAt) || hasQxRealMeasureSession()) {
@@ -1599,7 +1594,6 @@ async function runQxBleScheduleWakeTickInner(source = 'wake') {
 			const busyLabel = isMainSleepAlertMeasureBusy() ? 'Main测量中' : '调度忙'
 			const hasRealSession = hasQxRealMeasureSession()
 			if (!hasRealSession) {
-				logQx('唤醒到点', '假忙/残留占槽，清理后重试本槽', busyLabel, formatSlotTime(nextAt))
 				qxSlotExecuteLockAt = 0
 				qxSlotClaimedAt = 0
 				qxMeasureInFlight = false
@@ -1608,22 +1602,16 @@ async function runQxBleScheduleWakeTickInner(source = 'wake') {
 				clearQxScheduledMeasureStorage()
 				clearQxScheduledEmotionBusyFlags()
 				const retried = await executeQxMeasurementOnce()
-				logQx('唤醒清理后重试', retried ? 'executed' : 'dispatch-skipped')
 				return retried ? 'executed' : 'dispatch-skipped'
 			}
-			logQx('唤醒到点', '本轮槽位采集中', busyLabel, `槽位${formatSlotTime(nextAt)}`)
 			return 'already-running'
 		}
-		logQx('唤醒到点', '新槽位到点，终止上一轮并下发', `新槽位${formatSlotTime(nextAt)}`)
 		abortQxBleMeasurementForNewSlot('新槽位必须下发')
 		clearQxScheduledEmotionBusyFlags()
 		const restarted = await executeQxMeasurementOnce()
-		logQx('唤醒重测结果', restarted ? 'restarted' : 'dispatch-skipped')
 		return restarted ? 'restarted' : 'dispatch-skipped'
 	}
-	logQx('唤醒到点执行', `槽位${formatSlotTime(nextAt)}`, '新槽必须下发')
 	const executed = await executeQxMeasurementOnce()
-	logQx('唤醒执行结果', executed ? 'executed' : 'dispatch-skipped')
 	return executed ? 'executed' : 'dispatch-skipped'
 }
 

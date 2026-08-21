@@ -2093,9 +2093,9 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-				console.log("趋势数据", data)
+				// console.log("趋势数据", data)
 				this.$post(this.$url_APP_IP + this.$url_query_minmax, data, getheader).then(res => {
-					console.log("趋势数据", res)
+					// console.log("趋势数据", res)
 					if (res.code == 200) {
 						//最近
 						this.lately_Blood_pressure = this.bgaaa(res.data.last.lowPressure, res.data.last

@@ -40,7 +40,8 @@
 						<input type="number" :placeholder="$t('请输入验证码')" style="margin-left: 10px;" maxlength="6"
 							v-model="yanzhengma" />
 					</view>
-					<button class="linear_btn" @tap="huoqu">{{yanzheng ? $t('获取验证码') : codetime + msg}}</button>
+					<button class="linear_btn" :disabled="codeCounting" :style="codeBtnStyle"
+						@tap="huoqu">{{yanzheng ? $t('获取验证码') : codetime + msg}}</button>
 				</view>
 				<view style="margin-top: 20px; display: flex; flex-direction: row; justify-content: space-between;">
 					<view class="text_bg"></view>
@@ -133,7 +134,10 @@
 		setActiveAppRegion
 	} from '../api/appBaseHosts.js'
 
+	import codeCountdownMixin from '../api/codeCountdownMixin.js'
+
 	export default {
+		mixins: [codeCountdownMixin],
 		computed: {
 			...mapState(['uuid'])
 		},
@@ -346,6 +350,7 @@
 			},
 
 			//点击获取验证码
+
 			async huoqu() {
 				let that = this
 				if (!that.unername) {
@@ -362,13 +367,14 @@
 					}
 					return
 				}
-				if (that.codetime > 0) {
+				if (that.codeCounting) {
 					uni.showToast({
 						title: that.$t('不能重复获取'),
 						icon: "none"
 					})
 					return
 				} else {
+					this.startCodeCountdown(120)
 					uni.showLoading({
 						title: that.$t('正在发送验证码'),
 						mask: true
@@ -421,35 +427,26 @@
 				this.$post(this.$url_APP_IP + this.$url_send_login_code, data, {
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
-					console.log(this.$url_APP_IP, res)
+					console.log(res)
 					uni.hideLoading();
 					if (res.code === 200) {
-						this.yanzheng = 0
-						if (this.codetime > 0) {
-							uni.showToast({
-								title: this.$t('不能重复获取'),
-								icon: "none"
-							})
-							return
-						} else {
-							this.codetime = 60
-							this.msg = this.$t('s后可重发')
-							let timer = setInterval(() => {
-								this.codetime-- + this.msg;
-								if (this.codetime < 1) {
-									clearInterval(timer);
-									this.msg = ''
-									this.codetime = this.$t('重新获取')
-								}
-							}, 1000)
-						}
+						uni.hideLoading()
 					} else {
-						uni.showToast({
-							title: this.$t("失败"),
-							icon: 'none'
-						})
+						this.resetCodeCountdown()
+						if (res.msg === "User does not exist.") {
+							uni.showToast({
+								title: this.$t("此用户不存在") + "/" + this.$t("未绑定"),
+								icon: 'none'
+							})
+						} else {
+							uni.showToast({
+								title: this.$t("失败"),
+								icon: 'none'
+							})
+						}
 					}
 				}).catch(() => {
+					this.resetCodeCountdown()
 					uni.hideLoading();
 				})
 			},
@@ -463,33 +460,22 @@
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
 					uni.hideLoading();
-					if (res.code === 200) {
-						this.yanzheng = 0
-						if (this.codetime > 0) {
+					if (res.code !== 200) {
+						this.resetCodeCountdown()
+						if (res.msg === "User does not exist.") {
 							uni.showToast({
-								title: this.$t('不能重复获取'),
-								icon: "none"
+								title: this.$t("此用户不存在") + "/" + this.$t("未绑定"),
+								icon: 'none'
 							})
-							return
 						} else {
-							this.codetime = 60
-							this.msg = this.$t('s后可重发')
-							let timer = setInterval(() => {
-								this.codetime-- + this.msg;
-								if (this.codetime < 1) {
-									clearInterval(timer);
-									this.msg = ''
-									this.codetime = this.$t('重新获取')
-								}
-							}, 1000)
+							uni.showToast({
+								title: this.$t("失败"),
+								icon: 'none'
+							})
 						}
-					} else {
-						uni.showToast({
-							title: this.$t("失败"),
-							icon: 'none'
-						})
 					}
 				}).catch(() => {
+					this.resetCodeCountdown()
 					uni.hideLoading();
 				})
 			},
@@ -730,7 +716,6 @@
 					smsCode: this.yanzhengma,
 					email: this.unername
 				}
-				console.log(this.$url_APP_IP, "app_email_login", data)
 				this.$post(this.$url_APP_IP + "/prod-api/app/app_email_login", data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
@@ -1221,6 +1206,13 @@
 		background: #3298F7;
 		color: white;
 	}
+
+	.linear_btn[disabled] {
+		background: #BDBDBD !important;
+		color: #ffffff !important;
+		opacity: 1;
+	}
+
 
 	.img_style {
 		width: 20px;

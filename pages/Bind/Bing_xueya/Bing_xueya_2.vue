@@ -42,6 +42,9 @@
 				uuid: '',
 				modelId: '',
 				WIFITYPE: false,
+				bleNotifyTimer: null,
+				bleNotifyRetried: false,
+				bleValueListening: false,
 
 			}
 		},
@@ -62,8 +65,17 @@
 			})
 			this.fetchDeviceConnectedWifi()
 		},
+		onUnload() {
+			this.clearBleNotifyTimer()
+		},
 
 		methods: {
+			clearBleNotifyTimer() {
+				if (this.bleNotifyTimer) {
+					clearTimeout(this.bleNotifyTimer)
+					this.bleNotifyTimer = null
+				}
+			},
 			isAndroidPlatform() {
 				const platform = uni.getSystemInfoSync().platform
 				return platform === 'android' || (typeof plus !== 'undefined' && plus.os.name === 'Android')
@@ -90,6 +102,10 @@
 					value: buffer,
 					writeType: "write",
 					success(res) {
+						uni.showLoading({
+							title: that.$t('连接中'),
+							mask: true
+						})
 						setTimeout(() => {
 							that.notifyBLECharacteristicValueChange(deviceId, serviceId, uuid, notifyuuid)
 						}, 1000)
@@ -116,18 +132,44 @@
 					serviceId: serviceId,
 					characteristicId: notifyuuid,
 					success: (notifyres) => {
+						that.clearBleNotifyTimer()
+						that.bleNotifyTimer = setTimeout(() => {
+							that.bleNotifyTimer = null
+							if (!that.bleNotifyRetried) {
+								that.bleNotifyRetried = true
+								console.log('蓝牙回包超时，重发AT命令')
+								that.sendATCommand(deviceId, serviceId, uuid,
+									'AT+QSTAAPINFODEF=' + that.wifi_name + ',' + that
+									.wifi_password, notifyuuid)
+								return
+							}
+							uni.hideLoading()
+							uni.showToast({
+								title: that.$t('连接超时'),
+								icon: 'none'
+							})
+						}, 20000)
 						that.onBLEValue(deviceId, serviceId, uuid, notifyuuid)
 					},
-					fail: (notifyerr) => {}
+					fail: (notifyerr) => {
+						that.clearBleNotifyTimer()
+						uni.hideLoading()
+					}
 				})
 			},
 			onBLEValue(deviceId, serviceId, uuid, notifyuuid) {
 				let that = this
+				if (that.bleValueListening) {
+					return
+				}
+				that.bleValueListening = true
 				uni.onBLECharacteristicValueChange((res) => {
+					that.clearBleNotifyTimer()
 					let hexData = that.ab2hex(res.value)
 					let asciiString = that.hexToAscii(hexData)
 					if (asciiString === "+QSTASTAT:WLAN_DISCONNECTED\r\n" || asciiString.includes(
 							"WLAN_DISCONNECTED")) {
+						uni.hideLoading()
 						if (!that.WIFITYPE) {
 							that.getunbind(that.sn)
 							that.WIFITYPE = true
@@ -139,7 +181,8 @@
 							}, 1000)
 						}
 					} else if (asciiString === "+QSTASTAT:WLAN_CONNECTED\r\n" || asciiString.includes(
-							"WLAN_CONNECTED")) {
+							"WLAN_CONNECTED") || asciiString === "OK" || asciiString.includes("OK")) {
+						uni.hideLoading()
 						let buffertime = that.toArrayBuffer("74696d6540" + that.getTimeAllJSON().YMDHMSWIFI)
 						uni.writeBLECharacteristicValue({
 							deviceId: deviceId,
@@ -489,6 +532,7 @@
 					})
 					return
 				} else {
+					that.bleNotifyRetried = false
 					that.sendATCommand(that.deviceId, that.serviceId, that.uuid,
 						'AT+QSTAAPINFODEF=' + that.wifi_name + ',' + that.wifi_password, that.notifyuuid)
 				}

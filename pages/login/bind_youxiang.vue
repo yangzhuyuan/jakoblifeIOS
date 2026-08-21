@@ -11,8 +11,8 @@
 				<input type="number" :placeholder="$t('请输入验证码')" style="margin-left: 10px;" maxlength="6"
 					v-model="yanzhengma" />
 			</view>
-			<button class="linear_btn" style="background: #3298F7; color: white;"
-				@tap="huoqu">{{yanzheng ? $t('获取验证码'): codetime+msg}}</button>
+			<button class="linear_btn" :disabled="codeCounting" :style="codeBtnStyle"
+				@tap="huoqu">{{yanzheng ? $t('获取验证码') : codetime + msg}}</button>
 		</view>
 		<button class="button_back" @tap="btn_next">{{$t('完成')}}</button>
 		<view class="container_bg" v-show="tanchuang">
@@ -49,7 +49,10 @@
 		mapState,
 		mapMutations
 	} from 'vuex';
+	import codeCountdownMixin from '../api/codeCountdownMixin.js'
+
 	export default {
+		mixins: [codeCountdownMixin],
 		computed: {
 			...mapState(['tokens', 'uuid'])
 		},
@@ -89,6 +92,7 @@
 			...mapMutations(['getImgID']),
 
 
+
 			huoqu() {
 				if (this.email === "" || this.email === undefined) {
 					uni.showToast({
@@ -96,7 +100,7 @@
 						icon: 'none'
 					})
 					return
-				} else if (this.codetime > 0) {
+				} else if (this.codeCounting) {
 					uni.showToast({
 						title: this.$t('不能重复获取'),
 						icon: "none"
@@ -106,6 +110,11 @@
 					// this.tanchuang = true
 					// this.yzm = ''
 					// this.captchaImage();
+					this.startCodeCountdown(120)
+					uni.showLoading({
+						title: this.$t('发送中'),
+						mask: true
+					})
 					this.send_register_code()
 				}
 			},
@@ -222,26 +231,10 @@
 						if (res.statusCode == 200) {
 							console.log(res)
 							if (res.data.code == 200) {
-								that.yanzheng = 0
-								if (that.codetime > 0) {
-									uni.showToast({
-										title: that.$t('不能重复获取'),
-										icon: "none"
-									})
-									return
-								} else {
-									that.codetime = 120
-									that.msg = that.$t('s后可重发')
-									let timer = setInterval(() => {
-										that.codetime-- + that.msg;
-										if (that.codetime < 1) {
-											clearInterval(timer);
-											that.msg = ''
-											that.codetime = that.$t('重新获取')
-										}
-									}, 1000)
-								}
+								uni.hideLoading()
 							} else {
+								that.resetCodeCountdown()
+								uni.hideLoading()
 								uni.showToast({
 									title: that.$t("该邮箱已被绑定"),
 									icon: 'none'
@@ -250,6 +243,8 @@
 						}
 					},
 					fail(res) {
+						that.resetCodeCountdown()
+						uni.hideLoading()
 						console.log("失败", res)
 					}
 				})
@@ -364,6 +359,13 @@
 		background: #3298F7;
 		color: white;
 	}
+
+	.linear_btn[disabled] {
+		background: #BDBDBD !important;
+		color: #ffffff !important;
+		opacity: 1;
+	}
+
 
 
 	.forget_password_btn_2 {

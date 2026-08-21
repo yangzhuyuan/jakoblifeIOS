@@ -11,8 +11,8 @@
 				{{$t('夜间')}}({{nightCount}})
 			</text>
 		</view>
-		<view class="table-tip">{{tableTipText}}</view>
-		<view v-show="modeltips" class="model-tip">{{$t('无感血压AI模型建立中提示')}}</view>
+		<view v-if="modeltips" class="model-tip">{{$t('无感血压AI模型建立中提示')}}</view>
+		<view v-else class="model-tip">{{$t('您的AI无感血压模型已经建立')}}</view>
 		<view class="table-header">
 			<text class="col-time">{{$t('测量时间')}}</text>
 			<text class="col-period">{{$t('时段')}}</text>
@@ -21,7 +21,6 @@
 			<text class="col-value">{{$t('心率')}}</text>
 			<text class="col-status">{{$t('状态')}}</text>
 		</view>
-
 		<scroll-view scroll-y class="list-scroll">
 			<view v-if="loading" class="empty-tip">{{$t('加载中')}}</view>
 			<view v-else-if="filteredList.length === 0" class="empty-tip">{{$t('暂无数据')}}</view>
@@ -42,6 +41,7 @@
 				</text>
 			</view>
 		</scroll-view>
+		<view class="table-tip">{{tableTipText}}</view>
 	</view>
 </template>
 
@@ -64,6 +64,7 @@
 				modeltips: true,
 			}
 		},
+
 		computed: {
 			filteredList() {
 				if (this.currentTab === 'all') return this.dataList
@@ -95,43 +96,19 @@
 				return this.$t('当天数据云端计算中需明天查询', {
 					date: dateText
 				})
-			}
+			},
 		},
 		onShow() {
 			const modeltipsbool = uni.getStorageSync("temperature")
-			console.log("modeltipsbool", modeltipsbool)
+			// console.log("modeltipsbool", modeltipsbool)
 			uni.setNavigationBarTitle({
 				title: this.$t('无感血压报告')
 			})
-			// this.ppgdatalist()
 			this.get_retVarList()
 			if (modeltipsbool && modeltipsbool !== '-/-' && Number(modeltipsbool) >= 500) this.modeltips = false
 
 		},
 		methods: {
-			//根据患者ID查询PPG信号最新分析结果
-			ppgdatalist() {
-				let that = this
-				let ppgdata = {
-					patientId: uni.getStorageSync("userid"),
-				}
-				that.$get(that.$url_APP_IP + "/prod-api/device/ppgresults/get_result_by_patient_id",
-					ppgdata, {
-						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-						'content-type': 'application/json;charset=UTF-8'
-					}).then((ppgdatalist) => {
-					console.log("ppgdatalist", ppgdatalist)
-					if (ppgdatalist.code === 200) {
-						if (ppgdatalist.data.remark) {
-							that.modeltips = false
-						} else {
-							that.modeltips = true
-						}
-					} else {
-						that.modeltips = true
-					}
-				})
-			},
 			switchTab(tab) {
 				this.currentTab = tab
 			},
@@ -352,26 +329,32 @@
 					return
 				}
 				that.loading = true
+				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
+				const chinaNow = getChinaTimeAllJSON()
+				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
+				const profYmd = chinaHour < 1 ?
+					getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD :
+					chinaNow.YMD
 				const data = {
 					userId: uni.getStorageSync("userid"),
-					// 永远中国时间
-					profDate: getChinaTimeAllJSON().YMD + ' 07:00:00',
+					profDate: profYmd + ' 00:00:00',
 					filterVarList: that.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				}
-				console.log('get_retVarLisdata参数：', data)
+				// console.log('get_retVarLisdata参数（传入的时间均以中国时间为准）：', data)
 				that.$post(that.$url_APP_IP + '/prod-api/device_app/get_retVarList', data, {
 					'Authorization': 'Bearer ' + token,
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((res) => {
-					console.log('get_retVarLis：', res)
+					// console.log('请求结果：', res)
 					if (res.code === 200 && res.data && res.data.retVarList) {
 						that.dataList = that.processRetVarList(res.data.retVarList)
 					} else {
 						that.dataList = []
+						console.log('1服务器数据还在处理中', res);
 					}
 				}).catch((e) => {
-					console.warn('[Smooth_BP_Data] get_retVarList failed', e)
+					console.log('2服务器数据还在处理中', e);
 					that.dataList = []
 				}).finally(() => {
 					that.loading = false
@@ -383,7 +366,7 @@
 
 <style scoped>
 	.page {
-		padding: 10px;
+		/* padding: 10px; */
 		height: 100vh;
 		box-sizing: border-box;
 		background: #f5f5f5;
@@ -398,23 +381,23 @@
 		z-index: 20;
 		flex-shrink: 0;
 		display: flex;
-		background: #EB1508;
+		background: #ffffff;
 		padding: 20rpx;
-		border-bottom: 1px solid #c41008;
+		border-bottom: 1px solid #e5e5e5;
 	}
 
 	.tab {
 		flex: 1;
 		text-align: center;
 		font-size: 26rpx;
-		color: rgba(255, 255, 255, 0.85);
+		color: #666;
 		padding: 16rpx 0;
 		border-radius: 8rpx;
 	}
 
 	.tab.active {
-		color: #EB1508;
-		background: #ffffff;
+		color: #007aff;
+		background: rgba(0, 122, 255, 0.08);
 		font-weight: 600;
 	}
 
@@ -428,8 +411,7 @@
 	.table-header {
 		align-items: center;
 		flex-shrink: 0;
-		background: #FF6B00;
-		border-bottom: 1px solid #e55a00;
+		background: #007aff;
 		font-size: 26rpx;
 		font-weight: 600;
 		color: #ffffff;
@@ -535,7 +517,6 @@
 	.list-scroll {
 		flex: 1;
 		height: 0;
-		padding-bottom: 60rpx;
 		box-sizing: border-box;
 	}
 
@@ -548,7 +529,7 @@
 
 	.table-tip {
 		flex-shrink: 0;
-		padding: 16rpx 20rpx;
+		padding: 16rpx 15px;
 		font-size: 24rpx;
 		line-height: 1.5;
 		color: red;
@@ -558,13 +539,11 @@
 	}
 
 	.model-tip {
-		margin-top: 16rpx;
 		padding: 16rpx 20rpx;
 		font-size: 22rpx;
-		line-height: 1.55;
-		color: #fff8e8;
-		text-align: left;
-		background: rgba(0, 0, 0, 0.2);
-		border-radius: 12rpx;
+		line-height: 1.5;
+		color: #c0392b;
+		text-align: center;
+		background: rgba(255, 248, 232, 0.95);
 	}
 </style>

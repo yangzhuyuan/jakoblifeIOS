@@ -11,8 +11,8 @@
 				<input type="number" :placeholder="$t('请输入验证码')" style="margin-left: 10px;" maxlength="6"
 					v-model="yanzhengma" />
 			</view>
-			<button class="linear_btn" style="background: #3298F7; color: white;"
-				@tap="huoqu">{{yanzheng?$t('获取验证码'): codetime+msg}}</button>
+			<button class="linear_btn" :disabled="codeCounting" :style="codeBtnStyle"
+				@tap="huoqu">{{yanzheng ? $t('获取验证码') : codetime + msg}}</button>
 		</view>
 		<button class="button_back" @tap="btn_next">{{$t('下一步')}}</button>
 		<view class="container_bg" v-show="tanchuang">
@@ -52,7 +52,10 @@
 		isInChinaByIP,
 		check_email_register,
 	} from '../api/isInChinaByIP.js';
+	import codeCountdownMixin from '../api/codeCountdownMixin.js'
+
 	export default {
+		mixins: [codeCountdownMixin],
 		computed: {
 			...mapState(['uuid'])
 		},
@@ -103,6 +106,7 @@
 				}
 			},
 
+
 			async huoqu() {
 				if (!this.unername_phone) {
 					uni.showToast({
@@ -110,37 +114,18 @@
 						icon: 'none'
 					})
 					return
-				} else if (this.codetime > 0) {
+				} else if (this.codeCounting) {
 					uni.showToast({
 						title: this.$t('不能重复获取'),
 						icon: "none"
 					})
 					return
 				} else {
+					this.startCodeCountdown(120)
 					uni.showLoading({
 						title: this.$t('正在发送验证码'),
 						mask: true
 					});
-					// const checkemailregister = await check_email_register(this.unername_phone);
-					// console.log("忘记密码判断当前账号归属哪一个服务器：", checkemailregister);
-					// switch (checkemailregister) {
-					// 	case "Chinese_server":
-					// 		Vue.prototype.$url_APP_IP = this.$APP_IP1;
-					// 		break
-					// 	case "American_server":
-					// 	case "Chinese_American_servers":
-					// 		Vue.prototype.$url_APP_IP = this.$APP_IP2;
-					// 		break
-					// 	default:
-					// 		console.log("忘记密码" + checkemailregister);
-					// 		const isInChina = await isInChinaByIP();
-					// 		if (isInChina) {
-					// 			Vue.prototype.$url_APP_IP = this.$APP_IP1;
-					// 		} else {
-					// 			Vue.prototype.$url_APP_IP = this.$APP_IP2;
-					// 		}
-					// 		break
-					// }
 					if (this.loact === "境内") {
 						this.send_phone_reset_code()
 					} else if (this.loact === "境外") {
@@ -277,32 +262,16 @@
 					console.log("发送重置密码短信", res)
 					uni.hideLoading()
 					if (res.code == 200) {
-						that.yanzheng = 0
-						if (that.codetime > 0) {
-							uni.showToast({
-								title: that.$t('不能重复获取'),
-								icon: "none"
-							})
-							return
-						} else {
-							that.codetime = 120
-							that.msg = that.$t('s后可重发')
-							let timer = setInterval(() => {
-								that.codetime-- + that.msg;
-								if (that.codetime < 1) {
-									clearInterval(timer);
-									that.msg = ''
-									that.codetime = that.$t('重新获取')
-								}
-							}, 1000)
-						}
+						uni.hideLoading()
 					} else {
+						that.resetCodeCountdown()
 						uni.showToast({
 							title: res.msg,
 							icon: 'none'
 						})
 					}
 				}).catch((Error) => {
+					that.resetCodeCountdown()
 					uni.hideLoading()
 				})
 			},
@@ -316,34 +285,18 @@
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((res) => {
 					console.log("发送重置密码短信", res)
-					uni.hideLoading()
 					if (res.code === 200) {
-						that.yanzheng = 0
-						if (that.codetime > 0) {
-							uni.showToast({
-								title: that.$t('不能重复获取'),
-								icon: "none"
-							})
-							return
-						} else {
-							that.codetime = 120
-							that.msg = that.$t('s后可重发')
-							let timer = setInterval(() => {
-								that.codetime-- + that.msg;
-								if (that.codetime < 1) {
-									clearInterval(timer);
-									that.msg = ''
-									that.codetime = that.$t('重新获取')
-								}
-							}, 1000)
-						}
+						uni.hideLoading()
 					} else {
+						that.resetCodeCountdown()
+						uni.hideLoading()
 						uni.showToast({
 							title: res.msg,
 							icon: 'none'
 						})
 					}
 				}).catch((Error) => {
+					that.resetCodeCountdown()
 					uni.hideLoading()
 				})
 			},
@@ -479,6 +432,13 @@
 		background: #3298F7;
 		color: white;
 	}
+
+	.linear_btn[disabled] {
+		background: #BDBDBD !important;
+		color: #ffffff !important;
+		opacity: 1;
+	}
+
 
 	.container_bg {
 		display: flex;

@@ -1068,8 +1068,6 @@
 				return this.sortMonitorByDateTime(this.dedupeMonitorByReturnData(processedData));
 			},
 			updateStatistics(data) {
-				console.log("updateStatistics", data)
-
 				if (!data || data.length === 0) {
 					this.stats.totalCount = 0;
 					this.dayCount = 0;
@@ -1185,21 +1183,24 @@
 					diastolic: minItem.diastolic,
 					time: minItem.fullTime || minItem.time
 				};
-
-				console.log("极值记录 - 最高:", this.stats.max);
-				console.log("极值记录 - 最低:", this.stats.min);
 			},
 
 			// ==================== API 请求 ====================
 			get_finalRetVarList() {
 				let that = this;
+				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
+				const chinaNow = getChinaTimeAllJSON()
+				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
+				const profYmd = chinaHour < 1
+					? getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD
+					: chinaNow.YMD
 				let data = {
 					userId: uni.getStorageSync("userid"),
-					profDate: getChinaTimeAllJSON().YMD + ' 07:00:00',
+					profDate: profYmd + ' 00:00:00',
 					period: that.period,
 					retVarList: that.finlretVarList1.toLowerCase()
 				};
-				console.log("get_finalRetVarList", data)
+				// console.log("get_finalRetVarList", data)
 				that.$post(that.$url_APP_IP + "/prod-api/device_app/get_finalRetVarList", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
@@ -1234,18 +1235,24 @@
 
 			get_retVarList() {
 				let that = this
+				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
+				const chinaNow = getChinaTimeAllJSON()
+				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
+				const profYmd = chinaHour < 1
+					? getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD
+					: chinaNow.YMD
 				let data = {
 					userId: uni.getStorageSync("userid"),
-					profDate: getChinaTimeAllJSON().YMD + ' 07:00:00',
+					profDate: profYmd + ' 00:00:00',
 					filterVarList: that.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				}
-				console.log("get_retVarLisdata参数：", data)
+				// console.log("get_retVarLisdata参数：", data)
 				that.$post(that.$url_APP_IP + "/prod-api/device_app/get_retVarList", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((get_retVarList) => {
-					console.log("get_retVarLis：", get_retVarList)
+					// console.log("get_retVarLis：", get_retVarList)
 					if (get_retVarList.code === 200 && get_retVarList.data && get_retVarList.data.retVarList) {
 						const processedData = that.processRetVarList(get_retVarList.data.retVarList);
 						const filteredData = that.filterMonitorDataByTimeRange(processedData);

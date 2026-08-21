@@ -286,7 +286,8 @@
 					<view class="list-body">
 						<view v-for="(item, idx) in group.items" :key="group.date + '-' + (item.time || '') + '-' + idx"
 							:class="['data-row', item.period === 'night' ? 'night-row' : '']">
-							<text class="row-item time">{{ item.clock || (item.time.split(' ')[1] || item.time) }}</text>
+							<text
+								class="row-item time">{{ item.clock || (item.time.split(' ')[1] || item.time) }}</text>
 							<text class="row-item type">
 								<text :class="['period-tag', item.period]">{{ item.periodText }}</text>
 							</text>
@@ -744,9 +745,11 @@
 				const groups = {}
 				this.filteredData.forEach(item => {
 					const parsed = this.parseMeasureDateTime(item.fullTime || item.time || item.timestamp)
-					const date = item.dateKey || parsed.date || String(item.time || '').slice(0, 10).replace(/T.*/i, '')
+					const date = item.dateKey || parsed.date || String(item.time || '').slice(0, 10).replace(
+						/T.*/i, '')
 					if (!date) return
-					const clockSec = (item.clockSec != null && item.clockSec >= 0) ? item.clockSec : parsed.clockSec
+					const clockSec = (item.clockSec != null && item.clockSec >= 0) ? item.clockSec : parsed
+						.clockSec
 					if (!groups[date]) groups[date] = []
 					groups[date].push({
 						...item,
@@ -778,8 +781,6 @@
 			try {
 				const request = JSON.parse(decodeURIComponent(options.request));
 				const form = JSON.parse(decodeURIComponent(options.form));
-				console.log('request:', request);
-				console.log('form:', form);
 				this.userInfo = {
 					...this.userInfo,
 					...form
@@ -1014,11 +1015,17 @@
 			/** 日期降序 + 同日内时间升序（早→晚） */
 			sortMonitorByDateTime(list) {
 				return (list || []).slice().sort((a, b) => {
-					const pa = (a.dateKey && a.clockSec != null && a.clockSec >= 0) ?
-						{ date: a.dateKey, clockSec: a.clockSec, sortKey: a.sortKey } :
+					const pa = (a.dateKey && a.clockSec != null && a.clockSec >= 0) ? {
+							date: a.dateKey,
+							clockSec: a.clockSec,
+							sortKey: a.sortKey
+						} :
 						this.parseMeasureDateTime(a.fullTime || a.time || a.timestamp)
-					const pb = (b.dateKey && b.clockSec != null && b.clockSec >= 0) ?
-						{ date: b.dateKey, clockSec: b.clockSec, sortKey: b.sortKey } :
+					const pb = (b.dateKey && b.clockSec != null && b.clockSec >= 0) ? {
+							date: b.dateKey,
+							clockSec: b.clockSec,
+							sortKey: b.sortKey
+						} :
 						this.parseMeasureDateTime(b.fullTime || b.time || b.timestamp)
 					if (pa.date !== pb.date) return pa.date < pb.date ? 1 : -1
 					if (pa.clockSec !== pb.clockSec) return pa.clockSec - pb.clockSec
@@ -1074,7 +1081,8 @@
 						period: periodInfo.period,
 						periodText: periodInfo.periodText,
 						heartRate: parts[3],
-						timestamp: parsed.ts || new Date(String(fullTime).replace(/T/i, ' ').replace(/-/g, '/')).getTime(),
+						timestamp: parsed.ts || new Date(String(fullTime).replace(/T/i, ' ').replace(/-/g, '/'))
+							.getTime(),
 						systolic,
 						diastolic,
 						heartOnly: false,
@@ -1308,23 +1316,30 @@
 
 			// ==================== API 请求 ====================
 			get_retVarList() {
+				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
+				const chinaNow = getChinaTimeAllJSON()
+				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
+				const profYmd = chinaHour < 1
+					? getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD
+					: chinaNow.YMD
 				const data = {
 					userId: uni.getStorageSync("userid"),
-					// 永远中国时间
-					profDate: getChinaTimeAllJSON().YMD + ' 07:00:00',
+					profDate: profYmd + ' 00:00:00',
 					filterVarList: this.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				};
-				console.log('get_retVarLisdata参数：', data);
+				// console.log('7天报告数据明细（传入的时间以中国时间为准）：', data)
 				this.$post(this.$url_APP_IP + '/prod-api/device_app/get_retVarList', data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((res) => {
-					console.log('get_retVarLis：', res);
+					// console.log('7天报告数据结果：', res);
 					if (res.code === 200 && res.data && res.data.retVarList) {
 						this.monitorData = this.processRetVarList(res.data.retVarList);
 						this.updateStatistics(this.monitorData);
 						this.calculateDailyStats(this.monitorData);
+					} else {
+						console.log('服务器数据还在处理中', res);
 					}
 				});
 			},
@@ -1436,6 +1451,7 @@
 						})
 					} else if (res.code == 500) {
 						this.setDefaultData()
+						console.log('服务器数据还在处理中', res.code);
 						return
 					} else {
 						uni.showToast({

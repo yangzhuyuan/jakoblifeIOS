@@ -234,7 +234,8 @@
 					avgQiBlood: 0
 				},
 				healthAdvices: [],
-				deviceId: uni.getStorageSync("BPW6devicemac")
+				deviceId: uni.getStorageSync("BPW6devicemac"),
+				refreshTimer: null
 			}
 		},
 		computed: {
@@ -250,7 +251,13 @@
 				title: this.$t("脉诊健康管理")
 			})
 			this.loadRealData()
-
+			this.startRefreshTimer()
+		},
+		onHide() {
+			this.stopRefreshTimer()
+		},
+		onUnload() {
+			this.stopRefreshTimer()
 		},
 		methods: {
 			/**
@@ -390,6 +397,27 @@
 				});
 			},
 
+			startRefreshTimer() {
+				this.stopRefreshTimer()
+				this.refreshTimer = setInterval(() => {
+					this.deviceId = uni.getStorageSync("BPW6devicemac")
+					this.autoRefreshData()
+				}, 5000)
+			},
+			stopRefreshTimer() {
+				if (this.refreshTimer) {
+					clearInterval(this.refreshTimer)
+					this.refreshTimer = null
+				}
+			},
+			autoRefreshData() {
+				if (!this.refreshTimer) return
+				u16proBLE.readLatestPulseDiagnosis2(1000, this.deviceId)
+				setTimeout(() => {
+					if (!this.refreshTimer) return
+					this.loadRealData()
+				}, 2000)
+			},
 			/**
 			 * 刷新数据
 			 */

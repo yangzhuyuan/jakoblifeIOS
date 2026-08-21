@@ -199,7 +199,6 @@
 			}
 		},
 		onLoad(option) {
-			console.log("onLoad", option)
 			this.type = option.type
 			this.refreshUnits()
 			// 页面加载时读取本地存储的数据
@@ -414,7 +413,6 @@
 			saveToStorage() {
 				try {
 					uni.setStorageSync(this.storageKey, this.form)
-					console.log('数据已保存到本地')
 					return true
 				} catch (e) {
 					console.error('保存到本地失败：', e)
@@ -522,13 +520,6 @@
 						icon: 'none'
 					})
 				}
-
-				// 控制台输出
-				console.log('提交的数据：', this.form)
-				console.log('计算指标：', {
-					bmi: this.bmi,
-					whtr: this.whtr
-				})
 				let request = {
 					type: this.type,
 					bmi: this.bmi,

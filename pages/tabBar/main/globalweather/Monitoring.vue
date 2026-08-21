@@ -61,7 +61,6 @@
 			// 原有逻辑：仅 BPW6 单设备时，子页面走 BPW6 通道
 			if (options.devicetype === "30001" && options.devicetypelist === "1") {
 				this.devicetype = true
-				console.log("血压计设备")
 			} else {
 				this.devicetype = false
 			}
