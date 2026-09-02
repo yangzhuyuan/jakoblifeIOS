@@ -28,7 +28,7 @@
 				const articleId = this.getArticleId(id, titleConfig.useLangCheck);
 				this.fetchArticle(articleId);
 			} else {
-				this.title = this.$t('关于更新');
+				this.title = this.$t('帮助中心');
 			}
 
 			uni.setNavigationBarTitle({
@@ -100,7 +100,7 @@
 						}
 					},
 					'1158': {
-						title: this.$t('血压手表问题解答'),
+						title: this.$t('臂式电子血压计问题解答'),
 						articleId: 1158,
 						useLangCheck: true,
 						langMap: {

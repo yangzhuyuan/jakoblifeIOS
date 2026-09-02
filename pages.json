@@ -253,7 +253,7 @@
 			"path": "pages/tabBar/my/Health_record",
 			"style": {
 				"navigationBarTitleText": "健康档案",
-				"navigationBarBackgroundColor": "#F7F7F7",
+				"navigationBarBackgroundColor": "#dceefc",
 				"navigationBarTextStyle": "black"
 			}
 		},
@@ -286,24 +286,36 @@
 			"path": "pages/tabBar/my/Unit_setting",
 			"style": {
 				"navigationBarTitleText": "单位设置",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
+				"navigationBarBackgroundColor": "#dceefc",
+				"navigationBarTextStyle": "black",
+				"scrollIndicator": "none",
+				"app-plus": {
+					"scrollIndicator": "none"
+				}
 			}
 		},
 		{
 			"path": "pages/tabBar/my/Help_center",
 			"style": {
 				"navigationBarTitleText": "帮助中心",
-				"navigationBarBackgroundColor": "#F5F5F5",
-				"navigationBarTextStyle": "black"
+				"navigationBarBackgroundColor": "#dceefc",
+				"navigationBarTextStyle": "black",
+				"scrollIndicator": "none",
+				"app-plus": {
+					"scrollIndicator": "none"
+				}
 			}
 		},
 		{
 			"path": "pages/tabBar/my/Safety_center",
 			"style": {
 				"navigationBarTitleText": "安全中心",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
+				"navigationBarBackgroundColor": "#dceefc",
+				"navigationBarTextStyle": "black",
+				"scrollIndicator": "none",
+				"app-plus": {
+					"scrollIndicator": "none"
+				}
 			}
 		},
 		{
@@ -326,8 +338,12 @@
 			"path": "pages/tabBar/my/About_Update",
 			"style": {
 				"navigationBarTitleText": "关于&更新",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
+				"navigationBarBackgroundColor": "#dceefc",
+				"navigationBarTextStyle": "black",
+				"scrollIndicator": "none",
+				"app-plus": {
+					"scrollIndicator": "none"
+				}
 			}
 		},
 		{
@@ -367,7 +383,7 @@
 			"path": "pages/tabBar/device/Equipment_management",
 			"style": {
 				"navigationBarTitleText": "设备管理",
-				"navigationBarBackgroundColor": "#F7F7F7",
+				"navigationBarBackgroundColor": "#f4f7fb",
 				"navigationBarTextStyle": "black"
 			}
 		},
@@ -375,7 +391,7 @@
 			"path": "pages/tabBar/my/Equipment_management1",
 			"style": {
 				"navigationBarTitleText": "设备管理",
-				"navigationBarBackgroundColor": "#F7F7F7",
+				"navigationBarBackgroundColor": "#f4f7fb",
 				"navigationBarTextStyle": "black"
 			}
 		},
@@ -587,9 +603,22 @@
 			"path": "pages/tabBar/tendency/supplement",
 			"style": {
 				"navigationBarTitleText": "信息补充",
-				"navigationStyle": "custom",
-				"navigationBarBackgroundColor": "#F7F7F7",
-				"navigationBarTextStyle": "black"
+				"navigationBarBackgroundColor": "#dceefc",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#dceefc",
+				"backgroundColorTop": "#dceefc",
+				"backgroundColorBottom": "#dceefc",
+				"app-plus": {
+					"background": "#dceefc",
+					"scrollIndicator": "none",
+					"titleNView": {
+						"backgroundColor": "#dceefc",
+						"titleColor": "#1a2b4a",
+						"splitLine": {
+							"color": "#dceefc"
+						}
+					}
+				}
 			}
 		},
 		{
@@ -653,7 +682,7 @@
 			"path": "pages/tabBar/my/Alarms",
 			"style": {
 				"navigationBarTitleText": "警报",
-				"navigationBarBackgroundColor": "#F7F7F7",
+				"navigationBarBackgroundColor": "#dceefc",
 				"navigationBarTextStyle": "black"
 			}
 		},
@@ -661,6 +690,14 @@
 			"path": "pages/tabBar/my/Webview",
 			"style": {
 				"navigationBarTitleText": "备案号",
+				"navigationBarBackgroundColor": "#F7F7F7",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/tabBar/my/Webview1",
+			"style": {
+				"navigationBarTitleText": "联系客服",
 				"navigationBarBackgroundColor": "#F7F7F7",
 				"navigationBarTextStyle": "black"
 			}
@@ -816,6 +853,22 @@
 			}
 		},
 		{
+			"path": "pages/tabBar/main/emotion_trend_detail",
+			"style": {
+				"navigationBarTitleText": "详细趋势",
+				"navigationBarBackgroundColor": "#dceefc",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/tabBar/main/health_summary",
+			"style": {
+				"navigationBarTitleText": "健康摘要",
+				"navigationBarBackgroundColor": "#dceefc",
+				"navigationBarTextStyle": "black"
+			}
+		},
+		{
 			"path": "pages/tabBar/share/share_history",
 			"style": {
 				"navigationBarTitleText": "共享历史数据",
@@ -885,7 +938,7 @@
 			"path": "pages/tabBar/main/globalweather/Monitoring",
 			"style": {
 				"navigationBarTitleText": "定时监测",
-				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarBackgroundColor": "#dceefc",
 				"navigationBarTextStyle": "black"
 			}
 		},
@@ -893,7 +946,7 @@
 			"path": "pages/tabBar/main/report_all_type/report_all_type",
 			"style": {
 				"navigationBarTitleText": "报告",
-				"navigationBarBackgroundColor": "#F5F5F5",
+				"navigationBarBackgroundColor": "#dceefc",
 				"navigationBarTextStyle": "black"
 			}
 		},

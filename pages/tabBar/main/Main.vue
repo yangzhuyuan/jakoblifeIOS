@@ -1,12 +1,13 @@
 <template>
 	<view class="all">
 		<swiper class="scroll-view-height" :style="{height: screenHeight + 'px'}" @change="swipeIndex"
-			:current="currentIndex" :disable-touch="disabletouch">
+			:current="currentIndex" acceleration="true" skip-hidden-item-layout="true"
+			disable-programmatic-animation="true" :disable-touch="disabletouch">
 			<!-- 血压计 -->
 			<swiper-item>
-				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
-					<view style="background: #3298F7;">
-						<view class="title_zs_1">{{$t("本页面显示均为最近测量数据")}}</view>
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view scroll-view-bp"
+					:enable-back-to-top="false" :scroll-with-animation="false" :show-scrollbar="false">
+					<view class="bp-home-scroll-inner">
 						<!-- <view class="bp-log-panel">
 							<view class="bp-log-header">
 								<text class="bp-log-title">调试日志(历史/实时/qxBle)</text>
@@ -19,6 +20,7 @@
 								<text class="bp-log-text">{{ bpLogText || '暂无日志' }}</text>
 							</scroll-view>
 						</view> -->
+						<view class="title_zs_1"></view>
 						<BloodPressureSwiperItem :Languageceliang="Languageceliang" :xueya="xueya"
 							:title_name="title_name" :Blood="Blood" :highPressure="highPressure"
 							:lowPressure="lowPressure" :pulse="pulse" :binaji="binaji" :list="list"
@@ -54,8 +56,8 @@
 			<!-- 情绪 -->
 			<swiper-item>
 				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
-					<view style="background: white;">
-						<view class="title_zs_ppg">{{$t("本页面显示均为最近测量数据")}}</view>
+					<view style="background:#f4f7fb;">
+						<view class="title_zs_yundong"></view>
 						<EmotionSwiperItem :sleep_alertdisabled="sleep_alertdisabled" :ppgnewpoint="ppgnewpoint"
 							:mood_Description="mood_Description" :mood_level="mood_level"
 							:depression_risk_score="depression_risk_score" :baoggaodisabled="baoggaodisabled"
@@ -73,8 +75,8 @@
 			<!-- 体脂秤 -->
 			<swiper-item>
 				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
-					<view style="background: #3298F7;">
-						<view class="title_zs_1">{{$t("本页面显示均为最近测量数据")}}</view>
+					<view style="background:#f4f7fb;">
+						<view class="title_zs_yundong"></view>
 						<BodyFatSwiperItem :Latest_weight="Latest_weight" :newweightKG="newweightKG"
 							:Latest_date="Latest_date" :Initial_weight="Initial_weight" :chuhsikg="chuhsikg"
 							:Target_weight="Target_weight" :list2="list2" @update:list2="list2 = $event"
@@ -93,8 +95,8 @@
 			<!-- 睡眠 -->
 			<swiper-item>
 				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
-					<view style="background: #3298F7;">
-						<view class="title_zs_1">{{$t("本页面显示均为最近测量数据")}}</view>
+					<view style="background: #dceefc;">
+						<view class="title_zs_yundong"></view>
 						<SleepSwiperItem :sleep="sleep" :sleep_time="sleep_time" :totalLight="totalLight"
 							:totalDeep="totalDeep" :totalRem="totalRem" :sleep_point="sleep_point"
 							:medication="medication" :sleepTip="sleepTip" @medication-change="switch1Change" />
@@ -104,11 +106,12 @@
 			<!-- 步数 -->
 			<swiper-item>
 				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
-					<view style="background: #3298F7;">
-						<view class="title_zs_1">{{$t("本页面显示均为最近测量数据")}}</view>
+					<view style="background: #dceefc;">
+						<view class="title_zs_yundong"></view>
 						<StepsSwiperItem :bushu="bushu" :bushu_time="bushu_time" :today_Daily_Goal="today_Daily_Goal"
 							:dailyGoal="Daily_Goal" @update:dailyGoal="Daily_Goal = $event" :chartData="chartData"
-							:opts="opts" :xueya="xueya" @daily-goal-set="Daily_Goal_set" />
+							:opts="opts" :xueya="xueya" @daily-goal-set="Daily_Goal_set"
+							@sync-steps="syncStepsFromDevice" />
 					</view>
 				</scroll-view>
 			</swiper-item>
@@ -139,29 +142,26 @@
 		<view class="showTotal" v-show="fillOut">
 			<view class="over">
 				<view class="show">
-					<view style="display: flex;justify-content: flex-end;margin-right: 40px;" @click="closess()">
-						<uni-icons size="30" type="closeempty"></uni-icons>
-					</view>
-					<view style="margin-top: 220px;">
-						<view style="color: black;font-size: 38px; font-weight: bold;">{{showTotal_date}}</view>
-						<view style="background: black; width: 50%; height: 1px;margin-top: 20px;"></view>
-						<view style="color: #2595D3;margin-top: 5px;">{{$t('确保每天摄入足够的水')}}</view>
-					</view>
-					<view style="display: flex; flex-direction: row;  margin-top: 60px;margin-left: 10px;">
-						<view style="display: flex;flex-direction: column; align-items: center;" @click="Keep()">
-							<image src="../../../static/icons/6.png"
-								style="width: 50px; height: 50px;border-radius: 40px;">
-							</image>
-							<text
-								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('记体重')}}</text>
+					<view class="show-close-top" @click="closess()">
+						<view class="show-close-btn">
+							<uni-icons size="28" type="closeempty" color="#FFFFFF"></uni-icons>
 						</view>
-						<view style="display: flex;flex-direction: column;  align-items: center;margin-left: 10px;"
-							@click="Body_circumference()">
-							<image src="../../../static/icons/7.png"
-								style="width: 50px; height: 50px;border-radius: 40px;">
-							</image>
-							<text
-								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('记体围')}}</text>
+					</view>
+					<view class="show-body">
+						<view class="show-date">{{showTotal_date}}</view>
+						<view class="show-tip">
+							<view class="show-tip-bar"></view>
+							<view class="show-tip-text">{{$t('确保每天摄入足够的水')}}</view>
+						</view>
+						<view class="show-cards">
+							<view class="show-card" @click="Keep()">
+								<image src="../../../static/icons/6.png" class="show-card-icon"></image>
+								<text class="show-card-label">{{$t('记体重')}}</text>
+							</view>
+							<view class="show-card" @click="Body_circumference()">
+								<image src="../../../static/icons/7.png" class="show-card-icon"></image>
+								<text class="show-card-label">{{$t('记体围')}}</text>
+							</view>
 						</view>
 					</view>
 				</view>
@@ -550,12 +550,13 @@
 					<view style="display: flex;justify-content: space-between; padding: 20px;">
 						<text @click="mb_closess()" style="font-size: 22px;">✖</text>
 					</view>
-					<view style="padding: 20px;width: 75vw;">
+					<view style="padding: 20px;width: 75vw;box-sizing: border-box;">
 						<view
-							style="display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
+							style="display: flex;flex-direction: row;align-items: center;background: #F7F7F7;padding: 15px;border-radius: 10px;box-sizing: border-box;">
 							<input type="number" v-model="mubiao" :placeholder="$t('请输入目标体重')"
-								style="text-align: center;width: 80vw;" />
-							<text>{{$t("千克")}}</text>
+								style="flex: 1;min-width: 0;text-align: center;font-size: 16px;" />
+							<text
+								style="flex-shrink: 0;margin-left: 8px;font-size: 14px;color: #8a94a6;">{{chuhsikg}}</text>
 						</view>
 					</view>
 					<button @tap="mubiao_weight()"
@@ -934,6 +935,8 @@
 				Blood: uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa",
 				bluetoothManager: null,
 				stepsData: {}, // 用于存储每天步数的对象
+				_stepsWeekFetching: false,
+				_bpw6DailyWeekReading: false,
 				timer: null, // 定时器变量
 				timertwslist: null,
 				screenHeight: windowHeight,
@@ -1360,12 +1363,16 @@
 					}, ]
 				},
 				opts: {
-					color: ["#EE6666"],
-					padding: [15, 15, 0, 5],
+					color: ["#3298F7"],
+					padding: [15, 10, 0, 5],
 					enableScroll: false,
-					legend: {},
+					legend: {
+						show: false
+					},
 					xAxis: {
-						disableGrid: true
+						disableGrid: true,
+						fontSize: 10,
+						itemCount: 7
 					},
 					yAxis: {
 						splitNumber: 5,
@@ -1377,7 +1384,7 @@
 					extra: {
 						column: {
 							type: "group",
-							width: 30,
+							width: 18,
 							activeBgColor: "#000000",
 							activeBgOpacity: 0.08
 						}
@@ -1589,6 +1596,25 @@
 				}
 			}
 			uni.$on('qxBle:sleepAlertDisabled', this._onQxSleepAlertDisabled)
+			this._onUnitSettingsChanged = () => {
+				this.Blood = uni.getStorageSync('Blood') === 0 || uni.getStorageSync('Blood') === '' ? 'mmHg' :
+					'kPa'
+				this.lastWeightbishi = ''
+				this.syncWeightUnitsFromStorage()
+				this.hydrateBpFromStorage()
+			}
+			uni.$on('unit-settings-changed', this._onUnitSettingsChanged)
+			try {
+				const app = getApp()
+				if (app) {
+					if (!app.globalData) app.globalData = {}
+					app.globalData.mainPageVm = this
+				}
+			} catch (e) {}
+			this._onManualSyncHistory = () => {
+				this.manualSyncBoundDeviceHistory()
+			}
+			uni.$on('REQUEST_DEVICE_HISTORY_SYNC', this._onManualSyncHistory)
 		},
 
 		beforeDestroy() {
@@ -1610,6 +1636,20 @@
 				uni.$off('qxBle:sleepAlertDisabled', this._onQxSleepAlertDisabled)
 				this._onQxSleepAlertDisabled = null
 			}
+			if (this._onUnitSettingsChanged) {
+				uni.$off('unit-settings-changed', this._onUnitSettingsChanged)
+				this._onUnitSettingsChanged = null
+			}
+			if (this._onManualSyncHistory) {
+				uni.$off('REQUEST_DEVICE_HISTORY_SYNC', this._onManualSyncHistory)
+				this._onManualSyncHistory = null
+			}
+			try {
+				const app = getApp()
+				if (app && app.globalData && app.globalData.mainPageVm === this) {
+					app.globalData.mainPageVm = null
+				}
+			} catch (e) {}
 		},
 
 		onHide() {
@@ -2301,12 +2341,56 @@
 					this.updateBloodPressureStatus(hasLow ? low : '', hasHigh ? high : '')
 				}
 			},
+			isKgWeightUnit(unitLabel) {
+				const u = String(unitLabel || '').trim()
+				return u === 'KG' || u === 'kg' || u === '千克' || u === this.$t('千克') || u === this.$t('千克1')
+			},
+			isValidWeightDisplay(val) {
+				if (val == null || val === '') return false
+				const s = String(val).trim()
+				return s && s !== '-' && s !== '--/--' && s !== '--' && s !== '-/-'
+			},
+			reconvertWeightField(field, fromKg, toKg) {
+				if (fromKg === toKg) return
+				const val = this[field]
+				if (!this.isValidWeightDisplay(val)) return
+				const num = Number(val)
+				if (!Number.isFinite(num)) return
+				this[field] = toKg ? WeightConverter.lbToKg(num) : WeightConverter.kgToLb(num)
+			},
+			syncWeightUnitsFromStorage() {
+				const prevIsKg = this.isKgWeightUnit(this.chuhsikg)
+				const isKg = uni.getStorageSync('danwei2') !== 1
+				this.chuhsikg = isKg ? this.$t('千克') : this.$t('英镑')
+				this.newweightKG = isKg ? this.$t('千克1') : this.$t('英镑')
+				const weightKg = uni.getStorageSync('weightkg')
+				const weightLb = uni.getStorageSync('weightlb')
+				if (weightKg !== '' && weightKg != null) {
+					this.Latest_weight = isKg ? weightKg : (weightLb || WeightConverter.kgToLb(weightKg))
+				} else if (weightLb !== '' && weightLb != null) {
+					this.Latest_weight = isKg ? WeightConverter.lbToKg(weightLb) : weightLb
+				} else {
+					this.reconvertWeightField('Latest_weight', prevIsKg, isKg)
+				}
+				const goalKg = uni.getStorageSync('goalWeightKg')
+				if (goalKg !== '' && goalKg != null) {
+					this.Target_weight = isKg ? goalKg : WeightConverter.kgToLb(goalKg)
+				} else {
+					this.reconvertWeightField('Target_weight', prevIsKg, isKg)
+				}
+				const initialKg = uni.getStorageSync('initialWeightKg')
+				if (initialKg !== '' && initialKg != null) {
+					this.Initial_weight = isKg ? initialKg : WeightConverter.kgToLb(initialKg)
+				} else {
+					this.reconvertWeightField('Initial_weight', prevIsKg, isKg)
+				}
+			},
 			/**
 			 * 当app没有任何网络的情况下
 			 */
 			Offline_mode() {
 				let that = this
-				that.Latest_weight = (that.newweightKG === "KG" || that.newweightKG === "千克") ? uni.getStorageSync(
+				that.Latest_weight = that.isKgWeightUnit(that.newweightKG) ? uni.getStorageSync(
 					"weightkg") : uni.getStorageSync("weightlb")
 				that.hydrateBpFromStorage()
 				that.sethuilian(true)
@@ -2382,8 +2466,7 @@
 			initPage() {
 				let that = this
 				that.Unitlist()
-				that.chuhsikg = uni.getStorageSync("danwei2") === 1 ? that.$t("英镑") : that.$t("千克");
-				that.newweightKG = uni.getStorageSync("danwei2") === 1 ? that.$t("英镑") : that.$t("千克1");
+				that.syncWeightUnitsFromStorage()
 				that.Blood = uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa"
 				isInChinaByIP().then(isInChina => {
 					that.loact = isInChina ? "境内" : "境外";
@@ -2413,12 +2496,10 @@
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(UserInfo => {
 					if (UserInfo.code == 200) {
-						if (this.currentIndex === 2) {
-							this.chuhsikg = uni.getStorageSync("danwei2") === 1 ? this.$t("英镑") : this.$t("千克");
-							this.newweightKG = uni.getStorageSync("danwei2") === 1 ? this.$t("英镑") : this.$t(
-								"千克1");
-							this.Initial_weight = (this.chuhsikg === "kg" || this.chuhsikg === "千克") ? UserInfo
-								.data.weight : WeightConverter.kgToLb(UserInfo.data.weight);
+						if (UserInfo.data && UserInfo.data.weight != null && UserInfo.data.weight !== '') {
+							uni.setStorageSync('initialWeightKg', UserInfo.data.weight)
+							this.Initial_weight = this.isKgWeightUnit(this.chuhsikg) ? UserInfo.data.weight :
+								WeightConverter.kgToLb(UserInfo.data.weight)
 						}
 						this.handleUserInformation(UserInfo.data);
 					} else if (UserInfo.code == 401) { //401错误为登陆失效，需要重新登陆
@@ -2825,37 +2906,281 @@
 				try {
 					const storedData = uni.getStorageSync("weeklySteps");
 					if (storedData) {
-						this.stepsData = JSON.parse(storedData);
+						const parsed = JSON.parse(storedData);
+						const normalized = {}
+						Object.keys(parsed || {}).forEach(key => {
+							const md = this.normalizeStepsMd(key)
+							if (!md) return
+							const val = parsed[key]
+							if (!this.isValidStepsValue(val)) return
+							const prev = normalized[md]
+							const n = parseInt(val, 10)
+							const p = parseInt(prev, 10)
+							if (!Number.isFinite(p) || (Number.isFinite(n) && n >= p)) {
+								normalized[md] = val
+							}
+						})
+						this.stepsData = normalized;
+						uni.setStorageSync("weeklySteps", JSON.stringify(this.stepsData));
+					}
+				} catch (e) {}
+				this.refreshWeeklyStepsChart()
+				this.fetchWeekStepsFromApi()
+			},
+			getLastSevenLocalMdKeys() {
+				const keys = []
+				const now = new Date()
+				for (let i = 6; i >= 0; i--) {
+					const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
+					keys.push(`${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`)
+				}
+				return keys
+			},
+			normalizeStepsMd(md) {
+				const raw = String(md || '').trim()
+				if (!raw || raw === '--/--' || raw === '-/-') return ''
+				const parts = raw.split(/[\/\-.]/)
+				if (parts.length >= 2) {
+					const month = parseInt(parts.length >= 3 ? parts[1] : parts[0], 10)
+					const day = parseInt(parts.length >= 3 ? parts[2] : parts[1], 10)
+					if (Number.isFinite(month) && Number.isFinite(day) && month >= 1 && month <= 12 && day >= 1 &&
+						day <= 31) {
+						return `${String(month).padStart(2, '0')}/${String(day).padStart(2, '0')}`
+					}
+				}
+				return ''
+			},
+			lookupStepsByMd(md) {
+				if (!this.stepsData) return 0
+				const key = this.normalizeStepsMd(md)
+				if (!key) return 0
+				if (this.stepsData[key] != null && this.stepsData[key] !== '') {
+					return this.stepsData[key]
+				}
+				const loose = `${parseInt(key.split('/')[0], 10)}/${parseInt(key.split('/')[1], 10)}`
+				if (this.stepsData[loose] != null && this.stepsData[loose] !== '') {
+					return this.stepsData[loose]
+				}
+				const keys = Object.keys(this.stepsData)
+				for (let i = 0; i < keys.length; i++) {
+					if (this.normalizeStepsMd(keys[i]) === key) {
+						return this.stepsData[keys[i]]
+					}
+				}
+				return 0
+			},
+			formatStepsChartLabel(md) {
+				const key = this.normalizeStepsMd(md)
+				return key || md
+			},
+			isValidStepsValue(val) {
+				if (val === undefined || val === null || val === '') return false
+				if (val === '-/-' || val === '--/--') return false
+				const n = parseInt(val, 10)
+				return Number.isFinite(n) && n >= 0
+			},
+			refreshWeeklyStepsChart() {
+				const mdKeys = this.getLastSevenLocalMdKeys()
+				const categories = []
+				const seriesData = []
+				mdKeys.forEach(md => {
+					const n = parseInt(this.lookupStepsByMd(md), 10)
+					const steps = Number.isFinite(n) ? n : 0
+					categories.push(this.formatStepsChartLabel(md))
+					seriesData.push(steps)
+				})
+				this.chartData = {
+					categories,
+					series: [{
+						name: this.$t('步数'),
+						data: seriesData
+					}]
+				}
+			},
+			saveDailySteps(bushu, bushu_time, skipChart, overwrite) {
+				const currentDate = this.normalizeStepsMd(bushu_time);
+				if (!currentDate) {
+					return
+				}
+				const next = parseInt(bushu, 10)
+				if (!Number.isFinite(next) || next < 0) {
+					return
+				}
+				const prev = parseInt(this.lookupStepsByMd(currentDate), 10)
+				// 设备同步：取较大值，且历史空天 0 不覆盖已有步数；服务端接口以返回值为准
+				let merged = next
+				if (!overwrite) {
+					if (next === 0 && Number.isFinite(prev) && prev > 0) {
+						merged = prev
+					} else {
+						merged = Number.isFinite(prev) ? Math.max(prev, next) : next
+					}
+				}
+				if (Number.isFinite(prev) && merged === prev) {
+					if (!skipChart) {
+						this.refreshWeeklyStepsChart()
+					}
+					return
+				}
+				this.$set(this.stepsData, currentDate, merged);
+				const dates = Object.keys(this.stepsData);
+				if (dates.length > 14) {
+					const sorted = dates.slice().sort((a, b) => {
+						const na = this.normalizeStepsMd(a)
+						const nb = this.normalizeStepsMd(b)
+						return na < nb ? -1 : (na > nb ? 1 : 0)
+					});
+					this.$delete(this.stepsData, sorted[0]);
+				}
+				try {
+					uni.setStorageSync("weeklySteps", JSON.stringify(this.stepsData));
+					if (!skipChart) {
+						this.refreshWeeklyStepsChart()
 					}
 				} catch (e) {}
 			},
-			// 保存当天的步数数据到本地存储
-			saveDailySteps(bushu, bushu_time) {
-				const currentDate = bushu_time; // 当前日期，格式为 YYYY-MM-DD
-				const steps = bushu; // 获取当天步数
-				// 更新步数数据
-				this.stepsData[currentDate] = steps;
-				// 如果超过一周的数据，删除最早的一天数据
-				const dates = Object.keys(this.stepsData);
-				if (dates.length > 7) {
-					const earliestDate = dates.sort()[0];
-					delete this.stepsData[earliestDate];
+			saveStepsRowsFromApi(dataList, skipChart) {
+				if (!Array.isArray(dataList) || !dataList.length) return
+				dataList.forEach(row => {
+					if (!row || row.register !== 'steps') return
+					if (!this.isValidStepsValue(row.registerVal)) return
+					const md = row.updateTime ? this.formatDate(row.updateTime) : ''
+					if (!md || md === '-/-') return
+					this.saveDailySteps(row.registerVal, md, true, true)
+				})
+				if (!skipChart) {
+					this.refreshWeeklyStepsChart()
 				}
-				// 保存到本地存储
+			},
+			/** 趋势/概览接口有当天步数时，同步运动页「今日」展示 */
+			syncTodayStepsDisplayFromApi(stepsValue) {
+				if (this.currentIndex !== 4) return
+				const todayMd = this.normalizeStepsMd(this.getPhoneLocalCardMD())
+				if (!todayMd || !this.isValidStepsValue(stepsValue)) return
+				this.bushu = stepsValue
+				this.bushu_time = todayMd
+			},
+			/** 从服务端拉近 7 天步数趋势（get_trend_data，aggregateType=max） */
+			fetchWeekStepsFromApi() {
+				const userid = uni.getStorageSync('userid')
+				if (!userid || this._stepsWeekFetching) {
+					return
+				}
+				this._stepsWeekFetching = true
+				const pad = (n) => String(n).padStart(2, '0')
+				const ymd = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate())
+				const now = new Date()
+				const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6)
+				const header = {
+					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/json;charset=UTF-8'
+				}
+				const post = (sn) => {
+					return this.$post(this.$url_APP_IP + this.$url_get_trend_data, {
+						deviceSn: userid,
+						timeLevel: 0,
+						slaveList: [{
+							slaveSn: "3",
+							register: 'steps'
+						}],
+						startTime: ymd(start) + ' 00:00:00',
+						endTime: ymd(now) + ' 23:59:59',
+						aggregateType: 'max'
+					}, header)
+				}
+				const applyRes = (res) => {
+					let data = res && res.data
+					if (typeof data === 'string') {
+						try {
+							data = JSON.parse(data)
+						} catch (e) {
+							data = null
+						}
+					}
+					if (!res || res.code != 200 || !data) return false
+					const list = data.steps || data.Steps || []
+					if (!Array.isArray(list) || !list.length) return false
+					let changed = false
+					const todayMd = this.normalizeStepsMd(this.getPhoneLocalCardMD())
+					let todayApiSteps = null
+					list.forEach((item) => {
+						let dateStr = ''
+						let value = null
+						if (Array.isArray(item)) {
+							dateStr = this.formatDate(item[1])
+							value = parseInt(item[0], 10)
+							if ((!dateStr || dateStr === '-/-') && this.formatDate(item[0]) !== '-/-') {
+								dateStr = this.formatDate(item[0])
+								value = parseInt(item[1], 10)
+							}
+						} else if (item && typeof item === 'object') {
+							dateStr = this.formatDate(item.time || item.timestamp || item.dateTime || item
+								.date)
+							value = parseInt(item.value != null ? item.value : item.avg, 10)
+						}
+						const key = this.normalizeStepsMd(dateStr)
+						if (!key || !Number.isFinite(value) || value < 0) return
+						const prev = parseInt(this.lookupStepsByMd(key), 10)
+						if (!Number.isFinite(prev) || value !== prev) {
+							this.saveDailySteps(value, key, true, true)
+							changed = true
+						}
+						if (todayMd && key === todayMd) {
+							todayApiSteps = value
+						}
+					})
+					if (todayApiSteps != null) {
+						this.syncTodayStepsDisplayFromApi(todayApiSteps)
+					}
+					if (changed) {
+						this.refreshWeeklyStepsChart()
+					}
+					return true
+				}
+				post('0').then((res) => {
+					if (applyRes(res)) return
+					return post('3').then(applyRes)
+				}).catch(() => {}).then(() => {
+					this.refreshWeeklyStepsChart()
+					this._stepsWeekFetching = false
+				})
+			},
+			delayMs(ms) {
+				return new Promise(resolve => setTimeout(resolve, ms))
+			},
+			async readBpw6DailyInfoWeek(deviceId) {
+				const targetDeviceId = deviceId || this.deviceIdwatch6 || uni.getStorageSync('BPW6devicemac')
+				if (!targetDeviceId || this._bpw6DailyWeekReading) {
+					return
+				}
+				this._bpw6DailyWeekReading = true
 				try {
-					uni.setStorageSync("weeklySteps", JSON.stringify(this.stepsData));
-					// 按日期排序
-					const sortedDates = Object.keys(this.stepsData).sort();
-					const categories = sortedDates; // 日期数组
-					const seriesData = sortedDates.map(date => this.stepsData[date]); // 步数数组
-					this.chartData = {
-						categories: categories,
-						series: [{
-							name: this.$t("步数"),
-							data: seriesData
-						}]
-					};
-				} catch (e) {}
+					for (let daysAgo = 0; daysAgo < 7; daysAgo++) {
+						try {
+							await u16proBLE.readDailyInfo(daysAgo, targetDeviceId)
+						} catch (err) {
+							console.error('【BPW6】读取运动/睡眠信息失败', daysAgo, err)
+						}
+						if (daysAgo < 6) {
+							await this.delayMs(350)
+						}
+					}
+				} finally {
+					this._bpw6DailyWeekReading = false
+				}
+			},
+			activityDateToMd(data) {
+				if (data && data.date) {
+					const md = this.formatDate(data.date)
+					if (md && md !== '-/-') return md
+				}
+				const daysAgo = Number(data && data.daysAgo)
+				if (Number.isFinite(daysAgo) && daysAgo > 0) {
+					const d = new Date()
+					d.setDate(d.getDate() - daysAgo)
+					return `${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
+				}
+				return this.getPhoneLocalCardMD()
 			},
 
 			toggleExpand2() {
@@ -4943,6 +5268,95 @@
 					}, 500)
 				}
 			},
+			/** BPW6 情绪/运动相关通道是否已连接 */
+			isBpw6EmotionDeviceConnected() {
+				const a6 = this.acktypes6
+				return a6 === '1' || a6 === 1 || a6 === true
+			},
+			/** 解析当前是否绑定 BPW1(30000) / BPW6(30001)，优先服务端绑定列表 */
+			resolveBoundWatchTypes() {
+				let boundBpw1 = false
+				let boundBpw6 = false
+				try {
+					const list = uni.getStorageSync('lixianlist')
+					const rows = Array.isArray(list) ? list : ((list && list.rows) || [])
+					if (Array.isArray(rows) && rows.length) {
+						boundBpw1 = rows.some(row => String(row && row.deviceModelId) === '30000')
+						boundBpw6 = rows.some(row => String(row && row.deviceModelId) === '30001')
+					}
+				} catch (e) {}
+				const types = this.devicetypelist || []
+				if (types.includes(30000) || types.includes('30000')) boundBpw1 = true
+				if (types.includes(30001) || types.includes('30001')) boundBpw6 = true
+				// 绑定列表为空时，再回退本地 mac（避免未拉到列表时完全不能同步）
+				if (!boundBpw1 && !boundBpw6) {
+					boundBpw1 = !!(this.deviceIdwatch || uni.getStorageSync('deviceIdwatch'))
+					boundBpw6 = !!(this.deviceIdwatch6 || uni.getStorageSync('BPW6devicemac'))
+				}
+				return {
+					boundBpw1,
+					boundBpw6
+				}
+			},
+			/** 步数页：按绑定设备同步步数（BPW1→getsetp，BPW6→readDailyInfo，不混发） */
+			async syncStepsFromDevice() {
+				const that = this
+				if (that.currentIndex !== 4) {
+					return
+				}
+				const {
+					boundBpw1,
+					boundBpw6
+				} = that.resolveBoundWatchTypes()
+				const bpw6Connected = that.isBpw6EmotionDeviceConnected()
+				const bpw1Connected = that.acktypes === '1' || that.acktypes === 1
+				const toastSyncing = () => {
+					uni.showToast({
+						title: that.$t('数据同步中请稍后'),
+						icon: 'none',
+						duration: 1500
+					})
+				}
+				const toastDisconnected = () => {
+					uni.showToast({
+						title: that.$t('设备未连接'),
+						icon: 'none',
+						duration: 1500
+					})
+				}
+				if (!boundBpw1 && !boundBpw6) {
+					toastDisconnected()
+					return
+				}
+				// 两者都绑定时：谁连着走谁；都连着优先 BPW6（运动/睡眠日数据）
+				if (boundBpw6 && bpw6Connected) {
+					const deviceId = that.deviceIdwatch6 || uni.getStorageSync('BPW6devicemac') ||
+						(u16proBLE && u16proBLE.deviceId)
+					if (!deviceId) {
+						toastDisconnected()
+						return
+					}
+					toastSyncing()
+					try {
+						await that.readBpw6DailyInfoWeek(deviceId)
+						that.fetchWeekStepsFromApi()
+					} catch (err) {
+						console.error('【BPW6】读取运动/睡眠信息失败', err)
+					}
+					return
+				}
+				if (boundBpw1 && bpw1Connected) {
+					const deviceId = that.deviceIdwatch || uni.getStorageSync('deviceIdwatch')
+					if (!deviceId) {
+						toastDisconnected()
+						return
+					}
+					that.getsetp(deviceId, BPW1serviceId, BPW1write, 0x01)
+					toastSyncing()
+					return
+				}
+				toastDisconnected()
+			},
 			//用药开关
 			switch1Change(e) {
 				let that = this
@@ -5057,13 +5471,7 @@
 				if (that.currentIndex === 1) {
 					that.finalResultids = false
 				}
-				const BleDeviceConfig = {
-					PROTOCOL_VERSION: 0x01 // 协议版本号
-				};
-				if (that.acktypes === "1" && that.currentIndex === 4) {
-					that.getsetp(that.deviceIdwatch, BPW1serviceId, BPW1write, BleDeviceConfig
-						.PROTOCOL_VERSION)
-				} else if (that.acktypes === "1" && that.currentIndex === 0) {
+				if (that.acktypes === "1" && that.currentIndex === 0) {
 					let hexString = uni.getStorageSync("BPW1hexData")
 					that.calculateChecksumsss2(hexString, that.deviceIdwatch, BPW1serviceId, BPW1write)
 				} else if (that.acktypes === "1" && that.currentIndex === 3) {
@@ -5073,6 +5481,9 @@
 						that.bpw1SleepHistorySyncedOnce = true
 						that.Sync_historical_data(that.deviceIdwatch)
 					}
+				}
+				if (that.currentIndex === 4) {
+					that.fetchWeekStepsFromApi()
 				}
 				const token = uni.getStorageSync("token");
 				if (!token) {
@@ -5154,6 +5565,8 @@
 									break;
 							}
 						});
+						this.syncWeightUnitsFromStorage()
+						this.hydrateBpFromStorage()
 					}
 				});
 			},
@@ -9446,6 +9859,77 @@
 				})
 			},
 
+			/** 「我的」页手动同步：绑定 BPW1 发 BPW1 历史命令，否则发 BPW6 */
+			manualSyncBoundDeviceHistory() {
+				const that = this
+				const emitDone = (ok, message) => {
+					uni.$emit('DEVICE_HISTORY_SYNC_DONE', {
+						ok: !!ok,
+						message: message || that.$t(ok ? '已发送同步命令' : '数据同步失败')
+					})
+				}
+				const hasBpw1 = !!(that.deviceIdwatch || uni.getStorageSync('deviceIdwatch'))
+				const hasBpw6 = !!(that.deviceIdwatch6 || uni.getStorageSync('BPW6devicemac'))
+				let boundBpw1 = hasBpw1
+				let boundBpw6 = hasBpw6
+				try {
+					const list = uni.getStorageSync('lixianlist')
+					const rows = Array.isArray(list) ? list : ((list && list.rows) || [])
+					if (Array.isArray(rows) && rows.length) {
+						boundBpw1 = boundBpw1 || rows.some(row => String(row && row.deviceModelId) === '30000')
+						boundBpw6 = boundBpw6 || rows.some(row => String(row && row.deviceModelId) === '30001')
+					}
+				} catch (e) {}
+				if (boundBpw1) {
+					const deviceId = that.deviceIdwatch || uni.getStorageSync('deviceIdwatch')
+					if (!deviceId || that.acktypes !== '1') {
+						emitDone(false, that.$t('设备未连接'))
+						return
+					}
+					that._manualHistorySyncCb = (writeOk) => {
+						emitDone(writeOk, that.$t(writeOk ? '已发送同步命令' : '数据同步失败'))
+					}
+					that.Sync_historical_data(deviceId)
+					return
+				}
+				if (!boundBpw6) {
+					emitDone(false, that.$t('当前未绑定任何设备'))
+					return
+				}
+				const deviceId6 = that.deviceIdwatch6 || uni.getStorageSync('BPW6devicemac')
+				if (!deviceId6 || that.acktypes6 !== '1') {
+					emitDone(false, that.$t('设备未连接'))
+					return
+				}
+				that.Sync_historical_data_BPW6(deviceId6).then((ok) => {
+					emitDone(ok !== false, that.$t(ok !== false ? '已发送同步命令' : '数据同步失败'))
+				}).catch(() => {
+					emitDone(false, that.$t('数据同步失败'))
+				})
+			},
+			/** BPW6 同步历史：运动睡眠 + 血压 + 心率（与首页连接后命令一致） */
+			async Sync_historical_data_BPW6(deviceId) {
+				const that = this
+				const targetDeviceId = deviceId || that.deviceIdwatch6 || uni.getStorageSync('BPW6devicemac')
+				if (!targetDeviceId) {
+					return false
+				}
+				that.bpw6BpBuffer = []
+				that.bpw6HrBuffer = []
+				that.bpw6SpO2Buffer = []
+				that.bpw6RealtimeUploadKey = ''
+				that.bpw6BpHistorySyncing = true
+				try {
+					await that.readBpw6DailyInfoWeek(targetDeviceId)
+					await u16proBLE.readLatestBPHistory(50, targetDeviceId)
+					await u16proBLE.readLatestHRHistory(targetDeviceId)
+					return true
+				} catch (err) {
+					that.bpw6BpHistorySyncing = false
+					console.error('BPW6历史同步失败:', err)
+					return false
+				}
+			},
 			/** BPW1同步历史数据并发送天气命令
 			 * @param {Object} deviceId
 			 * 请求同步所有数据：e00006ea010100000101
@@ -9462,8 +9946,14 @@
 					writeType: 'write',
 					value: that.toArrayBuffer('e00006ea010100000101'),
 					complete(complete) {
+						const writeOk = that.isBPW1BleWriteOk(complete)
+						if (typeof that._manualHistorySyncCb === 'function') {
+							const cb = that._manualHistorySyncCb
+							that._manualHistorySyncCb = null
+							cb(writeOk)
+						}
 						// 兼容旧约定 code===10007，以及标准 writeBLECharacteristicValue:ok
-						if (that.isBPW1BleWriteOk(complete)) {
+						if (writeOk) {
 							that.blewatch_id = "1"
 							that.blewatch_id2 = "0"
 							that._bpw1PendingBtHistoryResync = false
@@ -9825,7 +10315,7 @@
 										that.bpw6RealtimeUploadKey = ''
 										that.bpw6BpHistorySyncing = true
 										try {
-											await u16proBLE.readDailyInfo(0, deviceId) //读取运动&睡眠数据
+											await that.readBpw6DailyInfoWeek(deviceId) //读取近7天运动&睡眠数据
 											await u16proBLE.readLatestBPHistory(50, deviceId) //读取血压历史记录
 											await u16proBLE.readLatestHRHistory(deviceId) //读取心率历史记录
 											// await u16proBLE.readLatestSpO2History(deviceId)//读取血氧历史记录
@@ -11419,12 +11909,25 @@
 					case 'SpO2_history_empty':
 						that.bpw6SpO2Buffer = []
 						break;
-					case 'activity':
-						that.bushu = data.steps
-						that.bushu_time = that.getTimeAllJSON().MD;
-						that.saveDailySteps(that.bushu, that.bushu_time);
-						that.jakoblife_fat_scale3(deviceId, data.steps, deviceSn, "步数", "");
+					case 'activity': {
+						const activityMd = that.activityDateToMd(data)
+						const todayMd = that.normalizeStepsMd(that.getPhoneLocalCardMD())
+						const daysAgoNum = Number(data.daysAgo)
+						const isTodayActivity = Number.isFinite(daysAgoNum) ? daysAgoNum === 0 : (that
+							.normalizeStepsMd(activityMd) === todayMd)
+						const stepsNum = parseInt(data.steps, 10)
+						// 历史天：仅写入有效步数，避免空包把已有数据（如 27 号 13 步）覆盖成 0
+						if (activityMd && activityMd !== '-/-' && (isTodayActivity || (Number.isFinite(
+								stepsNum) && stepsNum > 0))) {
+							that.saveDailySteps(data.steps, activityMd)
+						}
+						if (isTodayActivity) {
+							that.bushu = data.steps
+							that.bushu_time = todayMd
+							that.jakoblife_fat_scale3(deviceId, data.steps, deviceSn, "步数", "");
+						}
 						break;
+					}
 					case 'pulse_data':
 						console.log('3BPW6paredata接收到数据:', data || "数据统计中");
 						break;
@@ -11451,7 +11954,10 @@
 							}
 						}, 1000)
 						break;
-					case 'sleep':
+					case 'sleep': {
+						if (data.daysAgo != null && Number(data.daysAgo) !== 0) {
+							break
+						}
 						const BPW6totalAll = `${Math.floor(data.sleepTotal / 60)}${"H"}${data.sleepTotal % 60}${"M"}`
 						const BPW6sleepLight = `${Math.floor(data.sleepLight / 60)}${"H"}${data.sleepLight % 60}${"M"}`
 						const BPW6sleepDeep = `${Math.floor(data.sleepDeep / 60)}${"H"}${data.sleepDeep % 60}${"M"}`
@@ -11491,6 +11997,7 @@
 							that.jakoblife_fat_scale3(deviceId, BPW6totalAll, deviceSn, "睡眠", "");
 						}
 						break;
+					}
 					case 'battery':
 						console.log('手表电量:', data.value);
 						break;
@@ -13023,7 +13530,7 @@
 													.toFixed(2)
 												))
 											} else {
-												if (that.newweightKG === "KG" || that.newweightKG === "千克") {
+												if (that.isKgWeightUnit(that.newweightKG)) {
 													if (parsedData.weightUnit === 0) {
 														that.Latest_weight = parsedData.weight
 														that.lastWeightbishi = ""
@@ -13510,6 +14017,28 @@
 				const value = this.findValue(data, type, key);
 				return value ? this.formatDateServer(value.updateTime) : "-/-";
 			},
+			/** 运动页「今日」步数：接口不是当天则今日显示 0，但按接口日期保留数据；接口变为当天后按接口显示 */
+			applyTodayStepsFromApi(dataList) {
+				const todayMd = this.normalizeStepsMd(this.getPhoneLocalCardMD())
+				this.saveStepsRowsFromApi(dataList, true)
+				const latest = this.pickLatestRecipeByRegister(dataList, 'steps')
+				const apiMd = latest && latest.time ? this.normalizeStepsMd(this.formatDate(latest.time)) : ''
+				const rawVal = latest && latest.value
+				const hasVal = this.isValidStepsValue(rawVal)
+				const isToday = !!apiMd && apiMd === todayMd
+				if (hasVal && apiMd) {
+					this.saveDailySteps(rawVal, apiMd, true, true)
+				}
+				this.refreshWeeklyStepsChart()
+				this.fetchWeekStepsFromApi()
+				if (isToday && hasVal) {
+					this.bushu = rawVal
+					this.bushu_time = todayMd
+					return
+				}
+				this.bushu = 0
+				this.bushu_time = todayMd
+			},
 
 			// 封装获取存储信息的通用函数
 			getStorageInfo(keys, callback) {
@@ -13523,29 +14052,25 @@
 
 			// 处理步数卡片
 			processSteps(item, name) {
-				let that = this
-				const now = new Date().getTime();
-				const stepItem = that.findValue(that.list, 'title', name);
-				stepItem.Step_number = that.getRegisterVal(item, 'register', "steps")
-				stepItem.Step_count = that.formatDate(now);
-				stepItem.title = that.$t("步数");
-				stepItem.type_LX = that.$t("计步");
-				that.bushu = stepItem.Step_number;
-				that.bushu_time = stepItem.Step_count;
-				that.saveDailySteps(that.bushu, that.bushu_time);
+				this.applyTodayStepsFromApi(item)
+				const stepItem = this.findValue(this.list, 'title', name);
+				if (stepItem) {
+					stepItem.Step_number = this.bushu
+					stepItem.Step_count = this.bushu_time
+					stepItem.title = this.$t("步数");
+					stepItem.type_LX = this.$t("计步");
+				}
 			},
 			// 封装处理步数的逻辑
 			processSteps2(item, name) {
-				let that = this
-				const now = new Date().getTime();
-				const stepItem = that.findValue(that.list2, 'title', name);
-				stepItem.Step_number = that.getRegisterVal(item, 'register', "steps")
-				stepItem.Step_count = that.formatDate(now);
-				stepItem.title = that.$t("步数");
-				stepItem.type_LX = that.$t("计步");
-				that.bushu = stepItem.Step_number;
-				that.bushu_time = stepItem.Step_count;
-				that.saveDailySteps(that.bushu, that.bushu_time);
+				this.applyTodayStepsFromApi(item)
+				const stepItem = this.findValue(this.list2, 'title', name);
+				if (stepItem) {
+					stepItem.Step_number = this.bushu
+					stepItem.Step_count = this.bushu_time
+					stepItem.title = this.$t("步数");
+					stepItem.type_LX = this.$t("计步");
+				}
 			},
 
 			// 封装处理身高、体重等通用逻辑
@@ -14085,9 +14610,13 @@
 							this.ppgresultslist2(this.types_index)
 							this.ppgresultslist3(this.types_index)
 						} else if (this.currentIndex === 2) {
-							const recipeWeight = (this.newweightKG === "KG" || this.newweightKG === "千克") ?
-								this.getRegisterVal(res.data, 'register', 'weight') :
-								WeightConverter.kgToLb(this.getRegisterVal(res.data, 'register', 'weight'));
+							const rawKg = this.getRegisterVal(res.data, 'register', 'weight');
+							const recipeWeight = this.isKgWeightUnit(this.newweightKG) ?
+								rawKg : WeightConverter.kgToLb(rawKg);
+							if (rawKg && rawKg !== '-/-' && rawKg !== '--') {
+								uni.setStorageSync('weightkg', rawKg);
+								uni.setStorageSync('weightlb', WeightConverter.kgToLb(rawKg));
+							}
 							const hasPendingOfflineWeight = !!uni.getStorageSync("tizhidata");
 							const weightMismatch = !hasPendingOfflineWeight &&
 								this.isRecipeDisplayMismatch(this.Latest_weight, recipeWeight);
@@ -14102,9 +14631,12 @@
 								}
 							}
 							this.Latest_date = this.getUpdateTime(res.data, 'register', 'weight')
-							this.Target_weight = (this.chuhsikg === "kg" || this.chuhsikg === "千克") ?
-								this.getRegisterVal(res.data, 'register', 'goal_weight') : WeightConverter.kgToLb(
-									this.getRegisterVal(res.data, 'register', 'goal_weight'));
+							const rawGoalKg = this.getRegisterVal(res.data, 'register', 'goal_weight');
+							if (rawGoalKg && rawGoalKg !== '-/-' && rawGoalKg !== '--') {
+								uni.setStorageSync('goalWeightKg', rawGoalKg);
+							}
+							this.Target_weight = this.isKgWeightUnit(this.chuhsikg) ?
+								rawGoalKg : WeightConverter.kgToLb(rawGoalKg);
 							this.Chest_circumference = this.getRegisterVal(res.data, 'register',
 								'chest_circumference');
 							this.waistline = this.getRegisterVal(res.data, 'register', 'waistline');
@@ -14408,33 +14940,8 @@
 									.sleep_point
 								)
 							}
-						} else if (
-							this
-							.currentIndex ===
-							4
-						) {
-							this.bushu =
-								this
-								.getRegisterVal(
-									res
-									.data,
-									'register',
-									'steps'
-								);
-							this.bushu_time =
-								this
-								.getUpdateTime(
-									res
-									.data,
-									'register',
-									'steps'
-								)
-							this.saveDailySteps(
-								this
-								.bushu,
-								this
-								.bushu_time
-							);
+						} else if (this.currentIndex === 4) {
+							this.applyTodayStepsFromApi(res.data)
 						}
 					}
 				})
@@ -15853,6 +16360,13 @@
 	}
 
 	.showTotal {
+		position: fixed;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		z-index: 10050;
+
 		.show {
 			width: 100vw;
 			height: 100vh;
@@ -15861,21 +16375,113 @@
 			right: 0;
 			top: 0;
 			bottom: 0;
-			padding-top: 120px;
-			padding-left: 10px;
+			padding: 0 48rpx;
+			box-sizing: border-box;
 			margin: auto;
-			z-index: 10000;
+			z-index: 2;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
 		}
 
 		.over {
 			width: 100%;
 			height: 100%;
-			background-color: #FFFFFF;
-			opacity: 0.9; //属性指定了一个元素的不透明度。换言之，opacity 属性指定了一个元素后面的背景的被覆盖程度。
+			background-color: rgba(220, 238, 252, 0.96);
 			position: fixed;
 			top: 0;
 			left: 0;
-			z-index: 999; //这一步很重要
+			z-index: 1;
+		}
+
+		.show-close-top {
+			position: absolute;
+			top: 120px;
+			right: 48rpx;
+			display: flex;
+			justify-content: flex-end;
+			z-index: 1;
+		}
+
+		.show-close-btn {
+			width: 96rpx;
+			height: 96rpx;
+			border-radius: 50%;
+			background: #3298F7;
+			box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.show-body {
+			width: 100%;
+		}
+
+		.show-date {
+			color: #000000;
+			font-size: 80rpx;
+			font-weight: bold;
+			line-height: 1.1;
+		}
+
+		.show-tip {
+			display: flex;
+			flex-direction: row;
+			align-items: stretch;
+			margin-top: 28rpx;
+		}
+
+		.show-tip-bar {
+			width: 8rpx;
+			background: #1A4A73;
+			border-radius: 8rpx;
+			flex-shrink: 0;
+		}
+
+		.show-tip-text {
+			color: #1A4A73;
+			font-size: 28rpx;
+			line-height: 1.55;
+			margin-left: 20rpx;
+			flex: 1;
+		}
+
+		.show-cards {
+			display: flex;
+			flex-direction: row;
+			margin-top: 80rpx;
+		}
+
+		.show-card {
+			flex: 1;
+			background: #FFFFFF;
+			border-radius: 40rpx;
+			box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 56rpx 16rpx 48rpx;
+		}
+
+		.show-card+.show-card {
+			margin-left: 24rpx;
+		}
+
+		.show-card-icon {
+			width: 112rpx;
+			height: 112rpx;
+			border-radius: 56rpx;
+			box-shadow: 0 8rpx 28rpx rgba(37, 149, 211, 0.28);
+		}
+
+		.show-card-label {
+			margin-top: 24rpx;
+			font-weight: bold;
+			text-align: center;
+			color: #000000;
+			font-size: 30rpx;
 		}
 	}
 
@@ -16273,6 +16879,19 @@
 
 	.scroll-view {
 		margin-top: 20px;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.scroll-view-bp {
+		margin-top: 8px;
+	}
+
+	.bp-home-scroll-inner {
+		background: #F8F9FB;
+		padding-bottom: calc(20px + constant(safe-area-inset-bottom));
+		padding-bottom: calc(20px + env(safe-area-inset-bottom));
+		transform: translateZ(0);
+		padding-bottom: 180px;
 	}
 
 	/* 请根据实际需求修改父元素尺寸，组件自动识别宽高 */
@@ -16337,7 +16956,20 @@
 		margin-right: 20px;
 		margin-left: 20px;
 		text-align: right;
-		padding-top: 60px;
+		padding-top: 80px;
+		color: #8E8E93;
+		padding-bottom: 5px;
+		font-weight: 400;
+		font-size: 12px;
+	}
+
+	.title_zs_yundong {
+		display: flex;
+		justify-content: flex-end;
+		margin-right: 20px;
+		margin-left: 20px;
+		text-align: right;
+		padding-top: 50px;
 		color: white;
 		padding-bottom: 5px;
 		font-weight: 400;

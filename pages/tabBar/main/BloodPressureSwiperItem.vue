@@ -1,211 +1,159 @@
 <template>
-	<view>
-		<view class="data_bg">
-			<view class="icon_bg bp-measure-btn" @click="$emit('bp-measure-link', 1)">
-				<view class="card-vital-icon-wrap">
-					<image lazy-load
-						:src="Languageceliang == 'zh-Hans' || Languageceliang == 'zh-Hant' ? '../../../static/icons/3.png' : '../../../static/icons/3.png'"
-						class="img_style_celiang" mode="aspectFit" />
+	<view class="home-bp-page">
+		<HealthSummaryPanel ref="panel" :embedded="true" :syncHighPressure="highPressure" :syncLowPressure="lowPressure"
+			:syncPulse="pulse" @measure-link="$emit('bp-measure-link', $event)"
+			@xueya-tap="$emit('xueya-tap')" @bmi-tap="$emit('bmi-tap', $event)" />
+		<!-- <view class="home-cards-bottom">
+			<view class="data_bg">
+				<view class="icon_bg bp-measure-btn" @click="$emit('bp-measure-link', 1)">
+					<view class="card-vital-icon-wrap">
+						<image lazy-load
+							:src="Languageceliang == 'zh-Hans' || Languageceliang == 'zh-Hant' ? '../../../static/icons/3.png' : '../../../static/icons/3.png'"
+							class="img_style_celiang" mode="aspectFit" />
+					</view>
+					<text class="bp-measure-action">{{$t('测量')}}</text>
+					<text class="bp-measure-label">{{$t('血压')}}</text>
 				</view>
-				<text class="bp-measure-action">{{$t('测量')}}</text>
-				<text class="bp-measure-label">{{$t('血压')}}</text>
-			</view>
-			<view
-				style="display: flex;flex-direction: column; margin-left: 10px; margin-right: 20px; flex: 4;">
-				<view v-if="xueya == 0" style="display: flex;flex-direction: row; align-items: center;">
-					<view class="xueya_bg"></view>
-					<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
-					</view>
-					<uni-icons type="help" size="15" style="margin-left: 5px;"
-						@tap="$emit('xueya-tap')"></uni-icons>
-				</view>
-				<view v-else-if="xueya == 1"
-					style="display: flex;flex-direction: row;align-items: center;">
-					<view style="width: 14px; height:14px;background: #FFEC01;border-radius: 50px;">
-					</view>
-					<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
-					</view>
-					<uni-icons type="help" size="15" style="margin-left: 5px;"
-						@tap="$emit('xueya-tap')"></uni-icons>
-				</view>
-				<view v-else-if="xueya == 2"
-					style="display: flex;flex-direction: row;align-items: center;">
-					<view style="width: 14px; height:14px;background: #FCCD41;border-radius: 50px;">
-					</view>
-					<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
-					</view>
-					<uni-icons type="help" size="15" style="margin-left: 5px;"
-						@tap="$emit('xueya-tap')"></uni-icons>
-				</view>
-				<view v-else-if="xueya == 3"
-					style="display: flex;flex-direction: row;align-items: center;">
-					<view style="width: 14px; height:14px;background: #F55A5A;border-radius: 50px;">
-					</view>
-					<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
-					</view>
-					<uni-icons type="help" size="15" style="margin-left: 5px;"
-						@tap="$emit('xueya-tap')"></uni-icons>
-				</view>
-				<view v-else-if="xueya == 4"
-					style="display: flex;flex-direction: row;align-items: center;">
-					<view style="width: 14px; height:14px;background: #FFFFFF;border-radius: 50px;">
-					</view>
-					<view style="margin-left: 5px;font-size: 14px;font-weight: 400;">{{title_name}}
-					</view>
-					<uni-icons type="help" size="15" style="margin-left: 5px;"
-						@tap="$emit('xueya-tap')"></uni-icons>
-				</view>
-				<view style="width: auto; background:#CCCCCC;height:1px;margin-top: 5px;"></view>
-				<view @click="$emit('xueya-click')"
-					style="display: flex;flex-direction: row; margin-top: 5px;align-items: center; justify-content: space-between;">
-					<view>
-						<view style="color: #999999;font-size: 10px;font-weight: 400;">
-							{{$t('收缩压')}}/{{Blood}}
-						</view>
-						<view style="font-weight: bold;margin-top: 10px;font-size: 16px;">
-							{{highPressure}}
+				<view class="xueya_all">
+					<view v-if="xueya == 0" class="xueya_item">
+						<view class="xueya_bg"></view>
+						<view class="common-style">
+							<view class="common-text">{{title_name}}</view>
+							<uni-icons type="help" size="15" @tap="$emit('xueya-tap')"></uni-icons>
 						</view>
 					</view>
-					<view>
-						<view style="color: #999999;font-size: 10px;font-weight: 400;">
-							{{$t('舒张压')}}/{{Blood}}
-						</view>
-						<view style="font-weight: bold;margin-top: 10px;font-size: 16px;">
-							{{lowPressure}}
+					<view v-else-if="xueya == 1" class="xueya_item">
+						<view class="xueya_bg_1"></view>
+						<view class="common-style">
+							<view class="common-text">{{title_name}}</view>
+							<uni-icons type="help" size="15" @tap="$emit('xueya-tap')"></uni-icons>
 						</view>
 					</view>
-					<view style="margin-left: 10px;">
-						<view style="color: #999999;font-size: 10px;font-weight: 400;">{{$t('脉搏')}}/BPM
+					<view v-else-if="xueya == 2" class="xueya_item">
+						<view class="xueya_bg_2"></view>
+						<view class="common-style">
+							<view class="common-text">{{title_name}}</view>
+							<uni-icons type="help" size="15" @tap="$emit('xueya-tap')"></uni-icons>
 						</view>
-						<view style="font-weight: bold;margin-top: 10px;font-size: 16px;">{{pulse}}
+					</view>
+					<view v-else-if="xueya == 3" class="xueya_item">
+						<view class="xueya_bg_3"></view>
+						<view class="common-style">
+							<view class="common-text">{{title_name}}</view>
+							<uni-icons type="help" size="15" @tap="$emit('xueya-tap')"></uni-icons>
+						</view>
+					</view>
+					<view v-else-if="xueya == 4" class="xueya_item">
+						<view class="xueya_bg_4"></view>
+						<view class="common-style">
+							<view class="common-text">{{title_name}}</view>
+							<uni-icons type="help" size="15" @tap="$emit('xueya-tap')"></uni-icons>
+						</view>
+					</view>
+					<view class="borstysdl"></view>
+					<view @click="$emit('xueya-click')" class="yalisdsty">
+						<view>
+							<view class="yalisdjjj">{{$t('收缩压')}}/{{Blood}}</view>
+							<view class="yalisdjjj2">{{highPressure}}</view>
+						</view>
+						<view>
+							<view class="yalisdjjj">{{$t('舒张压')}}/{{Blood}}</view>
+							<view class="yalisdjjj2">{{lowPressure}}</view>
+						</view>
+						<view style="margin-left: 10px;">
+							<view class="yalisdjjj">{{$t('脉搏')}}/BPM</view>
+							<view class="yalisdjjj2" :key="'pulse-' + pulse">{{pulse}}</view>
 						</view>
 					</view>
 				</view>
 			</view>
-		</view>
-		<view class="data_bg_A">
-			<view class="title_zs1">{{$t('血压计注意事项')}}</view>
-			<view v-show="binaji" class="tzkpsx" @click="$emit('tiaozhen')">{{$t("编辑数据卡片")}}</view>
-			<view class="drag-containersss">
-				<basic-drag v-model="listModel" :disabled="disabledsaaa" itemKey="title" :column="2"
-					itemHeight="130px" @update:disabled="$emit('update:disabled', $event)">
-					<template #item="{element}">
-						<view class="data_item_bgsss" :class="'animation-' + animation"
-							@click="$emit('list-click', element)">
-							<view class="icon_bgsss">
-								<view v-if="isVitalCardIcon(element.title)"
-									class="card-vital-icon-wrap">
-									<image lazy-load :src="element.image" class="img_style_celiang"
-										mode="aspectFit" />
-								</view>
-								<image v-else :src="element.image" class="img_style" mode="aspectFit" />
-								<text v-if="isVitalCardIcon(element.title)"
-									class="bp-measure-action">{{$t('测量')}}</text>
-								<text class="icon_text_bgsss">{{element.title}}</text>
-							</view>
-							<view
-								style="display: flex; flex-direction: column;font-weight: bold;margin-right: 5px;">
-								<view v-if="element.bmi_show">
-									<view
-										style="display: flex; flex-direction: row;align-items: center;">
-										<text
-											style="margin-left: 5px; color: black;font-size: 10px;white-space: nowrap;text-overflow: ellipsis;overflow: auto;width: 45px;text-align: right;">{{element.BMI_ys}}</text>
-										<uni-icons type="help" size="15"
-											@tap="$emit('bmi-tap', element.title)"></uni-icons>
+			<view class="data_bg_A">
+				<view class="title_zs1" @click="$emit('AI-note')">{{$t('血压计注意事项')}}</view>
+				<view v-show="binaji" class="tzkpsx" @click="$emit('tiaozhen')">{{$t("编辑数据卡片")}}</view>
+				<view class="drag-containersss">
+					<basic-drag v-model="listModel" :disabled="disabledsaaa" itemKey="title" :column="2"
+						itemHeight="130px" @update:disabled="$emit('update:disabled', $event)">
+						<template #item="{element}">
+							<view class="data_item_bgsss" :class="'animation-' + animation"
+								@click="$emit('list-click', element)">
+								<view class="icon_bgsss">
+									<view v-if="isVitalCardIcon(element.title)" class="card-vital-icon-wrap">
+										<image :src="element.image" class="img_style_celiang " mode="aspectFit" />
 									</view>
+									<image v-else :src="element.image" class="img_style" mode="aspectFit" />
+									<text v-if="isVitalCardIcon(element.title)"
+										class="bp-measure-action">{{$t('测量')}}</text>
+									<text class="icon_text_bgsss">{{element.title}}</text>
 								</view>
-								<view
-									style="display: flex; flex-direction: row; align-items: center; justify-content: flex-end;">
+								<view class="elementsduu">
 									<view v-if="element.bmi_show">
-										<view v-if="element.BMI_TF == 0">
-											<view
-												style="width: 10px; height:10px;background: #FCCD41;border-radius: 50px;">
-											</view>
-										</view>
-										<view v-else-if="element.BMI_TF ==1"
-											style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-											<view
-												style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
-											</view>
-										</view>
-										<view v-else-if="element.BMI_TF ==2"
-											style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-											<view
-												style="width: 10px; height:10px;background: #FC7F41;border-radius: 50px;">
-											</view>
-										</view>
-										<view v-else-if="element.BMI_TF ==3"
-											style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-											<view
-												style="width: 10px; height:10px;background: #F55A5A;border-radius: 50px;">
-											</view>
-										</view>
-										<view v-else-if="element.BMI_TF ==4"
-											style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-											<view
-												style="width: 10px; height:10px;background: #7A0101;border-radius: 50px;">
-											</view>
-										</view>
-										<view v-else-if="element.BMI_TF ==10"
-											style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-											<view
-												style="width: 10px; height:10px;background: #58BF78;border-radius: 50px;">
-											</view>
-										</view>
-										<view v-else
-											style="display: flex; flex-direction: row;align-items: center;justify-content: flex-end;">
-											<view
-												style="width: 10px; height:10px;background: #333333;border-radius: 50px;">
-											</view>
+										<view class="xueya_item">
+											<text class="tesdtsdsdk">{{element.BMI_ys}}</text>
+											<uni-icons type="help" size="15" @tap="$emit('bmi-tap', element.title)" />
 										</view>
 									</view>
-									<text
-										style="text-align: right;font-size: 16px;margin-left: 10px;">{{element.Step_number}}</text>
+									<view class="enlkij">
+										<view v-if="element.bmi_show">
+											<view v-if="element.BMI_TF === 0">
+												<view class="BMI_TF_0" />
+											</view>
+											<view v-else-if="element.BMI_TF === 1">
+												<view class="BMI_TF_1" />
+											</view>
+											<view v-else-if="element.BMI_TF ==2">
+												<view class="BMI_TF_2" />
+											</view>
+											<view v-else-if="element.BMI_TF ==3">
+												<view class="BMI_TF_3" />
+											</view>
+											<view v-else-if="element.BMI_TF ==4">
+												<view class="BMI_TF_4" />
+											</view>
+											<view v-else-if="element.BMI_TF ==10">
+												<view class="BMI_TF_10" />
+											</view>
+											<view v-else>
+												<view class="BMI_TF_5" />
+											</view>
+										</view>
+										<text class="teststuld">{{element.Step_number}}</text>
+									</view>
+									<text class="teststuld_1">{{element.type_LX}}</text>
+									<text class="teststuld_2">{{element.Step_count}}</text>
 								</view>
-								<text
-									style="text-align: right;color: gray;font-size: 10px;">{{element.type_LX}}</text>
-								<text
-									style="text-align: right;font-size: 14px;font-size: 13px;font-weight: 400px;">{{element.Step_count}}</text>
+								<view v-show="delate_icon" class="delete-button"
+									@touchstart.stop.prevent="$emit('delete-card', element.title, element)"
+									hover-class="del-hover">
+									<image src="/static/icons/minus_filled.png" class="delete-icon" mode="aspectFit" />
+								</view>
 							</view>
-							<view v-show="delate_icon" class="delete-button"
-								@touchstart.stop.prevent="$emit('delete-card', element.title, element)"
-								hover-class="del-hover">
-								<image src="/static/icons/minus_filled.png" class="delete-icon"
-									mode="aspectFit" />
-							</view>
-						</view>
-					</template>
-				</basic-drag>
-			</view>
-			<view v-show="button_show" style="display: flex;flex-direction: column;margin: 20px 0;">
-				<view style="display: flex;justify-content: center;color: gray;">{{$t('长按拖动可调整数据卡片位置')}}
+						</template>
+					</basic-drag>
 				</view>
-				<view
-					style="display: flex;flex-direction: row;justify-content: space-between; align-items: center; margin-top: 20px;">
-					<view @click="$emit('confirm-cards')" class="cardstyle_1">
-						{{$t('确认')}}
-					</view>
-					<view @click="$emit('add-card')" class="cardstyle_2">
-						{{$t('添加数据卡片')}}
+				<view v-show="button_show" class="btnshow">
+					<view class="tuodongsd">{{$t('长按拖动可调整数据卡片位置')}}</view>
+					<view class="quernsda">
+						<view @click="$emit('confirm-cards')" class="cardstyle_1">{{$t('确认')}}</view>
+						<view @tap.stop="$emit('add-card')" class="cardstyle_2">{{$t('添加数据卡片')}}</view>
 					</view>
 				</view>
+				<view>
+					<image class="imashtylkkk" lazy-load src="/static/image/yundomng2.png" mode="aspectFit" />
+				</view>
 			</view>
-			<view>
-				<image src="/static/image/yundomng2.png" mode="aspectFit"
-					style="width: 88vw; height: 220px; margin: 0 20px 120px 20px;border-radius: 20px;object-fit: contain;">
-				</image>
-			</view>
-		</view>
+		</view> -->
 	</view>
 </template>
 
 <script>
 	import BasicDrag from '@/components/basic-drag/index.vue';
+	import HealthSummaryPanel from './Health_Summary_Panel.vue'
 
 	export default {
 		name: 'BloodPressureSwiperItem',
 		components: {
-			BasicDrag
+			BasicDrag,
+			HealthSummaryPanel
 		},
 		props: {
 			Languageceliang: {
@@ -238,7 +186,7 @@
 			},
 			binaji: {
 				type: Boolean,
-				default: true
+				default: false
 			},
 			list: {
 				type: Array,
@@ -271,7 +219,18 @@
 				}
 			}
 		},
+		watch: {
+			Blood() {
+				this.syncPanelUnits();
+			}
+		},
 		methods: {
+			syncPanelUnits() {
+				const panel = this.$refs.panel;
+				if (panel && panel.syncUnitSettings) {
+					panel.syncUnitSettings();
+				}
+			},
 			isVitalCardIcon(title) {
 				if (!title) return false
 				const t = String(title)
@@ -282,23 +241,59 @@
 </script>
 
 <style scoped>
+	.home-bp-page {
+		background: #F8F9FB;
+		padding-bottom: 0;
+	}
+
+	.home-cards-bottom {
+		padding-top: 8px;
+	}
+
 	.data_bg {
-		height: 116px;
+		min-height: 116px;
 		display: flex;
 		flex-direction: row;
 		align-items: center;
-		margin: 5px 20px 0 20px;
-		background: white;
-		border-radius: 20px;
-		box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
+		margin: 8px 16px 0 16px;
+		background: #FFFFFF;
+		border-radius: 16px;
+		padding: 12px 8px;
+		box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+		border: 1px solid rgba(16, 24, 40, 0.03);
 	}
 
 	.data_bg_A {
-		border-top-left-radius: 20px;
-		border-top-right-radius: 20px;
-		background: #EFEFF4;
-		margin-top: 20px;
-		padding: 20px 0 40px 0;
+		background: #F8F9FB;
+		margin-top: 12px;
+		padding: 8px 0 0 0;
+	}
+
+	.title_zs1 {
+		display: flex;
+		margin-right: 20px;
+		margin-left: 20px;
+		margin-bottom: 20px;
+		color: #8E8E93;
+		font-weight: 600;
+		font-size: 12px;
+	}
+
+	.tzkpsx {
+		height: 38px;
+		width: auto;
+		display: flex;
+		justify-content: center;
+		background: #FFFFFF;
+		align-items: center;
+		margin: 10px 16px 16px 16px;
+		padding: 10px;
+		font-size: 13px;
+		font-weight: 500;
+		border-radius: 16px;
+		color: #007AFF;
+		box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+		border: 1px solid rgba(16, 24, 40, 0.03);
 	}
 
 	.icon_bg {
@@ -310,84 +305,26 @@
 		align-items: center;
 	}
 
-	.xueya_bg {
-		width: 14px;
-		height: 14px;
-		background: #58BF78;
-		border-radius: 15px;
-	}
-
-	.title_zs1 {
+	.card-vital-icon-wrap {
+		position: relative;
+		width: 52px;
+		height: 52px;
 		display: flex;
-		margin-right: 20px;
-		margin-left: 20px;
-		margin-bottom: 20px;
-		color: black;
-		font-weight: 600;
-		font-size: 12px;
-	}
-
-	.tzkpsx {
-		height: 38px;
-		width: auto;
-		display: flex;
-		justify-content: center;
-		background: white;
 		align-items: center;
-		margin: 10px 20px 20px 20px;
-		padding: 10px;
-		font-size: 13px;
-		font-weight: 400;
-		border-radius: 10px;
-		color: #3298F7;
-	}
-
-	.drag-containersss {
-		display: flex;
 		justify-content: center;
-		padding-left: 20px;
-	}
-
-	.data_item_bgsss {
-		height: 90px;
-		line-height: 20px;
-		width: 36vw;
-		display: flex;
-		flex-direction: row;
-		background: white;
-		justify-content: space-between;
-		align-items: center;
-		border-radius: 20px;
-		padding: 10px;
-	}
-
-	.icon_bgsss {
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-	}
-
-	.icon_text_bgsss {
-		margin-top: 10px;
-		line-height: 15px;
-		width: 60px;
-		font-size: 13px;
-		text-align: center;
-		font-weight: 600;
-	}
-
-	.img_style {
-		width: 48px;
-		height: 48px;
-		object-fit: contain;
+		flex-shrink: 0;
 	}
 
 	.img_style_celiang {
-		width: 48px;
-		height: 48px;
-		border-radius: 50px;
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
 		object-fit: contain;
+	}
+
+	.bp-measure-btn {
+		padding: 6px 0;
+		min-width: 56px;
 	}
 
 	.bp-measure-action {
@@ -404,23 +341,237 @@
 		font-size: 13px;
 		line-height: 18px;
 		font-weight: bold;
-		color: #222328;
+		color: #8E8E93;
 		text-align: center;
 	}
 
-	.bp-measure-btn {
-		padding: 6px 0;
-		min-width: 56px;
+	.xueya_all {
+		display: flex;
+		flex-direction: column;
+		margin-left: 10px;
+		margin-right: 20px;
+		flex: 4;
 	}
 
-	.card-vital-icon-wrap {
-		position: relative;
-		width: 52px;
-		height: 52px;
+	.xueya_item {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.xueya_bg {
+		width: 10px;
+		height: 10px;
+		background: #34C759;
+		border-radius: 15px;
+	}
+
+	.xueya_bg_1 {
+		width: 10px;
+		height: 10px;
+		background: #FF9500;
+		border-radius: 50px;
+	}
+
+	.xueya_bg_2 {
+		width: 10px;
+		height: 10px;
+		background: #FF9500;
+		border-radius: 50px;
+	}
+
+	.xueya_bg_3 {
+		width: 10px;
+		height: 10px;
+		background: #FF3B30;
+		border-radius: 50px;
+	}
+
+	.xueya_bg_4 {
+		width: 10px;
+		height: 10px;
+		background: #C7C7CC;
+		border-radius: 50px;
+	}
+
+	.common-style {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		flex-shrink: 0;
+	}
+
+	.common-text {
+		margin-left: 5px;
+		font-size: 14px;
+		font-weight: 400;
+		color: #8E8E93;
+	}
+
+	.borstysdl {
+		width: auto;
+		background: #F2F2F7;
+		height: 1px;
+		margin-top: 5px;
+	}
+
+	.yalisdsty {
+		display: flex;
+		flex-direction: row;
+		margin-top: 5px;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.yalisdjjj {
+		color: #8E8E93;
+		font-size: 10px;
+		font-weight: 400;
+	}
+
+	.yalisdjjj2 {
+		font-weight: 700;
+		margin-top: 8px;
+		font-size: 18px;
+		color: #007AFF;
+	}
+
+	.drag-containersss {
+		display: flex;
+		justify-content: center;
+		padding-left: 16px;
+	}
+
+	.data_item_bgsss {
+		height: 90px;
+		line-height: 20px;
+		width: 36vw;
+		display: flex;
+		flex-direction: row;
+		background: #FFFFFF;
+		justify-content: space-between;
+		align-items: center;
+		border-radius: 16px;
+		padding: 10px;
+		position: relative;
+		box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+		border: 1px solid rgba(16, 24, 40, 0.03);
+	}
+
+	.icon_bgsss {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		align-items: center;
+	}
+
+	.icon_text_bgsss {
+		margin-top: 8px;
+		line-height: 15px;
+		width: 60px;
+		font-size: 13px;
+		text-align: center;
+		font-weight: 600;
+		color: #8E8E93;
+	}
+
+	.img_style {
+		width: 48px;
+		height: 48px;
+		object-fit: contain;
+	}
+
+	.elementsduu {
+		display: flex;
+		flex-direction: column;
+		font-weight: bold;
+		margin-right: 5px;
+	}
+
+	.tesdtsdsdk {
+		margin-left: 5px;
+		color: #8E8E93;
+		font-size: 10px;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		overflow: auto;
+		width: 45px;
+		text-align: right;
+	}
+
+	.enlkij {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	.BMI_TF_0 {
+		width: 10px;
+		height: 10px;
+		background: #FF9500;
+		border-radius: 50px;
+	}
+
+	.BMI_TF_1 {
+		width: 10px;
+		height: 10px;
+		background: #34C759;
+		border-radius: 50px;
+	}
+
+	.BMI_TF_2 {
+		width: 10px;
+		height: 10px;
+		background: #FF9500;
+		border-radius: 50px;
+	}
+
+	.BMI_TF_3 {
+		width: 10px;
+		height: 10px;
+		background: #FF3B30;
+		border-radius: 50px;
+	}
+
+	.BMI_TF_4 {
+		width: 10px;
+		height: 10px;
+		background: #7A0101;
+		border-radius: 50px;
+	}
+
+	.BMI_TF_10 {
+		width: 10px;
+		height: 10px;
+		background: #34C759;
+		border-radius: 50px;
+	}
+
+	.BMI_TF_5 {
+		width: 10px;
+		height: 10px;
+		background: #C7C7CC;
+		border-radius: 50px;
+	}
+
+	.teststuld {
+		text-align: right;
+		font-size: 16px;
+		margin-left: 10px;
+		color: #007AFF;
+		font-weight: 700;
+	}
+
+	.teststuld_1 {
+		text-align: right;
+		color: #8E8E93;
+		font-size: 10px;
+	}
+
+	.teststuld_2 {
+		text-align: right;
+		font-size: 13px;
+		color: #3A3A3C;
 	}
 
 	.animation-shake {
@@ -441,6 +592,70 @@
 		}
 	}
 
+	.btnshow {
+		display: flex;
+		flex-direction: column;
+		margin: 20px 0;
+	}
+
+	.tuodongsd {
+		display: flex;
+		justify-content: center;
+		color: #8E8E93;
+	}
+
+	.quernsda {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: center;
+		margin-top: 20px;
+	}
+
+	.cardstyle_1 {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: #FFFFFF;
+		color: #007AFF;
+		width: 120px;
+		height: 38px;
+		font-size: 13px;
+		border-radius: 16px;
+		padding: 10px;
+		text-align: center;
+		margin-right: 10px;
+		margin-left: 10vw;
+		box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+		border: 1px solid rgba(16, 24, 40, 0.03);
+	}
+
+	.cardstyle_2 {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		background: #FFFFFF;
+		color: #007AFF;
+		width: 120px;
+		height: 38px;
+		font-size: 13px;
+		border-radius: 16px;
+		padding: 10px;
+		text-align: center;
+		margin-left: 10px;
+		margin-right: 10vw;
+		box-shadow: 0 4px 14px rgba(16, 24, 40, 0.04);
+		border: 1px solid rgba(16, 24, 40, 0.03);
+	}
+
+	.imashtylkkk {
+		width: 88vw;
+		height: 220px;
+		margin: 0 20px 120px 20px;
+		border-radius: 16px;
+		object-fit: contain;
+	}
+
 	.delete-button {
 		position: absolute;
 		top: 0;
@@ -459,37 +674,5 @@
 		opacity: 0.7;
 		transform: scale(0.95);
 		transition: all 0.1s;
-	}
-
-	.cardstyle_1 {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		background: white;
-		color: #3298F7;
-		width: 120px;
-		height: 38px;
-		font-size: 13px;
-		border-radius: 10px;
-		padding: 10px;
-		text-align: center;
-		margin-right: 10px;
-		margin-left: 10vw;
-	}
-
-	.cardstyle_2 {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		background: white;
-		color: #3298F7;
-		width: 120px;
-		height: 38px;
-		font-size: 13px;
-		border-radius: 10px;
-		padding: 10px;
-		text-align: center;
-		margin-left: 10px;
-		margin-right: 10vw;
 	}
 </style>

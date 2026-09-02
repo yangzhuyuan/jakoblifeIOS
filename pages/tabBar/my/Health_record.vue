@@ -3,12 +3,10 @@
 		<view class="health_avatr">
 			<view class="context_btn" @click="btn_avatar()">
 				<view class="context_title">{{$t('头像')}}</view>
-				<view style="width: 35vw; display: flex;justify-content: flex-end;">
-					<image :src="avatar"
-						style="border: 1px solid gainsboro; width: 30px; height: 30px;border-radius: 20px;">
-					</image>
+				<view class="row-right">
+					<image :src="avatar" class="avatar-img"></image>
+					<uni-icons type="right" size="14" color="#C5CDD8"></uni-icons>
 				</view>
-				<uni-icons style="margin-left: 5px;" type="forward" size="20"></uni-icons>
 			</view>
 			<!-- <view style="width: 80vw; height: 1px; background: gainsboro; margin-left:25px;"></view> -->
 			<!-- <view class="context_btn" @click="member()">
@@ -18,57 +16,50 @@
 			</view> -->
 		</view>
 
-		<view style="margin: 20px 0 20px 15px; color: black;">{{$t('身体基础信息')}}：</view>
+		<view class="section-title">{{$t('身体基础信息')}}：</view>
 
 		<view class="health_avatr">
 			<view class="bt_BG">
 				<view class="text">{{$t('性别')}}</view>
-				<view
-					style="width: 40vw; justify-content: flex-end; display: flex;flex-direction: row;align-items: center;">
+				<view class="row-right">
 					<view class="color_bg" :style="getcolor(select)" @click="select_click()">
 						{{select}}
 					</view>
-					<uni-icons type="forward" size="20" style="margin-left: 5px;" @click="select_click()"></uni-icons>
+					<uni-icons type="right" size="14" color="#C5CDD8" @click="select_click()"></uni-icons>
 				</view>
 			</view>
-			<view style="width: 85%; height: 1px; background: gainsboro; margin-left:25px;"></view>
+			<view class="row-line"></view>
 			<view class="bt_BG">
 				<view class="text">{{$t('出生日期')}}</view>
-				<view style="width: 40vw; justify-content: flex-end; display: flex;flex-direction: row;">
+				<view class="row-right">
 					<picker fields="day" mode="date" :value="date" @change="bindDateChange">
-						<view style="display: flex;flex-direction: row;align-items: center;">
+						<view class="picker-row">
 							<view class="color_bg_1" :style="getcolor(date)">{{date}}</view>
-							<uni-icons type="forward" size="20" style="margin-left: 10px;"></uni-icons>
+							<uni-icons type="right" size="14" color="#C5CDD8"></uni-icons>
 						</view>
 					</picker>
 				</view>
 			</view>
-			<view style="width: 85%; height: 1px; background: gainsboro; margin-left:25px;"></view>
+			<view class="row-line"></view>
 			<view class="bt_BG">
 				<view class="text">{{$t('身高')}}</view>
-				<view style="justify-content: flex-end; display: flex;flex-direction: row; align-items: center;">
+				<view class="row-right">
 					<input type="number" :placeholder="$t('请输入')" v-model="height"
-						style="color: black; text-align: right; font-size: 14px;" maxlength="5" />
-					<view style="margin-right: 15px;width: 80px;">
-						<picker @change="bindPickerChange_Height" :value="Height_index" :range="Height_array">
-							<view class="uni-input" style="text-align: right;">{{Height_array[Height_index]}}</view>
-						</picker>
-					</view>
+						class="value-input" maxlength="5" />
+					<picker @change="bindPickerChange_Height" :value="Height_index" :range="Height_array">
+						<view class="unit-pill">{{Height_array[Height_index]}}</view>
+					</picker>
 				</view>
 			</view>
-			<view style="width: 85%; height: 1px; background: gainsboro; margin-left:25px;"></view>
+			<view class="row-line"></view>
 			<view class="bt_BG">
 				<view class="text">{{$t('体重')}}</view>
-				<view style="justify-content: flex-end;display: flex;flex-direction: row;align-items: center;">
+				<view class="row-right">
 					<input type="number" :placeholder="$t('请输入')" v-model="width"
-						style="color: black; text-align: right; font-size: 14px;" maxlength="5" />
-					<view style="margin-right: 15px;width: 80px;">
-						<picker @change="bindPickerChange_Width" :value="Width_index" :range="Width_array">
-							<view class="uni-input" style="text-align: right;background: none;">
-								{{Width_array[Width_index]}}
-							</view>
-						</picker>
-					</view>
+						class="value-input" maxlength="5" />
+					<picker @change="bindPickerChange_Width" :value="Width_index" :range="Width_array">
+						<view class="unit-pill">{{Width_array[Width_index]}}</view>
+					</picker>
 				</view>
 			</view>
 		</view>
@@ -76,7 +67,7 @@
 			<uni-popup ref="popup" type="bottom" border-radius="10px 10px 0 0" :mask-click="true">
 				<view class="popup_bg">
 					<view class="select_text" @click="sex_nan()">{{$t('男')}}</view>
-					<view style="border-top: 1px solid gainsboro;"></view>
+					<view class="popup-line"></view>
 					<view class="select_text" @click="sex_nv()">{{$t('女')}}</view>
 				</view>
 			</uni-popup>
@@ -343,59 +334,123 @@
 </script>
 
 <style>
+	page {
+		background: linear-gradient(180deg, #dceefc 0%, #f4f7fb 42%, #f4f7fb 100%);
+	}
+
 	.health_page {
-		padding: 20px 10px 0 10px;
-		color: black;
-		height: 100vh;
+		min-height: 100vh;
+		padding: 16px 16px calc(28px + env(safe-area-inset-bottom));
+		box-sizing: border-box;
+		color: #1a2b4a;
+		background: linear-gradient(180deg, #dceefc 0%, #f4f7fb 42%, #f4f7fb 100%);
 	}
 
 	.health_avatr {
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-		background: white;
+		background: #ffffff;
 		border-radius: 20px;
-		margin-left: 10px;
-		margin-right: 10px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		overflow: hidden;
+		padding: 4px 16px;
+	}
+
+	.section-title {
+		display: block;
+		font-size: 16px;
+		font-weight: 700;
+		color: #1a2b4a;
+		margin: 24px 4px 12px;
 	}
 
 	.context_btn {
-		height: 48px;
+		min-height: 72px;
 		display: flex;
 		flex-direction: row;
-		background: white;
+		background: #ffffff;
 		align-items: center;
-		padding-top: 10px;
-		padding-left: 10px;
-		padding-bottom: 10px;
-		padding-right: 10px;
-		border-radius: 50px;
+		padding: 8px 0;
 	}
 
 	.context_title {
-		width: 40vw;
+		flex: 1;
 		font-size: 16px;
-		color: black;
-		margin-left: 15px;
+		color: #1a2b4a;
+		font-weight: 400;
+	}
+
+	.avatar-img {
+		width: 48px;
+		height: 48px;
+		border-radius: 24px;
+		margin-right: 8px;
+		background: #f3f6fa;
+	}
+
+	.row-right {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-end;
+		flex-shrink: 0;
+		margin-left: 8px;
+	}
+
+	.picker-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.row-line {
+		height: 1px;
+		background: #eef1f5;
+		margin: 0 4px;
 	}
 
 	.color_bg {
-		color: black;
-		text-align: center;
-		font-size: 14px;
-		margin-right: 5px;
+		color: #1a2b4a;
+		text-align: right;
+		font-size: 15px;
+		margin-right: 6px;
 	}
 
 	.color_bg_1 {
-		color: gray;
+		color: #8a94a6;
+		text-align: right;
+		font-size: 15px;
+		margin-right: 6px;
+	}
+
+	.value-input {
+		color: #1a2b4a;
+		text-align: right;
+		font-size: 15px;
+		width: 140rpx;
+		margin-right: 10px;
+	}
+
+	.unit-pill {
+		background: #e8f3ff;
+		color: #3298f7;
+		font-size: 12px;
+		line-height: 1.2;
+		padding: 6px 14px;
+		border-radius: 20px;
 		text-align: center;
-		font-size: 14px;
 	}
 
 	.popup_bg {
-		background: white;
+		background: #ffffff;
 		border-radius: 20px;
 		margin-left: 20px;
 		margin-right: 20px;
 		margin-bottom: 10px;
+		overflow: hidden;
+	}
+
+	.popup-line {
+		height: 1px;
+		background: #eef1f5;
 	}
 
 	.select_text {
@@ -407,23 +462,20 @@
 		padding: 10px;
 		font-size: 16px;
 		font-weight: bold;
+		color: #1a2b4a;
 	}
 
 	.bt_BG {
 		display: flex;
-		height: 48px;
+		min-height: 56px;
 		flex-direction: row;
 		align-items: center;
-		padding-top: 10px;
-		padding-left: 10px;
-		padding-right: 10px;
-		padding-bottom: 10px;
-
+		padding: 8px 0;
 	}
 
 	.text {
-		width: 40vw;
+		flex: 1;
 		font-size: 16px;
-		margin-left: 15px;
+		color: #1a2b4a;
 	}
 </style>

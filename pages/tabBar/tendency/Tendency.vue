@@ -69,8 +69,8 @@
 					</view>
 				</view>
 				<view class="charts-box">
-					<qiun-data-charts :canvas2d="true" type="line" canvas-id="10086" :opts="xeuyaopts"
-						:chartData="chartData" />
+					<qiun-data-charts :canvas2d="true" type="line" :canvas-id="'tendBp' + chartRev" :opts="xeuyaopts"
+						:chartData="chartData" :key="'tendBp' + chartRev" />
 				</view>
 			</view>
 			<view class="icon_item_bgsdsadsa">
@@ -204,8 +204,8 @@
 					</view>
 				</view>
 				<view class="charts-box">
-					<qiun-data-charts :canvas2d="true" type="line" canvas-id="10011" :opts="tizhonngopts"
-						:chartData="chartData2" />
+					<qiun-data-charts :canvas2d="true" type="line" :canvas-id="'tendWt' + chartRev" :opts="tizhonngopts"
+						:chartData="chartData2" :key="'tendWt' + chartRev" />
 				</view>
 			</view>
 			<view class="icon_item_bg">
@@ -270,30 +270,29 @@
 		<view class="showTotal" v-show="fillOut">
 			<view class="over">
 				<view class="show">
-					<view style="margin-top: 140px;">
-						<view style="color: black;font-size: 38px; font-weight: bold;">{{showTotal_date}}</view>
-						<view style="background: black; width: 50%; height: 1px;margin-top: 20px;"></view>
-						<view style="color: #2595D3;margin-top: 5px;">{{$t('确保每天摄入足够的水')}}</view>
-					</view>
-					<view style="display: flex; flex-direction: row;  margin-top: 180px;margin-left: 10px;">
-						<view style="display: flex;flex-direction: column; align-items: center;" @click="Keep()">
-							<image lazy-load src="../../../static/icons/6.png" mode="aspectFit"
-								style="width: 50px; height: 50px;border-radius: 40px;object-fit: contain;">
-							</image>
-							<text
-								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('记体重')}}</text>
+					<view class="show-body">
+						<view class="show-date">{{showTotal_date}}</view>
+						<view class="show-tip">
+							<view class="show-tip-bar"></view>
+							<view class="show-tip-text">{{$t('确保每天摄入足够的水')}}</view>
 						</view>
-						<view style="display: flex;flex-direction: column;  align-items: center;margin-left: 10px;"
-							@click="Body_circumference()">
-							<image lazy-load src="../../../static/icons/7.png" mode="aspectFit"
-								style="width: 50px; height: 50px;border-radius: 40px;object-fit: contain;">
-							</image>
-							<text
-								style="margin-top: 5px;font-weight: bold;text-align:center;width: 80px;">{{$t('记体围')}}</text>
+						<view class="show-cards">
+							<view class="show-card" @click="Keep()">
+								<image lazy-load src="../../../static/icons/6.png" mode="aspectFit"
+									class="show-card-icon"></image>
+								<text class="show-card-label">{{$t('记体重')}}</text>
+							</view>
+							<view class="show-card" @click="Body_circumference()">
+								<image lazy-load src="../../../static/icons/7.png" mode="aspectFit"
+									class="show-card-icon"></image>
+								<text class="show-card-label">{{$t('记体围')}}</text>
+							</view>
 						</view>
 					</view>
-					<view style="display: flex;justify-content: center;margin-top: 60px;" @click="ddclosess()">
-						<uni-icons size="30" type="closeempty"></uni-icons>
+					<view class="show-close-bottom" @click="ddclosess()">
+						<view class="show-close-btn">
+							<uni-icons size="28" type="closeempty" color="#FFFFFF"></uni-icons>
+						</view>
 					</view>
 				</view>
 			</view>
@@ -552,43 +551,6 @@
 			</uni-popup>
 		</view>
 		<view>
-			<uni-popup ref="qs_popup" :mask-click="true">
-				<view style="border-radius: 20px;background:#fff; padding-bottom: 10px;align-items: center;">
-					<view style="display: flex;justify-content: center; padding: 10px;">
-						<picker fields="day" mode="date" @change="bindDateChange" :end='endtimesss'>
-							<view style="display: flex;flex-direction: row;">
-								<view style="font-size: 16px;color: black;">{{birthday}}</view>
-								<uni-icons type="bottom" size="18" style="margin-left: 5px;"></uni-icons>
-							</view>
-						</picker>
-					</view>
-					<view style="padding: 10px;width: 80vw;">
-						<view
-							style="margin:0 20px 0 20px; display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="shousuoya" :placeholder="$t('请输入收缩压')"
-								style="text-align: center;" />
-							<text style="margin-left: 5px;">{{Blood}}</text>
-						</view>
-						<view
-							style="margin:20px 20px 0 20px; display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="shuzhangya" :placeholder="$t('请输入舒张压')"
-								style="text-align: center;" />
-							<text style="margin-left: 5px;">{{Blood}}</text>
-						</view>
-						<view
-							style="margin:20px 20px 0 20px; display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
-							<input type="number" v-model="maibo" :placeholder="$t('请输入脉搏')"
-								style="text-align: center;" />
-							<text style="margin-left: 5px;">BPM</text>
-						</view>
-
-					</view>
-					<button @tap="truesss()"
-						style="margin: 20px 50px 20px 50px; border-radius: 30px;background: #3298F7;color: white;">{{$t("确认")}}</button>
-				</view>
-			</uni-popup>
-		</view>
-		<view>
 			<yt-dateTimePicker ref="myPicker" @submit="handleSubmit" :start-year="2000" :end-year="2099"
 				:time-init="datass" :time-hide="[true, true, true, true, true, false]"
 				:time-label="[$t('年'), $t('月'), $t('日'), $t('时'), $t('分'), $t('周')]" />
@@ -810,8 +772,8 @@
 						splitNumber: 5,
 						gridType: "dash",
 						data: [{
-							min: 5,
-							max: 150,
+							min: 0,
+							max: 200,
 							position: "left",
 							fontSize: 10,
 							textAlign: "left",
@@ -852,6 +814,14 @@
 				slaveSn: '3',
 				lastWeight: '',
 				lastcreateTime: '',
+				rawBpCache: null,
+				rawMonthAvgCache: null,
+				rawWeightDayCache: null,
+				rawWeightAvgCache: null,
+				rawTrendBpHigh: [],
+				rawTrendBpLow: [],
+				rawTrendWeightKg: [],
+				chartRev: 0,
 			};
 		},
 
@@ -863,13 +833,16 @@
 
 		onHide() {
 			this.clearTimer()
+			uni.$off('unit-settings-changed', this.syncUnitSettings)
 		},
 		onShow() {
 			uni.setNavigationBarTitle({
 				title: this.$t('趋势')
 			})
+			this.syncUnitSettings()
+			uni.$off('unit-settings-changed', this.syncUnitSettings)
+			uni.$on('unit-settings-changed', this.syncUnitSettings)
 			this.Unitlist()
-			this.Blood = uni.getStorageSync("Blood") === 0 || uni.getStorageSync("Blood") === "" ? "mmHg" : "kPa"
 			switch (this.types_index) {
 				case 0:
 					this.slaveSn = "3"
@@ -890,7 +863,6 @@
 			}
 			isInChinaByIP().then(isInChina => {
 				const location = isInChina ? "境内" : "境外";
-				this.newweightKG = uni.getStorageSync("danwei2") === 1 ? this.$t("英镑") : this.$t("千克1");
 				this.loact = location;
 				this.messs()
 				this.tendtimer = setInterval(res => {
@@ -909,6 +881,113 @@
 					clearInterval(this.tendtimer);
 					this.tendtimer = null;
 				}
+			},
+			isKgWeightUnit(unitLabel) {
+				const u = String(unitLabel || '').trim()
+				return u === 'KG' || u === 'kg' || u === '千克' || u === this.$t('千克') || u === this.$t('千克1')
+			},
+			formatBpValue(val) {
+				if (val == null || val === '') return '-'
+				return this.Blood === 'mmHg' ? val : (Number(val) * 0.133).toFixed(1)
+			},
+			formatWeightKg(val) {
+				if (val == null || val === '' || val === '--') return val
+				const num = Number(val)
+				if (!Number.isFinite(num)) return val
+				return this.isKgWeightUnit(this.newweightKG) ? num : WeightConverter.kgToLb(num)
+			},
+			syncUnitSettings() {
+				this.Blood = uni.getStorageSync('Blood') === 0 || uni.getStorageSync('Blood') === '' ? 'mmHg' :
+					'kPa'
+				this.newweightKG = uni.getStorageSync('danwei2') === 1 ? this.$t('英镑') : this.$t('千克1')
+				this.applyMinmaxDisplay()
+				this.applyMonthAvgDisplay()
+				this.applyWeightDayDisplay()
+				this.applyWeightAvgDisplay()
+				this.applyTrendChartUnits()
+			},
+			applyMinmaxDisplay() {
+				if (!this.rawBpCache) return
+				const d = this.rawBpCache
+				const fmt = (v) => this.formatBpValue(v === null ? null : v)
+				this.lately_Blood_pressure = this.bgaaa(d.last.lowPressure, d.last.highPressure)
+				this.lately_Systolic_blood_pressure = d.last.highPressure === null ? '-' : fmt(d.last.highPressure)
+				this.lately_Diastolic_blood_pressure = d.last.lowPressure === null ? '-' : fmt(d.last.lowPressure)
+				this.lately_pulse = d.last.heartrate === null ? '-' : d.last.heartrate
+				this.average_Blood_pressure = this.bgaaa(d.avg.lowPressure, d.avg.highPressure)
+				this.average_Systolic_blood_pressure = fmt(d.avg.highPressure)
+				this.average_Diastolic_blood_pressure = fmt(d.avg.lowPressure)
+				this.average_pulse = d.avg.heartrate
+				this.Maximum_Blood_pressure = this.bgaaa(d.max.lowPressure, d.max.highPressure)
+				this.Maximum_Systolic_blood_pressure = fmt(d.max.highPressure)
+				this.Maximum_Diastolic_blood_pressure = fmt(d.max.lowPressure)
+				this.Maximum_pulse = d.max.heartrate === null ? '-' : d.max.heartrate
+				this.Minimum_Blood_pressure = this.bgaaa(d.min.lowPressure, d.min.highPressure)
+				this.Minimum_Systolic_blood_pressure = d.min.highPressure == null ? '-' : fmt(d.min.highPressure)
+				this.Minimum_Diastolic_blood_pressure = d.min.lowPressure == null ? '-' : fmt(d.min.lowPressure)
+				this.Minimum_pulse = d.min.heartrate == null ? '-' : d.min.heartrate
+			},
+			applyMonthAvgDisplay() {
+				if (!this.rawMonthAvgCache) return
+				this.Systolic_blood_pressure = this.formatBpValue(this.rawMonthAvgCache.highPressure)
+				this.Diastolic_blood_pressure = this.formatBpValue(this.rawMonthAvgCache.lowPressure)
+			},
+			applyWeightDayDisplay() {
+				if (!this.rawWeightDayCache) return
+				const d = this.rawWeightDayCache
+				this.level_weight = d.level
+				this.max_weight = this.formatWeightKg(d.max)
+				this.min_weight = this.formatWeightKg(d.min)
+				this.avg_weight = this.formatWeightKg(d.avg)
+			},
+			applyWeightAvgDisplay() {
+				if (!this.rawWeightAvgCache) return
+				this.Mean_value = this.formatWeightKg(this.rawWeightAvgCache.avgWeight)
+				this.bmi = this.rawWeightAvgCache.bmi
+				this.weight_value = this.rawWeightAvgCache.change
+			},
+			applyTrendChartUnits() {
+				if (this.rawTrendBpHigh.length) {
+					const fmtBp = (v) => {
+						if (v == null) return null
+						return this.Blood === 'mmHg' ? v : Number((Number(v) * 0.133).toFixed(1))
+					}
+					this.chartData.series[0].data = this.rawTrendBpHigh.map(fmtBp)
+					this.chartData.series[1].data = this.rawTrendBpLow.map(fmtBp)
+				}
+				if (this.rawTrendWeightKg.length) {
+					const fmtW = (v) => {
+						if (v == null) return null
+						return this.isKgWeightUnit(this.newweightKG) ? v : Number(WeightConverter.kgToLb(v))
+					}
+					this.chartData2.series[0].data = this.rawTrendWeightKg.map(fmtW)
+				}
+				this.updateTrendChartYAxis()
+			},
+			updateTrendChartYAxis() {
+				const bpMin = 0
+				const bpMax = this.Blood === 'mmHg' ? 200 : 50
+				this.xeuyaopts = Object.assign({}, this.xeuyaopts, {
+					yAxis: Object.assign({}, this.xeuyaopts.yAxis, {
+						data: [Object.assign({}, this.xeuyaopts.yAxis.data[0], {
+							min: bpMin,
+							max: bpMax
+						})]
+					})
+				})
+
+				const isKg = this.isKgWeightUnit(this.newweightKG)
+				const weightMin = 0
+				const weightMax = isKg ? 200 : 400
+				this.tizhonngopts = Object.assign({}, this.tizhonngopts, {
+					yAxis: Object.assign({}, this.tizhonngopts.yAxis, {
+						data: [Object.assign({}, this.tizhonngopts.yAxis.data[0], {
+							min: weightMin,
+							max: weightMax
+						})]
+					})
+				})
+				this.chartRev += 1
 			},
 			Unitlist() {
 				const data = {
@@ -954,6 +1033,7 @@
 									break;
 							}
 						});
+						this.syncUnitSettings()
 					}
 				});
 			},
@@ -1953,6 +2033,10 @@
 							let weightValue = weightMap.get(item.dateStr) || null
 							this.chartData2.series[0].data.push(weightValue)
 						})
+						this.rawTrendBpHigh = this.chartData.series[0].data.slice()
+						this.rawTrendBpLow = this.chartData.series[1].data.slice()
+						this.rawTrendWeightKg = this.chartData2.series[0].data.slice()
+						this.applyTrendChartUnits()
 						// 体重X轴标签
 						if (this.WEEK) {
 							let startLabel = `${dateList[0].month}/${dateList[0].day}`
@@ -2059,10 +2143,11 @@
 				}
 				this.$post(this.$url_APP_IP + this.$url_query_month_avg, data, getheader).then(res => {
 					if (res.code == 200) {
-						this.Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.avg.highPressure : (Number(
-							res.data.avg.highPressure) * 0.133).toFixed(1)
-						this.Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.avg.lowPressure : (Number(
-							res.data.avg.lowPressure) * 0.133).toFixed(1)
+						this.rawMonthAvgCache = {
+							highPressure: res.data.avg.highPressure,
+							lowPressure: res.data.avg.lowPressure
+						}
+						this.applyMonthAvgDisplay()
 						// this.Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.high.min + "-" + res.data
 						// 	.high.max : (Number(res.data.high.min) * 0.133).toFixed(1) + "-" + (Number(res.data
 						// 		.high.max) * 0.133).toFixed(1)
@@ -2097,44 +2182,8 @@
 				this.$post(this.$url_APP_IP + this.$url_query_minmax, data, getheader).then(res => {
 					// console.log("趋势数据", res)
 					if (res.code == 200) {
-						//最近
-						this.lately_Blood_pressure = this.bgaaa(res.data.last.lowPressure, res.data.last
-							.highPressure)
-						this.lately_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.last
-							.highPressure === null ? "-" : res.data.last.highPressure : (Number(res.data.last
-								.highPressure) * 0.133).toFixed(1)
-						this.lately_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.last
-							.lowPressure === null ? "-" : res.data
-							.last.lowPressure : (Number(res.data.last.lowPressure) * 0.133).toFixed(1)
-						this.lately_pulse = res.data.last.heartrate === null ? "-" : res.data.last.heartrate
-						//平均
-						this.average_Blood_pressure = this.bgaaa(res.data.avg.lowPressure, res.data.avg
-							.highPressure)
-						this.average_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.avg.highPressure :
-							(Number(res.data.avg.highPressure) * 0.133).toFixed(1)
-						this.average_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.avg.lowPressure :
-							(Number(res.data.avg.lowPressure) * 0.133).toFixed(1)
-						this.average_pulse = res.data.avg.heartrate
-						//最高
-						this.Maximum_Blood_pressure = this.bgaaa(res.data.max.lowPressure, res.data.max
-							.highPressure)
-						this.Maximum_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.max.highPressure :
-							(Number(res.data.max.highPressure) * 0.133).toFixed(1)
-						this.Maximum_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.max.lowPressure :
-							(Number(res.data.max.lowPressure) * 0.133).toFixed(1)
-						this.Maximum_pulse = res.data.max.heartrate === null ? '-' : res.data.max.heartrate
-						//最低
-						this.Minimum_Blood_pressure = this.bgaaa(res.data.min.lowPressure, res.data.min
-							.highPressure)
-						this.Minimum_Systolic_blood_pressure = this.Blood === "mmHg" ? res.data.min.highPressure ==
-							null ? "-" : res.data
-							.min.highPressure :
-							(Number(res.data.min.highPressure) * 0.133).toFixed(1)
-						this.Minimum_Diastolic_blood_pressure = this.Blood === "mmHg" ? res.data.min.lowPressure ==
-							null ? "-" : res.data
-							.min.lowPressure :
-							(Number(res.data.min.lowPressure) * 0.133).toFixed(1)
-						this.Minimum_pulse = res.data.min.heartrate == null ? "-" : res.data.min.heartrate
+						this.rawBpCache = res.data
+						this.applyMinmaxDisplay()
 					} else if (res.code == 500) {
 						//最近
 						this.lately_Blood_pressure = "--"
@@ -2167,15 +2216,17 @@
 			query_weight_avg(startTime, endTime) {
 				const data = {
 					deviceSn: uni.getStorageSync("userid"),
-					// deviceSn: this.TenddeviceSn,
 					startTime: startTime,
 					endTime: endTime,
 				}
 				this.$post(this.$url_APP_IP + this.$url_query_weight_avg, data, getheader).then(res => {
 					if (res.code == 200) {
-						this.Mean_value = res.data.avgWeight
-						this.bmi = res.data.bmi
-						this.weight_value = res.data.change
+						this.rawWeightAvgCache = {
+							avgWeight: res.data.avgWeight,
+							bmi: res.data.bmi,
+							change: res.data.change
+						}
+						this.applyWeightAvgDisplay()
 					} else if (res.code == 500) {
 						this.Mean_value = "--"
 						this.bmi = "--"
@@ -2191,7 +2242,6 @@
 			//体脂秤计算当天最高/最低/平均体重和肥胖等级
 			query_weight_day(startTime, endTime) {
 				const data = {
-					// deviceSn: this.TenddeviceSn,
 					deviceSn: uni.getStorageSync("userid"),
 					startTime: startTime,
 					endTime: endTime,
@@ -2199,16 +2249,13 @@
 				this.$post(this.$url_APP_IP + this.$url_query_weight_day, data, getheader).then(res => {
 					console.log("query_weight_day", res)
 					if (res.code == 200) {
-						this.level_weight = res.data.level
-						this.max_weight = (this.newweightKG === "KG" || this.newweightKG === "千克") ? res.data.max :
-							WeightConverter.kgToLb(res
-								.data.max)
-						this.min_weight = (this.newweightKG === "KG" || this.newweightKG === "千克") ? res.data.min :
-							WeightConverter.kgToLb(res
-								.data.min)
-						this.avg_weight = (this.newweightKG === "KG" || this.newweightKG === "千克") ? res.data.avg :
-							WeightConverter.kgToLb(res
-								.data.avg)
+						this.rawWeightDayCache = {
+							level: res.data.level,
+							max: res.data.max,
+							min: res.data.min,
+							avg: res.data.avg
+						}
+						this.applyWeightDayDisplay()
 					} else if (res.code == 500) {
 						this.level_weight = "--"
 						this.max_weight = "--"
@@ -2240,67 +2287,6 @@
 					formattedTime = `${year}-${month}`;
 				}
 				return formattedTime;
-			},
-			//弹窗数据提交按钮
-			truesss() {
-				let that = this;
-				const validateInput = (value, message) => {
-					if (!value) {
-						uni.showToast({
-							title: that.$t(message),
-							icon: "none"
-						});
-						return false;
-					}
-					return true;
-				};
-				if (
-					!validateInput(that.shuzhangya, '请输入收缩压') ||
-					!validateInput(that.shousuoya, '请输入舒张压') ||
-					!validateInput(that.maibo, '请输入脉搏')
-				) {
-					return;
-				}
-				that.pressure_data();
-			},
-			//用户在app手动上报血压数据
-			pressure_data() {
-				const now = new Date();
-				const timestamp = Math.floor(new Date(this.birthday == this.$t('今天') ?
-						`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}` :
-						`${this.birthday} ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`).getTime() /
-					1000);
-				const data = {
-					deviceSn: this.TenddeviceSn,
-					slaveSn: "0",
-					slaveData: {
-						lowPressure: this.shuzhangya,
-						highPressure: this.shousuoya,
-						heartrate: this.maibo
-					},
-					time: timestamp
-				}
-				this.$post(this.$url_APP_IP + this.$url_pressure_data, data, getheader).then(res => {
-					if (res.code == 200) {
-						this.$refs.qs_popup.close()
-						this.birthday = this.$t('今天')
-						this.shousuoya = ''
-						this.shuzhangya = ''
-						this.maibo = ''
-						uni.showToast({
-							title: res.msg,
-							icon: 'none'
-						})
-						this.query_minmax(this.startTime, this.endTime)
-					} else if (res.code == 500) {
-						return
-					} else {
-						uni.showToast({
-							title: res.msg,
-							icon: 'none'
-						})
-					}
-				})
 			},
 			bg(bg) {
 				const bloodPressureColors = {
@@ -2477,20 +2463,13 @@
 			},
 			//悬浮框点击按钮
 			fabClick() {
-				if (this.types == true) {
-					this.$refs.qs_popup.open("center")
-				} else {
-					this.fillOut = true
-				}
+				this.fillOut = true
 			},
 			BMI_tap() {
 				this.$refs.popup.open("center")
 			},
 			BMI_tap2() {
 				this.$refs.popup1.open("center")
-			},
-			closess() {
-				this.$refs.qs_popup.close()
 			},
 		}
 	};
@@ -2861,6 +2840,13 @@
 	}
 
 	.showTotal {
+		position: fixed;
+		left: 0;
+		right: 0;
+		top: 0;
+		bottom: 0;
+		z-index: 10050;
+
 		.show {
 			width: 100vw;
 			height: 100vh;
@@ -2869,22 +2855,110 @@
 			right: 0;
 			top: 0;
 			bottom: 0;
-			padding-top: 120px;
-			padding-left: 10px;
+			padding: 0 48rpx;
+			box-sizing: border-box;
 			margin: auto;
-			z-index: 10000;
+			z-index: 2;
+			display: flex;
+			flex-direction: column;
+			justify-content: center;
 		}
-
 
 		.over {
 			width: 100%;
 			height: 100%;
-			background-color: #FFFFFF;
-			opacity: 0.9;
+			background-color: rgba(220, 238, 252, 0.96);
 			position: fixed;
 			top: 0;
 			left: 0;
-			z-index: 999;
+			z-index: 1;
+		}
+
+		.show-body {
+			width: 100%;
+		}
+
+		.show-date {
+			color: #000000;
+			font-size: 80rpx;
+			font-weight: bold;
+			line-height: 1.1;
+		}
+
+		.show-tip {
+			display: flex;
+			flex-direction: row;
+			align-items: stretch;
+			margin-top: 28rpx;
+		}
+
+		.show-tip-bar {
+			width: 8rpx;
+			background: #1A4A73;
+			border-radius: 8rpx;
+			flex-shrink: 0;
+		}
+
+		.show-tip-text {
+			color: #1A4A73;
+			font-size: 28rpx;
+			line-height: 1.55;
+			margin-left: 20rpx;
+			flex: 1;
+		}
+
+		.show-cards {
+			display: flex;
+			flex-direction: row;
+			margin-top: 80rpx;
+		}
+
+		.show-card {
+			flex: 1;
+			background: #FFFFFF;
+			border-radius: 40rpx;
+			box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			padding: 56rpx 16rpx 48rpx;
+		}
+
+		.show-card+.show-card {
+			margin-left: 24rpx;
+		}
+
+		.show-card-icon {
+			width: 112rpx;
+			height: 112rpx;
+			border-radius: 56rpx;
+			box-shadow: 0 8rpx 28rpx rgba(37, 149, 211, 0.28);
+		}
+
+		.show-card-label {
+			margin-top: 24rpx;
+			font-weight: bold;
+			text-align: center;
+			color: #000000;
+			font-size: 30rpx;
+		}
+
+		.show-close-bottom {
+			display: flex;
+			justify-content: center;
+			margin-top: 80rpx;
+		}
+
+		.show-close-btn {
+			width: 96rpx;
+			height: 96rpx;
+			border-radius: 50%;
+			background: #3298F7;
+			box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+			display: flex;
+			align-items: center;
+			justify-content: center;
 		}
 	}
 

@@ -1,122 +1,116 @@
 <template>
 	<view class="pagestyle">
-		<view class="title_text">{{$t('相关信息')}}</view>
-		<view class="bt_BG">
-			<view class="text">{{$t('报告日期')}}</view>
-			<view class="uni-list-cell-db"
-				style="width: 60vw; display: flex;justify-content: flex-end; flex-direction: row;margin-left: 15px;">
-				<picker fields="day" mode="date" :value="profDate" @change="bindDateChange">
-					<view style="display: flex; flex-direction: row;align-items: center;">
-						<view class="date_bg" :style="getStatusColor(profDate)">{{profDate}}</view>
-						<uni-icons type="bottom" size="20" style="margin-left: 15px; margin-right: 20px;"></uni-icons>
-					</view>
-				</picker>
-			</view>
+		<view class="title-card">
+			<view class="wave"></view>
+			<image class="title-hero-img" src="/static/page_icon/app_icon_all.jpg" mode="aspectFit"></image>
+			<view class="title_text">{{$t('相关信息')}}</view>
 		</view>
-		<view class="bt_BG">
-			<view class="text">{{$t('监测时间')}}</view>
-			<view class="uni-list-cell-db"
-				style="width: 60vw; display: flex;justify-content: flex-end; flex-direction: row;margin-left: 15px;">
-				<picker :value="index1" @change="Monitoring" :range="array1">
-					<view style="display: flex; flex-direction: row;align-items: center;">
-						<view class="date_bg" :style="getStatusColor1(index1)">{{array1[index1]}}</view>
-						<uni-icons type="bottom" size="20" style="margin-left: 15px; margin-right: 20px;"></uni-icons>
-					</view>
-				</picker>
-			</view>
-		</view>
-		<view class="bt_BG">
-			<view class="text">{{$t('起床时间')}}</view>
-			<view class="uni-list-cell-db"
-				style="width: 60vw; display: flex;justify-content: flex-end; flex-direction: row;margin-left: 15px;">
-				<picker fields="month" mode="time" :value="time" @change="bindTimeChange">
-					<view style="display: flex; flex-direction: row;align-items: center;">
-						<view class="date_bg" :style="getStatusColor(time)">{{time}}</view>
-						<uni-icons type="bottom" size="20" style="margin-left: 15px; margin-right: 20px;"></uni-icons>
-					</view>
-				</picker>
-			</view>
-		</view>
-		<view class="bt_BG">
-			<view class="text">{{$t('就寝时间')}}</view>
-			<view class="uni-list-cell-db"
-				style="width: 60vw; display: flex;justify-content: flex-end; flex-direction: row;margin-left: 15px;">
-				<picker fields="month" mode="time" :value="time1" @change="bindTimeChange_1">
-					<view style="display: flex; flex-direction: row;align-items: center;">
-						<view class="date_bg" :style="getStatusColor(time1)">{{time1}}</view>
-						<uni-icons type="bottom" size="20" style="margin-left: 15px; margin-right: 20px;"></uni-icons>
-					</view>
-				</picker>
-			</view>
-		</view>
-		<view class="bt_BG">
-			<view class="text">{{$t('是否午休')}}</view>
-			<view
-				style="width: 60vw; display: flex;justify-content: flex-end; flex-direction: row;align-items: center;">
-				<view class="select_bg" :style="getStatusColor(select)" @click="select_click(0)">
-					{{select}}
+		<view class="form-card">
+			<view class="bt_BG">
+				<view class="text">{{$t('报告日期')}}</view>
+				<view class="uni-list-cell-db cell-right">
+					<picker fields="day" mode="date" :value="profDate" @change="bindDateChange">
+						<view class="picker-row">
+							<view class="date_bg" :style="getStatusColor(profDate)">{{profDate}}</view>
+							<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"></uni-icons>
+						</view>
+					</picker>
 				</view>
-				<uni-icons type="bottom" size="20" style="margin-right: 20px;" @click="select_click(0)"></uni-icons>
 			</view>
-		</view>
-		<view class="bt_BG">
-			<view class="text">{{$t('午休时长')}}</view>
-			<view class="uni-list-cell-db"
-				style="width: 60vw; display: flex;justify-content: flex-end; flex-direction: row;margin-left: 15px;">
-				<picker :value="index" @change="bindTimeChange_2" :range="array">
-					<view style="display: flex; flex-direction: row;align-items: center;">
-						<view class="date_bg" :style="getStatusColor1(index)">{{array[index]}}</view>
-						<uni-icons type="bottom" size="20" style="margin-left: 15px; margin-right: 20px;"></uni-icons>
+			<view class="bt_BG">
+				<view class="text">{{$t('监测时间')}}</view>
+				<view class="uni-list-cell-db cell-right">
+					<picker :value="index1" @change="Monitoring" :range="array1">
+						<view class="picker-row">
+							<view class="date_bg" :style="getStatusColor1(index1)">{{array1[index1]}}</view>
+							<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"></uni-icons>
+						</view>
+					</picker>
+				</view>
+			</view>
+			<view class="bt_BG">
+				<view class="text">{{$t('起床时间')}}</view>
+				<view class="uni-list-cell-db cell-right">
+					<picker fields="month" mode="time" :value="time" @change="bindTimeChange">
+						<view class="picker-row">
+							<view class="date_bg" :style="getStatusColor(time)">{{time}}</view>
+							<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"></uni-icons>
+						</view>
+					</picker>
+				</view>
+			</view>
+			<view class="bt_BG">
+				<view class="text">{{$t('就寝时间')}}</view>
+				<view class="uni-list-cell-db cell-right">
+					<picker fields="month" mode="time" :value="time1" @change="bindTimeChange_1">
+						<view class="picker-row">
+							<view class="date_bg" :style="getStatusColor(time1)">{{time1}}</view>
+							<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"></uni-icons>
+						</view>
+					</picker>
+				</view>
+			</view>
+			<view class="bt_BG">
+				<view class="text">{{$t('是否午休')}}</view>
+				<view class="cell-right">
+					<view class="select_bg" :style="getStatusColor(select)" @click="select_click(0)">
+						{{select}}
 					</view>
-				</picker>
-			</view>
-		</view>
-		<view class="bt_BG">
-			<view class="text_1">{{$t('是否服用药物')}}</view>
-			<view
-				style="width: 40vw; display: flex;justify-content: flex-end; flex-direction: row;align-items: center;">
-				<view class="select_bg" :style="getStatusColor(select2)" @click="select_click(2)">
-					{{select2}}
+					<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"
+						@click="select_click(0)"></uni-icons>
 				</view>
-				<uni-icons type="bottom" size="20" style="margin-right: 20px;" @click="select_click(2)"></uni-icons>
 			</view>
-		</view>
-		<!-- <view class="bt_BG">
-			<view class="text">{{$t('当前用药')}}</view>
-			<view
-				style="width: 60vw; display: flex;justify-content: flex-end; flex-direction: row;align-items: center;">
-				<view class="select_bg" :style="getStatusColor(select3)" @click="select_click(3)">
-					{{select3}}
+			<view class="bt_BG">
+				<view class="text">{{$t('午休时长')}}</view>
+				<view class="uni-list-cell-db cell-right">
+					<picker :value="index" @change="bindTimeChange_2" :range="array">
+						<view class="picker-row">
+							<view class="date_bg" :style="getStatusColor1(index)">{{array[index]}}</view>
+							<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"></uni-icons>
+						</view>
+					</picker>
 				</view>
-				<uni-icons type="bottom" size="20" style="margin-right: 20px;" @click="select_click(3)"></uni-icons>
 			</view>
-		</view> -->
-		<view class="bt_BG">
-			<view class="text_1">{{$t('工作是否倒班')}}</view>
-			<view
-				style="width: 50vw; display: flex;justify-content: flex-end; flex-direction: row;align-items: center;">
-				<view class="select_bg" :style="getStatusColor(select4)" @click="select_click(4)">
-					{{select4}}
+			<view class="bt_BG">
+				<view class="text_1">{{$t('是否服用药物')}}</view>
+				<view class="cell-right cell-right-sm">
+					<view class="select_bg" :style="getStatusColor(select2)" @click="select_click(2)">
+						{{select2}}
+					</view>
+					<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"
+						@click="select_click(2)"></uni-icons>
 				</view>
-				<uni-icons type="bottom" size="20" style="margin-right: 20px;" @click="select_click(4)"></uni-icons>
+			</view>
+			<!-- <view class="bt_BG">
+				<view class="text">{{$t('当前用药')}}</view>
+				<view class="cell-right">
+					<view class="select_bg" :style="getStatusColor(select3)" @click="select_click(3)">
+						{{select3}}
+					</view>
+					<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8" @click="select_click(3)"></uni-icons>
+				</view>
+			</view> -->
+			<view class="bt_BG">
+				<view class="text_1">{{$t('工作是否倒班')}}</view>
+				<view class="cell-right cell-right-sm">
+					<view class="select_bg" :style="getStatusColor(select4)" @click="select_click(4)">
+						{{select4}}
+					</view>
+					<uni-icons class="chevron" type="bottom" size="16" color="#C5CDD8"
+						@click="select_click(4)"></uni-icons>
+				</view>
 			</view>
 		</view>
 		<view class="butoonstyles">
 			<button class="buttonstyle_1" @click="skilp()">{{$t('跳过')}}</button>
 			<button class="buttonstyle_2" @click="btn_tuesss()">{{$t('确认')}}</button>
 		</view>
-		<view class="titlestyle">
-			<uni-icons @click="back()" type="left" size="20"
-				style="color: white;margin-left: 20px;margin-top: 30px;"></uni-icons>
-			<view class="titlestyle_1">{{$t('信息补充')}}</view>
-			<view style="margin-right: 20px;margin-top: 30px;"></view>
-		</view>
 
-		<view style="width: 100vw;">
-			<uni-popup ref="popup" type="center" border-radius="10px 10px 0 0" :mask-click="false">
+		<view class="popup-wrap">
+			<uni-popup ref="popup" type="center" border-radius="16px" :mask-click="false">
 				<view class="popup_bg">
 					<view class="select_text" @click="sex_yes()">{{$t('是')}}</view>
-					<view style="border-top: 1px solid gainsboro;"></view>
+					<view class="popup-line"></view>
 					<view class="select_text" @click="sex_no()">{{$t('否')}}</view>
 				</view>
 			</uni-popup>
@@ -154,8 +148,11 @@
 			}
 		},
 
-
-
+		onShow() {
+			uni.setNavigationBarTitle({
+				title: this.$t('信息补充')
+			})
+		},
 		methods: {
 			getSelectValue(key, defaultText = '请选择') {
 				const value = uni.getStorageSync(key);
@@ -172,11 +169,6 @@
 			/** 界面展示：手机本地日期 */
 			getCurrentTime() {
 				return getLocalTimeAllJSON().YMD
-			},
-
-
-			back() {
-				uni.navigateBack()
 			},
 			getStatusColor(status) {
 				// 根据状态值返回不同的样式对象
@@ -328,118 +320,212 @@
 
 <style>
 	.pagestyle {
-		height: 100vh;
-		background: #EFEFF4;
+		padding-top: 16px;
+		min-height: 100vh;
+		background-color: #dceefc;
+		background-image: linear-gradient(180deg, #dceefc 0%, #dceefc 220px, #f4f7fb 480px, #f4f7fb 100%);
+		box-sizing: border-box;
+		padding-bottom: calc(24px + env(safe-area-inset-bottom));
 	}
 
-	.titlestyle {
-		position: fixed;
-		top: 0;
-		width: 100vw;
+	.title-card {
+		position: relative;
+		overflow: hidden;
+		margin: 0 16px 12px;
+		padding: 12px 12px 12px 16px;
 		display: flex;
-		justify-content: space-between;
+		flex-direction: row;
 		align-items: center;
-		background: #3298F7;
-		height: 83px;
+		background: #eef1f4;
+		border-radius: 16px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		border: 1px solid #d8dee6;
+		box-sizing: border-box;
 	}
 
-	.titlestyle_1 {
-		margin-top: 30px;
-		color: white;
-		font-size: 17px;
-		font-weight: 500;
+	.wave {
+		position: absolute;
+		top: -180rpx;
+		left: -120rpx;
+		width: 560rpx;
+		height: 420rpx;
+		background: radial-gradient(ellipse at center, #FFFFFF 0%, rgba(255, 255, 255, 0.55) 46%, rgba(244, 248, 252, 0) 72%);
+		pointer-events: none;
+		z-index: 0;
 	}
 
 	.title_text {
-		padding-top: 108px;
-		margin-left: 24px;
-		margin-right: 24px;
-		color: #999999;
-		font-size: 12px;
+		position: relative;
+		z-index: 1;
+		flex: 1;
+		margin-left: 10px;
+		min-width: 0;
+		color: #5b6b7a;
+		font-size: 14px;
+		font-weight: 700;
+		line-height: 1.5;
+	}
+
+	.title-hero-img {
+		position: relative;
+		z-index: 1;
+		width: 68px;
+		height: 68px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.form-card {
+		margin: 20px 16px;
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		overflow: hidden;
+		padding: 4px 16px;
 	}
 
 	.bt_BG {
 		width: auto;
-		height: 54px;
+		min-height: 54px;
 		display: flex;
-		justify-content: center;
+		justify-content: space-between;
 		align-items: center;
 		flex-direction: row;
-		margin-left: 20px;
-		margin-right: 20px;
-		margin-top: 20px;
-		background: white;
-		border-radius: 50px;
+		background: transparent;
+		border-bottom: 1px solid #eef1f5;
+		box-sizing: border-box;
+	}
+
+	.bt_BG:last-child {
+		border-bottom: none;
 	}
 
 	.text {
-		width: 40vw;
-		font-size: 16px;
-		margin-left: 20px;
-		font-weight: 400;
+		flex: 1;
+		min-width: 0;
+		font-size: 15px;
+		font-weight: 600;
+		color: #1a2b4a;
+		padding-right: 12px;
 	}
 
 	.text_1 {
-		width: 70vw;
-		font-size: 16px;
-		margin-left: 20px;
-		font-weight: 400;
+		flex: 1;
+		min-width: 0;
+		font-size: 15px;
+		font-weight: 600;
+		color: #1a2b4a;
+		padding-right: 12px;
 	}
 
+	.cell-right {
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+		flex-direction: row;
+		flex-shrink: 0;
+		max-width: 58%;
+		min-width: 0;
+	}
+
+	.cell-right-sm {
+		max-width: 42%;
+	}
+
+	.picker-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		min-width: 0;
+	}
 
 	.select_bg {
-		width: 100vw;
 		text-align: right;
-		margin-right: 15px;
-		font-size: 16px;
+		margin-right: 4px;
+		font-size: 15px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.date_bg {
-		text-align: center;
-		font-size: 16px;
+		text-align: right;
+		font-size: 15px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 46vw;
+	}
+
+	.chevron {
+		margin-left: 6px;
+		flex-shrink: 0;
 	}
 
 	.select_text {
 		text-align: center;
-		padding: 10px;
+		padding: 16px;
 		font-size: 16px;
-		font-weight: bold;
+		font-weight: 600;
+		color: #1a2b4a;
+	}
+
+	.popup-wrap {
+		width: 100%;
 	}
 
 	.popup_bg {
-		padding: 20px;
-		width: 50vw;
-		margin-left: 20px;
-		margin-right: 20px;
-		background: white;
-		border-radius: 20px;
+		width: 72vw;
+		background: #ffffff;
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 12px 40px rgba(26, 43, 74, 0.16);
+	}
+
+	.popup-line {
+		height: 1px;
+		background: #eef1f5;
+		margin: 0 20px;
 	}
 
 	.butoonstyles {
-		margin-top: 60px;
-		margin-left: 20px;
-		margin-right: 20px;
-		padding-bottom: 80px;
+		margin-top: 28px;
+		margin-left: 16px;
+		margin-right: 16px;
+		padding-bottom: 24px;
 		display: flex;
 		justify-content: center;
 		align-items: center;
 		flex-direction: row;
 	}
 
-	.buttonstyle_1 {
-		width: 108px;
+	.buttonstyle_1,
+	.buttonstyle_2 {
+		flex: 1;
 		height: 48px;
-		border-radius: 100px;
-		color: white;
-		background: #3298F7;
+		line-height: 48px;
+		border-radius: 24px;
+		font-size: 16px;
+		font-weight: 600;
+		margin: 0;
+	}
 
+	.buttonstyle_1 {
+		margin-right: 12px;
+		color: #3298F7;
+		background: #ffffff;
+		border: 1.5px solid #3298F7;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.buttonstyle_2 {
-		width: 108px;
-		height: 48px;
-		color: white;
-		border-radius: 100px;
+		color: #ffffff;
 		background: #3298F7;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+	}
+
+	.buttonstyle_1::after,
+	.buttonstyle_2::after {
+		border: none;
 	}
 </style>

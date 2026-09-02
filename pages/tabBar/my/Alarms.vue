@@ -38,73 +38,75 @@
 			</view>
 		</view>
 		<button class="buttonstyle" @click="clickset()">{{$t("设置新的正常范围")}}</button>
-		<view style="margin-top: 20px;font-size: 14px; font-weight: 400;color: gray;">{{$t("警报使用提示1")}}</view>
-		<view style="margin-top: 5px;font-size: 14px; font-weight: 400;color: gray;">{{$t("警报使用提示2")}}</view>
-		<view style="background: gainsboro;height: 1px; margin-top: 10px;"></view>
-		<view style="background: white;">
-			<view
-				style="display: flex;justify-content: space-between; align-items: center; padding: 10px;margin: 0 15px 0 15px;">
-				<image :src="avatar"
-					style="border-radius: 20px; width: 40px; height: 40px; border: 1px solid gainsboro;">
+		<view class="tip-card">
+			<image class="tip-hero-img" src="/static/page_icon/app_icon_all.jpg" mode="aspectFit"></image>
+			<view class="tip-content">
+				<view class="tip-text tip-text-first">{{$t("警报使用提示1")}}</view>
+				<view class="tip-text">{{$t("警报使用提示2")}}</view>
+			</view>
+		</view>
+		<view class="section-line"></view>
+		<view class="user-card">
+			<view class="user-row">
+				<image :src="avatar" class="user-avatar">
 				</image>
-				<view style="flex: 2;margin-left: 20px;">
-					<view style="font-weight: 600;font-size: 16px; color: black;">
+				<view class="user-name-wrap">
+					<view class="user-name">
 						{{$t("用户1")+'：'+ name}}
 					</view>
 				</view>
-				<switch @change="switch1Change1" style="transform:scale(0.6);" :checked="swicth" color="#0686CC" />
+				<switch @change="switch1Change1" class="user-switch" :checked="swicth" color="#0686CC" />
 			</view>
 			<view class="container" v-show="jingbaoshow2">
-				<view style="font-size: 16px; font-weight: 600;">{{$t("收缩压")}}{{$t("警报")}}:</view>
-				<view style="font-size: 14px; font-weight: 400;">{{jingbao2}}</view>
+				<view class="alert-label">{{$t("收缩压")}}{{$t("警报")}}:</view>
+				<view class="alert-value">{{jingbao2}}</view>
 			</view>
 			<view class="container" v-show="jingbaoshow1">
-				<view style="font-size: 16px; font-weight: 600;">{{$t("舒张压")}}{{$t("警报")}}:</view>
-				<view style="font-size: 14px; font-weight: 400;">{{jingbao1}}</view>
+				<view class="alert-label">{{$t("舒张压")}}{{$t("警报")}}:</view>
+				<view class="alert-value">{{jingbao1}}</view>
 			</view>
 			<view class="container" v-show="jingbaoshow3">
-				<view style="font-size: 16px; font-weight: 600;">{{$t("脉搏")}}{{$t("警报")}}:</view>
-				<view style="font-size: 14px; font-weight: 400;">{{jingbao3}}</view>
+				<view class="alert-label">{{$t("脉搏")}}{{$t("警报")}}:</view>
+				<view class="alert-value">{{jingbao3}}</view>
 			</view>
 			<view class="container" v-show="jingbaoshow4">
-				<view style="font-size: 16px; font-weight: 600;">{{$t("血氧")}}{{$t("警报")}}:</view>
-				<view style="font-size: 14px; font-weight: 400;">{{jingbao4}}</view>
+				<view class="alert-label">{{$t("血氧")}}{{$t("警报")}}:</view>
+				<view class="alert-value">{{jingbao4}}</view>
 			</view>
-			<view style="background: gainsboro;height: 1px;"></view>
+			<view class="card-divider"></view>
 		</view>
-		<view style="padding-bottom: 80px;">
-			<view style="background: white;" v-for="(item,index) in filterList" :key="item.id">
-				<view
-					style="display: flex;justify-content: space-between; align-items: center; padding: 10px;margin: 0 15px 0 15px;">
+		<view class="list-wrap">
+			<view class="user-card" v-for="(item,index) in filterList" :key="item.id">
+				<view class="user-row">
 					<image
 						:src="item.shareAvatar==='' || item.shareAvatar===null? '/static/icons/80x80.png':item.shareAvatar"
-						style="border-radius: 20px; width: 40px; height: 40px; border: 1px solid gainsboro;">
+						class="user-avatar">
 					</image>
-					<view style="flex: 2;margin-left: 20px;">
-						<view style="font-weight: 600;font-size: 16px; color: black;">
+					<view class="user-name-wrap">
+						<view class="user-name">
 							{{$t("用户")+'：'+ item.shareName}}
 						</view>
 					</view>
-					<switch @change="switch1Change(item.swicth,index)" style="transform:scale(0.6);"
-						:checked="item.swicth" color="#0686CC" />
+					<switch @change="switch1Change(item.swicth,index)" class="user-switch" :checked="item.swicth"
+						color="#0686CC" />
 				</view>
 				<view class="container" v-show="item.jingbaoshow2">
-					<view style="font-size: 16px; font-weight: 600;">{{$t("收缩压")}}{{$t("警报")}}:</view>
-					<view style="font-size: 14px; font-weight: 400;">{{item.jingbao2}}</view>
+					<view class="alert-label">{{$t("收缩压")}}{{$t("警报")}}:</view>
+					<view class="alert-value">{{item.jingbao2}}</view>
 				</view>
 				<view class="container" v-show="item.jingbaoshow1">
-					<view style="font-size: 16px; font-weight: 600;">{{$t("舒张压")}}{{$t("警报")}}:</view>
-					<view style="font-size: 14px; font-weight: 400;">{{item.jingbao1}}</view>
+					<view class="alert-label">{{$t("舒张压")}}{{$t("警报")}}:</view>
+					<view class="alert-value">{{item.jingbao1}}</view>
 				</view>
 				<view class="container" v-show="item.jingbaoshow3">
-					<view style="font-size: 16px; font-weight: 600;">{{$t("脉搏")}}{{$t("警报")}}:</view>
-					<view style="font-size: 14px; font-weight: 400;">{{item.jingbao3}}</view>
+					<view class="alert-label">{{$t("脉搏")}}{{$t("警报")}}:</view>
+					<view class="alert-value">{{item.jingbao3}}</view>
 				</view>
 				<view class="container" v-show="item.jingbaoshow4">
-					<view style="font-size: 16px; font-weight: 600;">{{$t("血氧")}}{{$t("警报")}}:</view>
-					<view style="font-size: 14px; font-weight: 400;">{{item.jingbao4}}</view>
+					<view class="alert-label">{{$t("血氧")}}{{$t("警报")}}:</view>
+					<view class="alert-value">{{item.jingbao4}}</view>
 				</view>
-				<view style="background: gainsboro;height: 1px;"></view>
+				<view class="card-divider"></view>
 			</view>
 		</view>
 	</view>
@@ -781,30 +783,35 @@
 	}
 </script>
 
-<style>
+<style scoped>
 	.pagestyle {
-		padding: 20px;
+		min-height: 100vh;
+		padding: 18px 16px calc(28px + env(safe-area-inset-bottom));
+		box-sizing: border-box;
+		background: linear-gradient(180deg, #dceefc 0%, #f4f7fb 42%, #f4f7fb 100%);
 	}
 
 	.pagestyle_1 {
 		display: flex;
 		justify-content: center;
 		flex-direction: column;
-		background: white;
-		border-radius: 20px;
+		background: #ffffff;
+		border-radius: 22px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		overflow: hidden;
 	}
 
 	.viewstyle {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		padding: 20px;
+		padding: 16px 18px;
 	}
 
 	.titlestyle {
-		font-size: 17px;
-		font-weight: 600;
-		color: black;
+		font-size: 16px;
+		font-weight: 500;
+		color: #222222;
 	}
 
 	.titlestyle_1 {
@@ -815,19 +822,30 @@
 	}
 
 	.inputstyles {
-		width: 80px;
+		width: 78px;
+		height: 36px;
+		line-height: 36px;
 		text-align: center;
+		font-size: 14px;
+		font-weight: 400;
+		color: #222222;
+		background-color: #f5f7fa;
+		border-radius: 8px;
+		padding: 0 6px;
 	}
 
 	.linestyle1 {
-		background: black;
-		height: 2px;
-		width: 10px;
+		background: #3298F7;
+		height: 3px;
+		width: 12px;
+		margin: 0 8px;
+		border-radius: 2px;
 	}
 
 	.linestyle {
-		background: gainsboro;
+		background: #eef1f5;
 		height: 1px;
+		margin: 0 18px;
 	}
 
 	.buttonstyle {
@@ -837,22 +855,135 @@
 		font-size: 16px;
 		font-weight: 600;
 		height: 48px;
-		margin-top: 40px;
-		border-radius: 50px;
+		line-height: 48px;
+		width: 100%;
+		margin: 28px 0 0;
+		border-radius: 24px;
 		background: #3298F7;
-		color: white;
+		color: #ffffff;
+		border: none;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+	}
+
+	.buttonstyle::after {
+		border: none;
+	}
+
+	.tip-card {
+		margin-top: 20px;
+		background: #e8f3ff;
+		border-radius: 16px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		overflow: hidden;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 12px 12px 12px 16px;
+	}
+
+	.tip-content {
+		flex: 1;
+		min-width: 0;
+		padding-left: 10px;
+	}
+
+	.tip-hero-img {
+		width: 68px;
+		height: 68px;
+		border-radius: 50%;
+		flex-shrink: 0;
+	}
+
+	.tip-text {
+		font-size: 13px;
+		font-weight: 400;
+		color: #3298F7;
+		line-height: 1.55;
+	}
+
+	.tip-text-first {
+		padding-bottom: 6px;
+	}
+
+	.section-line {
+		height: 0;
+		background: transparent;
+		margin: 0 0 16px;
+	}
+
+	.user-card {
+		background: #ffffff;
+		border-radius: 22px;
+		box-shadow: 0 6px 18px rgba(80, 120, 170, 0.08);
+		margin-bottom: 12px;
+		overflow: hidden;
+	}
+
+	.user-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: 14px 16px;
+	}
+
+	.user-avatar {
+		border-radius: 50%;
+		width: 40px;
+		height: 40px;
+		border: none;
+		flex-shrink: 0;
+		background: #f4f7fb;
+	}
+
+	.user-name-wrap {
+		flex: 2;
+		margin-left: 12px;
+		min-width: 0;
+	}
+
+	.user-name {
+		font-weight: 500;
+		font-size: 16px;
+		color: #222222;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.user-switch {
+		transform: scale(0.85);
+		flex-shrink: 0;
 	}
 
 	.container {
-		color: red;
+		color: #e54d42;
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
-		/* 允许换行 */
 		justify-content: flex-start;
-		/* 子元素左对齐 */
-		gap: 10px;
-		/* 子元素之间的间距 */
-		margin: 10px 20px 20px 20px;
+		gap: 8px;
+		margin: 0 16px 12px 16px;
+		padding: 10px 12px;
+		background: #fef2f2;
+		border-radius: 10px;
+	}
+
+	.alert-label {
+		font-size: 14px;
+		font-weight: 600;
+	}
+
+	.alert-value {
+		font-size: 14px;
+		font-weight: 500;
+	}
+
+	.card-divider {
+		height: 0;
+		background: transparent;
+	}
+
+	.list-wrap {
+		padding-bottom: 80px;
 	}
 </style>

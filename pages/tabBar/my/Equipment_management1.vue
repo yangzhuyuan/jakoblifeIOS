@@ -1,30 +1,67 @@
 <template>
-	<view class="pagsin">
-		<view class="list-container">
-			<view class="list-item">
-				<view class="item-content" @click="btn_add">
-					<image lazy-load style="width: 68px; height: 68px;" :src="imageurl"></image>
+	<view class="pagsin" :class="{ 'pagsin-empty': list.length === 0 }">
+		<view v-if="list.length === 0" class="empty-page">
+			<view class="hs-header">
+				<view class="empty-header">
+					<text class="empty-title">{{ $t('我的设备') }}</text>
+					<text class="empty-subtitle">{{ $t('连接并管理您的Jakoblife设备') }}</text>
 				</view>
+				<image class="hero-img" src="/static/page_icon/app_icon_all.jpg" mode="aspectFit"></image>
 			</view>
-			<view class="list-item" v-for="(item, index) in list" :key="index" :class="{ active: act === index }"
-				@click="checkClick(index, item)">
-				<view class="item-content">
-					<image lazy-load class="imagesd" mode="aspectFit" :src="getDeviceImage(item.deviceModelId)"></image>
-					<view class="xinghao">{{$t('型号') + (item.name==="BPW6"?"U19M":item.name)}}</view>
-					<view style="font-size: 10px; padding-bottom: 5px; text-align: center;">SN:{{item.deviceSn}}</view>
-					<view v-if="item.name==='JL-S260'||item.name==='JL-S100'"></view>
-					<view v-else class="device-ble-status-badge"
-						:class="isDeviceBleConnected(item.mac) ? 'is-on' : 'is-off'">
-						{{ isDeviceBleConnected(item.mac) ? $t('设备已连接') : $t('设备未连接') }}
+			<view class="empty-card">
+				<image class="empty-illustration" src="/static/page_icon/shebei_1.png" mode="aspectFit"></image>
+				<text class="empty-state-title">{{ $t('尚未连接设备') }}</text>
+				<text class="empty-state-desc">{{ $t('添加设备后即可开始同步测量数据') }}</text>
+				<view class="add-device-btn" @click="btn_add">
+					<view class="add-icon-circle">
+						<text class="add-plus">+</text>
+					</view>
+					<text class="add-device-text">{{ $t('添加设备') }}</text>
+				</view>
+				<view class="connection-tip">
+					<view class="tip-icon-wrap">
+						<image class="tip-bluetooth-icon" src="/static/page_icon/shebei_2.png" mode="aspectFit"></image>
+					</view>
+					<view class="tip-content">
+						<text class="tip-title">{{ $t('连接提示') }}</text>
+						<text class="tip-desc">{{ $t('请开启蓝牙并将设备靠近手机') }}</text>
 					</view>
 				</view>
 			</view>
+			<view class="empty-footer">
+				<button plain="true" class="remove-btn-disabled" disabled>{{ $t('移除设备') }}</button>
+				<text class="footer-hint">{{ $t('连接设备后即可使用') }}</text>
+			</view>
 		</view>
-		<view class="bottom-bar">
-			<button plain="true" class="button_bg_color" :style="{ background: act === -1 ? '#DBDBDB' : '#3298F7' }"
-				@tap="deleteDevice()">{{$t('删除该设备')}}
-			</button>
-		</view>
+		<template v-else>
+			<view class="list-container">
+				<view class="list-item">
+					<view class="item-content" @click="btn_add">
+						<image lazy-load style="width: 68px; height: 68px;" :src="imageurl"></image>
+					</view>
+				</view>
+				<view class="list-item" v-for="(item, index) in list" :key="index" :class="{ active: act === index }"
+					@click="checkClick(index, item)">
+					<view class="item-content">
+						<image lazy-load class="imagesd" mode="aspectFit" :src="getDeviceImage(item.deviceModelId)">
+						</image>
+						<view class="xinghao">{{$t('型号') + (item.name==="BPW6"?"U19M":item.name)}}</view>
+						<view style="font-size: 10px; padding-bottom: 5px; text-align: center;">SN:{{item.deviceSn}}
+						</view>
+						<view v-if="item.name==='JL-S260'||item.name==='JL-S100'"></view>
+						<view v-else class="device-ble-status-badge"
+							:class="isDeviceBleConnected(item.mac) ? 'is-on' : 'is-off'">
+							{{ isDeviceBleConnected(item.mac) ? $t('设备已连接') : $t('设备未连接') }}
+						</view>
+					</view>
+				</view>
+			</view>
+			<view class="bottom-bar">
+				<button plain="true" class="button_bg_color" :style="{ background: act === -1 ? '#DBDBDB' : '#3298F7' }"
+					@tap="deleteDevice()">{{$t('删除该设备')}}
+				</button>
+			</view>
+		</template>
 	</view>
 </template>
 
@@ -70,7 +107,7 @@
 		},
 
 		methods: {
-			...mapMutations(['setacktypes','setacktypes6']),
+			...mapMutations(['setacktypes', 'setacktypes6']),
 			normalizeBleDeviceId(id) {
 				if (!id) return '';
 				return String(id).trim().toUpperCase();
@@ -536,7 +573,199 @@
 		padding-top: 10px;
 		background: #EFEFF4;
 		color: black;
-		height: 100vh;
+	}
+
+	.pagsin-empty {
+		padding-top: 0;
+		background: #f4f7fb;
+	}
+
+	.empty-page {
+		min-height: 100vh;
+		padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+		box-sizing: border-box;
+	}
+
+	.empty-header {
+		padding: 8px 4px 20px;
+	}
+
+	.hs-header {
+		display: flex;
+		flex-direction: row;
+		justify-content: space-between;
+		align-items: flex-start;
+		margin-bottom: 28rpx;
+	}
+
+	.hero-img {
+		width: 68px;
+		height: 68px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		object-fit: contain;
+	}
+
+	.empty-title {
+		display: block;
+		font-size: 28px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.25;
+	}
+
+	.empty-subtitle {
+		display: block;
+		margin-top: 8px;
+		font-size: 14px;
+		color: #8a94a6;
+		line-height: 1.45;
+	}
+
+	.empty-card {
+		background: #ffffff;
+		border-radius: 20px;
+		padding: 24px 20px 20px;
+		box-shadow: 0 2px 12px rgba(26, 43, 74, 0.06);
+	}
+
+	.empty-illustration {
+		width: 100%;
+		display: block;
+		margin: 0 auto 8px;
+	}
+
+	.empty-state-title {
+		display: block;
+		text-align: center;
+		font-size: 18px;
+		font-weight: 700;
+		color: #1a2b4a;
+		margin-top: 8px;
+	}
+
+	.empty-state-desc {
+		display: block;
+		text-align: center;
+		font-size: 13px;
+		color: #8a94a6;
+		line-height: 1.5;
+		margin: 8px 8px 20px;
+	}
+
+	.add-device-btn {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		height: 48px;
+		background: #3298F7;
+		border-radius: 24px;
+		margin-bottom: 16px;
+	}
+
+	.add-icon-circle {
+		width: 22px;
+		height: 22px;
+		border-radius: 11px;
+		border: 1.5px solid rgba(255, 255, 255, 0.9);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin-right: 8px;
+	}
+
+	.add-plus {
+		color: #ffffff;
+		font-size: 16px;
+		line-height: 1;
+		font-weight: 400;
+		margin-top: -1px;
+	}
+
+	.add-device-text {
+		color: #ffffff;
+		font-size: 16px;
+		font-weight: 600;
+	}
+
+	.connection-tip {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-start;
+		background: #edf6ff;
+		border-radius: 14px;
+		padding: 14px;
+	}
+
+	.tip-icon-wrap {
+		width: 40px;
+		height: 40px;
+		border-radius: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		margin-right: 12px;
+	}
+
+	.tip-bluetooth-icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 20px;
+	}
+
+	.tip-content {
+		flex: 1;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.tip-title {
+		font-size: 14px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.3;
+	}
+
+	.tip-desc {
+		margin-top: 4px;
+		font-size: 12px;
+		color: #8a94a6;
+		line-height: 1.45;
+	}
+
+	.empty-footer {
+		margin-top: 24px;
+		padding: 0 4px;
+	}
+
+	.remove-btn-disabled {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		width: auto;
+		margin: 0;
+		height: 48px;
+		font-size: 16px;
+		font-weight: 600;
+		color: #ffffff !important;
+		background: #DBDBDB !important;
+		border-radius: 24px;
+		border: none !important;
+	}
+
+	.remove-btn-disabled::after {
+		border: none;
+	}
+
+	.footer-hint {
+		display: block;
+		text-align: center;
+		margin-top: 10px;
+		font-size: 12px;
+		color: #8a94a6;
 	}
 
 	.list-container {

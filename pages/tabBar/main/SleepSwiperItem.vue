@@ -1,52 +1,97 @@
 <template>
-	<view>
-		<view class="data_bg">
-			<view class="icon_bg">
-				<image src="../../../static/icons/3.png" class="img_style" mode="aspectFit"></image>
-				<text class="icon_text_bg">{{$t('睡眠')}}</text>
+	<view class="sleep-page">
+		<view class="sleep-header">
+			<view class="sleep-header-left">
+				<text class="sleep-title">{{ $t('睡眠摘要') }}</text>
+				<text class="sleep-subtitle">{{ $t('基于最近一次记录的睡眠数据') }}</text>
 			</view>
-			<view
-				style="flex: 1;display: flex;flex-direction: column;align-items: center;justify-content: center;">
-				<view style="font-weight: bold;font-size: 16px;">{{sleep}}</view>
-				<view style="color: #999999;font-size: 10px;font-weight: 400;">Time</view>
-				<view style="text-align: right;font-size: 13px;">{{sleep_time}}</view>
-			</view>
-			<view class="yalistyds">
-				<view class="yalistyd_2">Light:{{totalLight}}</view>
-				<view class="yalistyd_2">Deep:{{totalDeep}}</view>
-				<view class="yalistyd_2">REM:{{totalRem}}</view>
+			<view class="sleep-date-badge">
+				<uni-icons type="calendar" size="16" color="#3298F7"></uni-icons>
+				<text class="sleep-date-text">{{ dateLabel }}</text>
 			</view>
 		</view>
-		<view class="data_bg_A" style="padding: 20px;font-size: 16px; font-weight: 400; color: black;">
-			<view
-				style="display: flex;flex-direction: row;justify-content: space-between;align-items: center;">
-				<view
-					style="margin-right: 5px; flex: 1; display: flex;justify-content: center; align-items: center; background: white;color: white;padding: 15px;font-weight: bold;font-size: 14px;border-radius: 100px;box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4); color: #222328;">
-					{{$t("评分")}}：<text v-if="sleep_point>=80 "
-						style="font-size: 22px;color: #58BF78;">{{sleep_point}}</text>
-					<text v-else-if="sleep_point<80&&sleep_point>=60 "
-						style="font-size: 22px;color: #FFEC01;">{{sleep_point}}</text>
-					<text v-else-if="sleep_point<60 "
-						style="font-size: 22px;color:  #F55A5A;">{{sleep_point}}</text>
-					<text v-else style="font-size: 22px;color:  #3298F7;">{{sleep_point}}</text>
-				</view>
-				<view class="context_btn2">
-					<view class="context_title1">{{$t('是否服用药物')}}</view>
-					<switch @change="$emit('medication-change', $event)" style="transform:scale(0.8);" :checked="medication"
-						color="#3298F7" />
-				</view>
-			</view>
-			<view v-show="sleep_point!=='--/--'"
-				style="padding: 15px; background: white;margin-top: 20px;border-radius: 20px;box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);">
-				<view v-if="sleepTip && sleep_point<85" class="sleep-card">
-					<view class="sleep-title">{{ $t('睡眠血压交叉分析') }}:</view>
-					<view v-for="(line, idx) in sleepTip" :key="idx" class="sleep-line">
-						<text>{{ $t(line) }}</text>
+
+		<view class="sleep-card main-card">
+			<view class="main-top-row">
+				<image src="/static/page_icon/shuimian_1.png" class="main-moon-img" mode="aspectFit"></image>
+				<view class="main-stages">
+					<text class="main-stages-title">{{ mainTitle }}</text>
+					<view class="stage-row">
+						<text class="stage-label">{{ $t('浅睡') }}</text>
+						<text class="stage-value">{{ displayLight }}</text>
+					</view>
+					<view class="stage-divider"></view>
+					<view class="stage-row">
+						<text class="stage-label">{{ $t('深睡') }}</text>
+						<text class="stage-value">{{ displayDeep }}</text>
+					</view>
+					<view class="stage-divider"></view>
+					<view class="stage-row">
+						<text class="stage-label">{{ $t('快速眼动') }}</text>
+						<text class="stage-value">{{ displayRem }}</text>
 					</view>
 				</view>
-				<view v-else class="icon_item_bg_toast">{{$t("睡眠良好")}}</view>
+			</view>
+			<view class="main-divider"></view>
+			<view class="main-foot-row">
+				<image src="/static/page_icon/shuimian_2.png" class="main-foot-icon" mode="aspectFit"></image>
+				<text class="main-foot-text">{{ $t('请在睡眠期间佩戴设备并于早晨同步') }}</text>
 			</view>
 		</view>
+
+		<view class="sleep-card score-card">
+			<view class="score-ring-box">
+				<view class="score-ring-track"></view>
+				<view v-if="hasScore" class="score-ring-fill" :style="scoreRingStyle"></view>
+				<view class="score-ring-inner">
+					<uni-icons type="star-filled" size="18" :color="scoreIconColor"></uni-icons>
+				</view>
+			</view>
+			<view class="score-info">
+				<text class="score-label">{{ $t('睡眠评分') }}</text>
+				<view class="score-value-row">
+					<text class="score-value" :class="scoreColorClass">{{ displayScore }}</text>
+					<text class="score-max">/ 100</text>
+				</view>
+				<text class="score-desc">{{ $t('记录睡眠数据后将显示评分') }}</text>
+			</view>
+		</view>
+
+		<view class="sleep-card med-card">
+			<image src="/static/page_icon/shuimian_3.png" class="med-icon" mode="aspectFit"></image>
+			<view class="med-info">
+				<text class="med-title">{{ $t('服药记录') }}</text>
+				<text class="med-desc">{{ $t('可选信息有助于完善趋势分析') }}</text>
+			</view>
+			<view class="med-switch-wrap">
+				<switch @change="$emit('medication-change', $event)" style="transform:scale(0.85);" :checked="medication"
+					color="#3298F7" />
+				<!-- <text class="med-switch-label">{{ medication ? $t('打开') : $t('关闭') }}</text> -->
+			</view>
+		</view>
+
+		<view v-show="sleep_point!=='--/--'" class="sleep-card tip-card tip-analysis">
+			<image src="/static/page_icon/shuimian_5.png" class="tip-icon" mode="aspectFit"></image>
+			<view class="tip-body">
+				<template v-if="sleepTip && sleep_point<85">
+					<text class="tip-title">{{ $t('睡眠血压交叉分析') }}</text>
+					<text v-for="(line, idx) in sleepTip" :key="idx" class="tip-line">{{ $t(line) }}</text>
+				</template>
+				<template v-else>
+					<text class="tip-title">{{ $t('睡眠良好') }}</text>
+				</template>
+			</view>
+		</view>
+
+		<view v-show="sleep_point==='--/--'" class="sleep-card tip-card tip-suggest">
+			<image src="/static/page_icon/shuimian_5.png" class="tip-icon" mode="aspectFit"></image>
+			<view class="tip-body">
+				<text class="tip-title tip-title-blue">{{ $t('睡眠建议') }}</text>
+				<text class="tip-line">{{ $t('为了获得更连贯的趋势请尽量每天在相近时间佩戴设备入睡') }}</text>
+			</view>
+		</view>
+
+		<view class="sleep-bottom-spacer"></view>
 	</view>
 </template>
 
@@ -86,103 +131,448 @@
 				type: Array,
 				default: () => []
 			}
+		},
+		computed: {
+			hasSleepData() {
+				const raw = String(this.sleep == null ? '' : this.sleep).trim()
+				if (!raw || raw === '--/--' || raw === '-/-' || raw === '--' || raw === 'NA') return false
+				return true
+			},
+			mainTitle() {
+				return this.hasSleepData ? String(this.sleep) : this.$t('暂无睡眠数据')
+			},
+			displayLight() {
+				return this.formatStage(this.totalLight)
+			},
+			displayDeep() {
+				return this.formatStage(this.totalDeep)
+			},
+			displayRem() {
+				return this.formatStage(this.totalRem)
+			},
+			displayScore() {
+				return this.hasScore ? String(this.scoreNum) : '—'
+			},
+			hasScore() {
+				const raw = String(this.sleep_point == null ? '' : this.sleep_point).trim()
+				return raw && raw !== '--/--' && raw !== '-/-' && !isNaN(parseInt(raw, 10))
+			},
+			scoreNum() {
+				const n = parseInt(this.sleep_point, 10)
+				return isNaN(n) ? 0 : n
+			},
+			scoreColorClass() {
+				if (!this.hasScore) return ''
+				if (this.scoreNum >= 80) return 'score-good'
+				if (this.scoreNum >= 60) return 'score-warn'
+				return 'score-bad'
+			},
+			scoreIconColor() {
+				if (!this.hasScore) return '#c5ced8'
+				if (this.scoreNum >= 80) return '#58BF78'
+				if (this.scoreNum >= 60) return '#FFEC01'
+				return '#F55A5A'
+			},
+			scoreRingStyle() {
+				const p = this.hasScore ? Math.min(100, Math.max(0, this.scoreNum)) : 0
+				const deg = p * 3.6
+				const color = this.scoreNum >= 80 ? '#58BF78' : (this.scoreNum >= 60 ? '#FFEC01' : '#F55A5A')
+				return {
+					background: `conic-gradient(${color} 0deg, ${color} ${deg}deg, #e8ecf2 ${deg}deg, #e8ecf2 360deg)`
+				}
+			},
+			dateLabel() {
+				const raw = String(this.sleep_time || '').trim()
+				if (!raw || raw === '--/--' || raw === '-/-') {
+					return this.formatDateFromParts(new Date())
+				}
+				const md = raw.match(/^(\d{1,2})\/(\d{1,2})$/)
+				if (md) {
+					return this.formatDateLabel(parseInt(md[1], 10), parseInt(md[2], 10))
+				}
+				const ymd = raw.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/)
+				if (ymd) {
+					return this.formatDateLabel(parseInt(ymd[2], 10), parseInt(ymd[3], 10))
+				}
+				const parts = raw.split(/[\/\-.]/)
+				if (parts.length >= 2) {
+					const month = parseInt(parts[0], 10)
+					const day = parseInt(parts[1], 10)
+					if (!isNaN(month) && !isNaN(day)) {
+						return this.formatDateLabel(month, day)
+					}
+				}
+				return raw
+			}
+		},
+		methods: {
+			formatStage(val) {
+				const raw = String(val == null ? '' : val).trim()
+				if (!raw || raw === '--/--' || raw === '-/-' || raw === '--' || raw === 'NA') {
+					return '—'
+				}
+				return raw
+			},
+			formatDateFromParts(date) {
+				return this.formatDateLabel(date.getMonth() + 1, date.getDate())
+			},
+			formatDateLabel(month, day) {
+				const locale = (this.$i18n && this.$i18n.locale) || uni.getLocale() || ''
+				if (locale.indexOf('zh') === 0) {
+					return `${month}${this.$t('月')}${day}${this.$t('日')}`
+				}
+				const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+				return `${months[month - 1] || month} ${day}`
+			}
 		}
 	}
 </script>
 
 <style scoped>
-	.data_bg {
-		height: 116px;
+	.sleep-page {
+		background: linear-gradient(180deg, #dceefc 0%, #f4f7fb 42%, #f4f7fb 100%);
+		padding: 16px 16px 0;
+		min-height: 100%;
+		box-sizing: border-box;
+	}
+
+	.sleep-header {
 		display: flex;
 		flex-direction: row;
-		align-items: center;
-		margin: 5px 20px 0 20px;
-		background: white;
-		border-radius: 20px;
-		box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
+		align-items: flex-start;
+		justify-content: space-between;
+		margin-bottom: 16px;
 	}
 
-	.data_bg_A {
-		border-top-left-radius: 20px;
-		border-top-right-radius: 20px;
-		background: #EFEFF4;
-		margin-top: 20px;
-		padding: 20px 0 40px 0;
-	}
-
-	.icon_bg {
+	.sleep-header-left {
 		flex: 1;
-		margin-left: 10px;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		align-items: center;
-	}
-
-	.icon_text_bg {
-		margin-top: 10px;
-		width: 26px;
-		height: 18px;
-		font-size: 13px;
-		text-align: center;
-		font-weight: bold;
-	}
-
-	.img_style {
-		width: 48px;
-		height: 48px;
-		object-fit: contain;
-	}
-
-	.yalistyds {
-		flex: 1;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-	}
-
-	.context_btn2 {
-		display: flex;
-		margin-left: 5px;
-		flex-direction: row;
-		background: white;
-		align-items: center;
-		border-radius: 100px;
-		padding: 15px;
-	}
-
-	.context_title1 {
-		width: 90%;
-		font-size: 16px;
-		color: black;
-	}
-
-	.sleep-card {
-		font-size: 14px;
-		font-weight: 600;
-		color: #3298f7;
+		padding-right: 12px;
 	}
 
 	.sleep-title {
-		margin-bottom: 6px;
-		font-size: 16px;
+		display: block;
+		font-size: 22px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.3;
 	}
 
-	.sleep-line {
-		color: #040000;
+	.sleep-subtitle {
+		display: block;
+		margin-top: 6px;
+		font-size: 13px;
+		color: #7a8699;
+		line-height: 1.4;
+	}
+
+	.sleep-date-badge {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		background: #eaf4ff;
+		border-radius: 20px;
+		padding: 8px 12px;
+		flex-shrink: 0;
+	}
+
+	.sleep-date-text {
+		margin-left: 6px;
+		font-size: 13px;
 		font-weight: 600;
+		color: #3298F7;
+	}
+
+	.sleep-card {
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+		margin-bottom: 14px;
+		overflow: hidden;
+	}
+
+	.main-card {
+		padding: 16px;
+	}
+
+	.main-top-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.main-moon-img {
+		width: 88px;
+		height: 88px;
+		border-radius: 44px;
+		flex-shrink: 0;
+	}
+
+	.main-stages {
+		flex: 1;
+		margin-left: 14px;
+		min-width: 0;
+	}
+
+	.main-stages-title {
+		display: block;
+		font-size: 17px;
+		font-weight: 700;
+		color: #1a2b4a;
+		margin-bottom: 8px;
+		line-height: 1.3;
+	}
+
+	.stage-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 0;
+	}
+
+	.stage-label {
 		font-size: 14px;
+		color: #1a2b4a;
+	}
+
+	.stage-value {
+		font-size: 14px;
+		color: #8a94a6;
+		font-weight: 500;
+	}
+
+	.stage-divider {
+		height: 1px;
+		background: #eef1f5;
+	}
+
+	.main-divider {
+		height: 1px;
+		background: #eef1f5;
+		margin: 12px 0;
+	}
+
+	.main-foot-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+	}
+
+	.main-foot-icon {
+		width: 28px;
+		height: 28px;
+		flex-shrink: 0;
+		margin-right: 10px;
+	}
+
+	.main-foot-text {
+		flex: 1;
+		font-size: 12px;
+		color: #8a94a6;
+		line-height: 1.45;
+	}
+
+	.score-card {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 16px;
+	}
+
+	.score-ring-box {
+		position: relative;
+		width: 68px;
+		height: 68px;
+		flex-shrink: 0;
+	}
+
+	.score-ring-track {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		border: 6px solid #e8ecf2;
+		box-sizing: border-box;
+	}
+
+	.score-ring-fill {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		padding: 6px;
+		box-sizing: border-box;
+	}
+
+	.score-ring-inner {
+		position: absolute;
+		top: 6px;
+		left: 6px;
+		right: 6px;
+		bottom: 6px;
+		border-radius: 50%;
+		background: #ffffff;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 1;
+	}
+
+	.score-info {
+		flex: 1;
+		margin-left: 14px;
+		min-width: 0;
+	}
+
+	.score-label {
+		display: block;
+		font-size: 15px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.3;
+	}
+
+	.score-value-row {
+		display: flex;
+		flex-direction: row;
+		align-items: baseline;
 		margin-top: 4px;
 	}
 
-	.icon_item_bg_toast {
-		background: white;
-		text-align: center;
-		color: #3298F7;
+	.score-value {
+		font-size: 28px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.1;
+	}
+
+	.score-good {
+		color: #58BF78;
+	}
+
+	.score-warn {
+		color: #FFEC01;
+	}
+
+	.score-bad {
+		color: #F55A5A;
+	}
+
+	.score-max {
+		margin-left: 4px;
+		font-size: 16px;
+		color: #8a94a6;
+	}
+
+	.score-desc {
+		display: block;
+		margin-top: 4px;
+		font-size: 12px;
+		color: #8a94a6;
+		line-height: 1.4;
+	}
+
+	.med-card {
 		display: flex;
-		padding: 10px;
-		justify-content: center;
+		flex-direction: row;
 		align-items: center;
+		padding: 14px 16px;
+	}
+
+	.med-icon {
+		width: 44px;
+		height: 44px;
+		border-radius: 22px;
+		flex-shrink: 0;
+	}
+
+	.med-info {
+		flex: 1;
+		margin-left: 12px;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.med-title {
+		font-size: 15px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.3;
+	}
+
+	.med-desc {
+		margin-top: 4px;
+		font-size: 12px;
+		color: #8a94a6;
+		line-height: 1.4;
+	}
+
+	.med-switch-wrap {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		flex-shrink: 0;
+		margin-left: 8px;
+	}
+
+	.med-switch-label {
+		margin-top: 2px;
+		font-size: 11px;
+		color: #8a94a6;
+	}
+
+	.tip-card {
+		display: flex;
+		flex-direction: row;
+		align-items: flex-start;
+		padding: 14px 16px;
+	}
+
+	.tip-suggest {
+		background: #eaf4ff;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+	}
+
+	.tip-icon {
+		width: 40px;
+		height: 40px;
+		border-radius: 20px;
+		flex-shrink: 0;
+	}
+
+	.tip-body {
+		flex: 1;
+		margin-left: 12px;
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
+
+	.tip-title {
+		font-size: 15px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.3;
+		margin-bottom: 4px;
+	}
+
+	.tip-title-blue {
+		color: #3298F7;
+	}
+
+	.tip-line {
+		font-size: 13px;
+		color: #5a6a80;
+		line-height: 1.5;
+		margin-top: 2px;
+	}
+
+	.sleep-bottom-spacer {
+		height: 160px;
 	}
 </style>

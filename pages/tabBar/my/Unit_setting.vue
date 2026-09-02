@@ -1,16 +1,38 @@
 <template>
-	<view style="padding:20px;color:#000;height:100vh">
-		<view class="view_bg">
-			<unit-row v-for="(item, index) in rows" :key="index" :title="$t(item.title)" :array="item.array"
-				:storage-key="item.key" :current-index="indexMap[item.key] || 0" @unit-change="collectUnit" />
+	<view class="unit-page">
+		<view class="unit-content">
+			<view class="hs-header">
+				<view class="emotion-header">
+					<text class="emotion-title">{{ $t('设置') }}</text>
+					<view class="hint-row">
+						<uni-icons type="info" size="16" color="#3298F7"></uni-icons>
+						<text class="hint-text">{{ $t('您可以随时更改这些设置') }}</text>
+					</view>
+				</view>
+				<image class="hero-img" src="/static/page_icon/app_icon_all.jpg" mode="aspectFit"></image>
+			</view>
+			<text class="section-title">{{ $t('测量单位') }}</text>
+			<view class="unit-card">
+				<unit-row v-for="(item, index) in rows" :key="index" :title="$t(item.title)" :array="item.array"
+					:storage-key="item.key" :current-index="indexMap[item.key] || 0" :icon="item.icon"
+					:hide-line="index === rows.length - 1" @unit-change="collectUnit" />
+			</view>
+			<text class="section-title">{{ $t('测量偏好') }}</text>
+			<view class="pref-card">
+				<image src="/static/page_icon/danwei_1.png" class="pref-icon" mode="aspectFit"></image>
+				<view class="pref-info">
+					<text class="pref-title">{{ $t('压力指数') }}</text>
+					<text class="pref-desc">{{ $t('每次测量血压后自动计算压力指数') }}</text>
+					<text class="pref-desc pref-desc-alert">{{ $t('这个功能必须打开才能使用无感血压测量它用于AI模型训练') }}</text>
+				</view>
+				<switch :checked="switchHER" @change="switch1ChangeHER" color="#4CD964" style="transform:scale(0.9);" />
+			</view>
 		</view>
-		<view class="context_btn2">
-			<view class="context_title1">{{$t('压力开关')}}</view>
-			<switch :checked="switchHER" @change="switch1ChangeHER" color="#4CD964" />
+
+		<view class="unit-footer">
+			<button class="save-btn" @tap="saveUnit">{{ $t('保存更改') }}</button>
+			<text class="cancel-btn" @tap="goBack">{{ $t('取消') }}</text>
 		</view>
-		<button type="primary" style="margin:50px 20px 0 20px;border-radius: 100px;" @tap="saveUnit">
-			{{ $t("保存") }}
-		</button>
 	</view>
 </template>
 <script>
@@ -24,17 +46,20 @@
 				rows: [{
 						title: '血压',
 						key: 'Blood',
-						array: ['mmHg', 'kPa']
+						array: ['mmHg', 'kPa'],
+						icon: '/static/page_icon/danwei_2.png'
 					},
 					{
 						title: '身高',
 						key: 'danwei1',
-						array: [this.$t("英寸"), this.$t("厘米")]
+						array: [this.$t("英寸"), this.$t("厘米")],
+						icon: '/static/page_icon/danwei_3.png'
 					},
 					{
 						title: '体重',
 						key: 'danwei2',
-						array: [this.$t("千克"), this.$t("英镑")]
+						array: [this.$t("千克"), this.$t("英镑")],
+						icon: '/static/page_icon/danwei_4.png'
 					}
 				],
 				unitMap: {}, // 保存单位值
@@ -44,11 +69,16 @@
 		},
 		onShow() {
 			uni.setNavigationBarTitle({
-				title: this.$t('设置')
+				title: this.$t('单位设置')
 			})
 			this.cardlist()
 		},
 		methods: {
+			goBack() {
+				uni.navigateBack({
+					delta: 1
+				})
+			},
 			switch1ChangeHER(e) {
 				let that = this
 				that.switchHER = e.detail.value
@@ -113,6 +143,7 @@
 							this.$set(this.indexMap, key, safe);
 							uni.setStorageSync(key, safe);
 						});
+						uni.$emit('unit-settings-changed');
 					}
 				});
 			},
@@ -139,11 +170,15 @@
 					'content-type': 'application/json'
 				}).then(res => {
 					if (res.code === 200) {
+						Object.keys(this.indexMap).forEach(key => {
+							uni.setStorageSync(key, this.indexMap[key])
+						})
 						uni.showToast({
 							title: this.$t('保存成功'),
 							icon: 'none'
 						})
 						this.cardlist()
+						uni.$emit('unit-settings-changed')
 					}
 				})
 			},
@@ -181,40 +216,158 @@
 </script>
 
 <style>
-	.view_bg {
-		padding: 0 20px;
-		background: #fff;
-		line-height: 48px;
-		border-radius: 10px;
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+	.unit-page {
+		min-height: 100vh;
+		background: linear-gradient(180deg, #dceefc 0%, #f4f7fb 42%, #f4f7fb 100%);
+		box-sizing: border-box;
 	}
 
-	.context_btn2 {
+	.unit-content {
+		padding: 20px 16px calc(180px + env(safe-area-inset-bottom));
+		box-sizing: border-box;
+	}
+
+	.hs-header {
 		display: flex;
 		flex-direction: row;
-		background: white;
+		justify-content: center;
 		align-items: center;
-		height: auto;
-		/* 改为自动高度，支持多行 */
-		min-height: 56px;
-		/* 最小高度保持原样 */
-		margin: 30px 0;
-		padding: 12px 20px;
-		/* 增加上下内边距 */
-		border-radius: 10px;
-		box-shadow: 0 0 8px 0 rgba(0, 0, 0, 0.15);
+		margin-bottom: 28rpx;
 	}
 
-	.context_title1 {
+	.hero-img {
+		width: 68px;
+		height: 68px;
+		border-radius: 50%;
+		flex-shrink: 0;
+		object-fit: contain;
+	}
+
+	.emotion-header {
 		flex: 1;
-		/* 占据剩余空间 */
+		min-width: 0;
+		margin-top: 20px;
+		padding-right: 10px;
+	}
+
+	.emotion-title {
+		display: block;
+		font-size: 22px;
+		font-weight: 700;
+		color: #1A1C1E;
+		line-height: 1.25;
+		margin-bottom: 5px;
+	}
+
+	.section-title {
+		display: block;
 		font-size: 16px;
-		color: black;
+		font-weight: 700;
+		color: #1a2b4a;
+		margin: 20px 4px 12px;
+	}
+
+	.unit-card,
+	.pref-card {
+		background: #ffffff;
+		border-radius: 16px;
+		box-shadow: 1px 1px 5px rgba(0, 0, 0, 0.4);
+		overflow: hidden;
+	}
+
+	.unit-card {
+		padding: 4px 16px;
+		margin-bottom: 24px;
+	}
+
+	.pref-card {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 16px;
+		margin-bottom: 20px;
+	}
+
+	.pref-icon {
+		width: 44px;
+		height: 44px;
+		border-radius: 22px;
+		flex-shrink: 0;
+	}
+
+	.pref-info {
+		flex: 1;
+		margin: 0 12px;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.pref-title {
+		font-size: 15px;
+		font-weight: 700;
+		color: #1a2b4a;
+		line-height: 1.3;
+	}
+
+	.pref-desc {
+		margin-top: 4px;
+		font-size: 12px;
+		color: #8a94a6;
 		line-height: 1.4;
-		/* 设置合适的行高 */
-		word-break: break-word;
-		/* 允许断行 */
-		padding-right: 12px;
-		/* 与switch保持间距 */
+	}
+
+	.pref-desc-alert {
+		color: #e54d42;
+		font-weight: 700;
+	}
+
+	.unit-footer {
+		position: fixed;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		z-index: 10;
+		padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+		background: linear-gradient(180deg, rgba(244, 247, 251, 0) 0%, #f4f7fb 28%, #f4f7fb 100%);
+	}
+
+	.hint-row {
+		display: block;
+		font-size: 12px;
+		color: #8E8E93;
+		line-height: 1.45;
+	}
+
+	.hint-text {
+		margin-left: 6px;
+		font-size: 13px;
+		color: #8a94a6;
+	}
+
+	.save-btn {
+		margin: 0;
+		height: 48px;
+		line-height: 48px;
+		background: #3298F7;
+		color: #ffffff;
+		font-size: 16px;
+		font-weight: 600;
+		border-radius: 24px;
+		border: none;
+	}
+
+	.save-btn::after {
+		border: none;
+	}
+
+	.cancel-btn {
+		display: block;
+		text-align: center;
+		margin-top: 12px;
+		font-size: 15px;
+		font-weight: 600;
+		color: #3298F7;
+		padding: 8px;
 	}
 </style>
