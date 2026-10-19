@@ -11,8 +11,6 @@
 				{{$t('夜间')}}({{nightCount}})
 			</text>
 		</view>
-		<view v-if="modeltips" class="model-tip">{{$t('无感血压AI模型建立中提示')}}</view>
-		<view v-else class="model-tip">{{$t('您的AI无感血压模型已经建立')}}</view>
 		<view class="table-header">
 			<text class="col-time">{{$t('测量时间')}}</text>
 			<text class="col-period">{{$t('时段')}}</text>
@@ -48,7 +46,11 @@
 <script>
 	import {
 		getChinaTimeAllJSON,
-		getLocalTimeAllJSON
+		getLocalTimeAllJSON,
+		isChinaTimezoneAligned,
+		addChinaYmdDays,
+		getReportProfChinaYmd,
+		localSelectedYmdToChinaYmd
 	} from '@/pages/api/unitls/timezone.js'
 	export default {
 		data() {
@@ -61,7 +63,7 @@
 				pacitime: getChinaTimeAllJSON().YMD + ' 07:00:00',
 				filterVarList: "JLvFLGvJL01v1W",
 				period: "1W",
-				modeltips: true,
+				tipRefreshKey: 0,
 			}
 		},
 
@@ -76,39 +78,43 @@
 			nightCount() {
 				return this.dataList.filter(item => item.period === 'night').length
 			},
-			/** 提示截止日期：手机本地昨天（与列表展示的最新日一致） */
+			/** 提示截止日期：按手机本地昨天（仅展示；取数仍走 getSmoothBpEndYmd） */
 			tableTipText() {
-				const localYmd = getLocalTimeAllJSON().YMD
-				const today = new Date(String(localYmd).replace(/-/g, '/'))
-				const yesterday = new Date(today.getTime())
-				yesterday.setDate(yesterday.getDate() - 1)
-				const month = yesterday.getMonth() + 1
-				const day = yesterday.getDate()
+				const _tick = this.tipRefreshKey
+				const tipYmd = addChinaYmdDays(getLocalTimeAllJSON().YMD, -1)
+				return this.$t('当天数据云端计算中需明天查询', {
+					date: this.formatTipDateText(tipYmd)
+				})
+			},
+		},
+		onShow() {
+			uni.setNavigationBarTitle({
+				title: this.$t('无感血压报告')
+			})
+			this.tipRefreshKey += 1
+			this.get_retVarList()
+		},
+		methods: {
+			formatTipDateText(ymd) {
+				const parts = String(ymd || '').split('-')
+				const month = Number(parts[1]) || 1
+				const day = Number(parts[2]) || 1
 				const locale = (this.$i18n && this.$i18n.locale) || 'zh-CN'
 				const isEn = String(locale).toLowerCase().startsWith('en')
 				const monthNames = [
 					'January', 'February', 'March', 'April', 'May', 'June',
 					'July', 'August', 'September', 'October', 'November', 'December'
 				]
-				const dateText = isEn ?
-					`${monthNames[month - 1]} ${day}` :
-					`${month}月${day}日`
-				return this.$t('当天数据云端计算中需明天查询', {
-					date: dateText
-				})
+				return isEn ? `${monthNames[month - 1]} ${day}` : `${month}月${day}日`
 			},
-		},
-		onShow() {
-			const modeltipsbool = uni.getStorageSync("temperature")
-			// console.log("modeltipsbool", modeltipsbool)
-			uni.setNavigationBarTitle({
-				title: this.$t('无感血压报告')
-			})
-			this.get_retVarList()
-			if (modeltipsbool && modeltipsbool !== '-/-' && Number(modeltipsbool) >= 500) this.modeltips = false
-
-		},
-		methods: {
+			/** 无感结束日：国内与 24h 一致（过凌晨 1 点传当天，未过传昨天）；国外对照手机次日中国 01:00 */
+			getSmoothBpEndYmd() {
+				const localYmd = getLocalTimeAllJSON().YMD
+				if (isChinaTimezoneAligned()) {
+					return getReportProfChinaYmd()
+				}
+				return localSelectedYmdToChinaYmd(localYmd)
+			},
 			switchTab(tab) {
 				this.currentTab = tab
 			},
@@ -297,20 +303,15 @@
 				const filtered = this.filterByLocalRecentTwoDays(unique)
 				return filtered.sort(cmp)
 			},
-			/** 手机本地日历：昨天、前天的 YMD 集合 */
+			/** 国内：昨天+前天；国外：按传入 profDate 的前一天+前两天（传 6 号→显示 4 号和 5 号） */
 			getLocalRecentTwoDayKeys() {
-				const pad = (n) => String(n).padStart(2, '0')
-				const localYmd = getLocalTimeAllJSON().YMD
-				const today = new Date(String(localYmd).replace(/-/g, '/'))
-				const keys = []
-				for (let i = 1; i <= 2; i++) {
-					const d = new Date(today.getTime())
-					d.setDate(d.getDate() - i)
-					keys.push(
-						`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
-					)
+				if (!isChinaTimezoneAligned()) {
+					const endYmd = addChinaYmdDays(this.getSmoothBpEndYmd(), -1)
+					return new Set([endYmd, addChinaYmdDays(endYmd, -1)])
 				}
-				return new Set(keys)
+				const localYmd = getLocalTimeAllJSON().YMD
+				const endYmd = addChinaYmdDays(localYmd, -1)
+				return new Set([endYmd, addChinaYmdDays(endYmd, -1)])
 			},
 			filterByLocalRecentTwoDays(list) {
 				const dayKeys = this.getLocalRecentTwoDayKeys()
@@ -329,26 +330,22 @@
 					return
 				}
 				that.loading = true
-				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
-				const chinaNow = getChinaTimeAllJSON()
-				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
-				const profYmd = chinaHour < 1 ?
-					getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD :
-					chinaNow.YMD
+				const profYmd = that.getSmoothBpEndYmd()
 				const data = {
 					userId: uni.getStorageSync("userid"),
 					profDate: profYmd + ' 00:00:00',
 					filterVarList: that.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				}
-				// console.log('get_retVarLisdata参数（传入的时间均以中国时间为准）：', data)
+				console.log('无感报告数据传参数:', data)
 				that.$post(that.$url_APP_IP + '/prod-api/device_app/get_retVarList', data, {
 					'Authorization': 'Bearer ' + token,
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((res) => {
-					// console.log('请求结果：', res)
-					if (res.code === 200 && res.data && res.data.retVarList) {
-						that.dataList = that.processRetVarList(res.data.retVarList)
+					console.log('无感报告数据返回的数据结果:', res)
+					const raw = res && res.data && res.data.retVarList
+					if (res.code === 200 && raw) {
+						that.dataList = that.processRetVarList(raw)
 					} else {
 						that.dataList = []
 						console.log('1服务器数据还在处理中', res);
@@ -536,14 +533,5 @@
 		text-align: center;
 		background: #fff8e8;
 		border-bottom: 1px solid #f0e6c8;
-	}
-
-	.model-tip {
-		padding: 16rpx 20rpx;
-		font-size: 22rpx;
-		line-height: 1.5;
-		color: #c0392b;
-		text-align: center;
-		background: rgba(255, 248, 232, 0.95);
 	}
 </style>

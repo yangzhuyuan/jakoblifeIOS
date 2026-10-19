@@ -210,9 +210,9 @@
 			},
 			getOxygenColor(level) {
 				const colorMap = {
-					0: '#FCCD41',
-					1: '#58BF78',
-					2: '#58BF78',
+					0: '#FCCD41', // 偏低 橙
+					1: '#7AE545', // 正常 绿
+					2: '#7AE545',
 					3: '#FFFFFF'
 				};
 				return colorMap[level] || '#FFFFFF';

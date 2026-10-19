@@ -257,7 +257,6 @@
 		},
 
 		onLoad(res) {
-			console.log("当前页面share_with", "上个页面带过来的数据" + JSON.stringify(res))
 			this.name = res.NAME
 			this.phone = res.PHONE
 			this.avatar = res.AVATAR

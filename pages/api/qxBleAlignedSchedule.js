@@ -39,6 +39,8 @@ const DEFAULT_CHAR_ID = '81EEA003-E735-49EC-8A11-7E32CAE1E14E'
 
 const QX_BLE_NEXT_FIRE_AT_KEY = 'qx_ble_next_fire_at'
 const QX_BLE_SCHEDULED_MEASURE_KEY = 'qx_ble_scheduled_measure'
+/** 血压后 PPG 等待/启测/采集中：定时测量勿再启，等传输结束即可 */
+export const QX_BPW6_PPG_AFTER_BP_BUSY_KEY = 'bpw6_ppg_after_bp_busy'
 export const QX_MAIN_SLEEP_ALERT_DISABLED_KEY = 'sleep_alertdisabled'
 export const QX_BPW6_EMOTION_MEASURE_KEY = 'qx_bpw6_emotion_measure'
 const QX_BLE_MEASURE_SLOT_AT_KEY = 'qx_ble_measure_slot_at'
@@ -191,10 +193,12 @@ async function ensureQxBleDeviceConnected(deviceId) {
 
 function isBpw6EmotionMeasure() {
 	const bpw6 = uni.getStorageSync('BPW6devicemac')
+	// 未绑定 BPW6：绝不走 BPW6（避免解绑后残留 qx_bpw6_emotion_measure 仍打 BPW6 日志/走错通道）
+	if (!bpw6) return false
 	const bpw1 = uni.getStorageSync('deviceIdwatch')
 	// 仅绑 BPW6：自动走 BPW6（解绑 BPW1 再绑 BPW6 无需重进设置页）
-	if (bpw6 && !bpw1) return true
-	// 双绑 / 仅 BPW1：仍以设置页写入的标记为准，行为不变
+	if (!bpw1) return true
+	// 双绑：以设置页写入的标记为准，行为不变
 	const v = uni.getStorageSync(QX_BPW6_EMOTION_MEASURE_KEY)
 	return v === true || v === 'true' || v === 1 || v === '1'
 }
@@ -353,6 +357,24 @@ function clearStaleQxScheduledMeasureState() {
 function isQxScheduledMeasureStorageOn() {
 	const scheduled = uni.getStorageSync(QX_BLE_SCHEDULED_MEASURE_KEY)
 	return scheduled === 1 || scheduled === '1'
+}
+
+function isBpw6PpgAfterBpBusyStorageOn() {
+	const v = uni.getStorageSync(QX_BPW6_PPG_AFTER_BP_BUSY_KEY)
+	return v === 1 || v === '1' || v === true || v === 'true'
+}
+
+/** 血压后 PPG / 设备侧测拉占用：定时勿再启 */
+function isBpw6PpgPeerBusy() {
+	if (isBpw6PpgAfterBpBusyStorageOn()) return true
+	try {
+		if (u16proBLE && u16proBLE.state && u16proBLE.state.ppgMeasuring) return true
+		if (typeof u16proBLE.isPpgTransferBusy === 'function' && u16proBLE.isPpgTransferBusy()) return true
+		if (typeof u16proBLE.isPpgOperationInProgress === 'function' && u16proBLE.isPpgOperationInProgress()) {
+			return true
+		}
+	} catch (e) {}
+	return false
 }
 
 function resetQxScheduleBusyState(reason, opts = {}) {
@@ -1134,6 +1156,12 @@ async function runOneQxBpw6PpgMeasurement(deviceId) {
 	if (!targetDeviceId) {
 		throw new Error('无BPW6设备')
 	}
+	// 与血压后 PPG 互斥：已有一路在等/测/拉，本槽不启，等传输结束
+	if (isBpw6PpgPeerBusy()) {
+		const err = new Error('PPG_PEER_BUSY')
+		err.code = 'PPG_PEER_BUSY'
+		throw err
+	}
 	// logQx('开始BPW6 PPG情绪测量', targetDeviceId, `时长${BPW6_PPG_SCHEDULE_DURATION_SEC}秒`)
 	uni.setStorageSync(QX_MAIN_SLEEP_ALERT_DISABLED_KEY, true)
 	try {
@@ -1394,6 +1422,11 @@ async function executeQxMeasurementOnce() {
 		logQx('跳过执行', '调度下发窗口内')
 		return false
 	}
+	// BPW6：血压后 PPG 占用中则本槽不启，保留槽位待传输结束后由心跳再试
+	if (isBpw6EmotionMeasure() && isBpw6PpgPeerBusy()) {
+		logQx('跳过执行', '血压后/其它PPG占用中，等待传输结束')
+		return false
+	}
 	// 到点下发时不要先 skipQxOverdue：宽限后会直接跳到下一槽，导致本槽从未发命令
 	const slotAt = readNextFireAt()
 	if (slotAt <= 0) {
@@ -1503,6 +1536,12 @@ async function executeQxMeasurementOnce() {
 			startQxMeasureWatchdog()
 			return true
 		} catch (e) {
+			const peerBusy = e && (e.code === 'PPG_PEER_BUSY' || e.message === 'PPG_PEER_BUSY')
+			if (peerBusy) {
+				logQx('本次测量跳过', '血压后/其它PPG占用中，等待传输结束', formatSlotTime(slotAt))
+				prepareSlotForDispatchRetry(slotAt)
+				return false
+			}
 			logQx('本次测量失败', e && (e.errMsg || e.message || e.code) || e,
 				isMakeupAttempt ? '补发' : `第${attempt}/${QX_DISPATCH_MAX_ATTEMPTS}次`)
 			prepareSlotForDispatchRetry(slotAt)
@@ -1590,6 +1629,11 @@ async function runQxBleScheduleWakeTickInner(source = 'wake') {
 		return 'already-running'
 	}
 	if (isQxScheduleMeasureBusy() || isSameQxSlotAlreadyClaimed(nextAt) || hasQxRealMeasureSession()) {
+		// 血压后 PPG 占用：勿抢占、勿清 busy，等传输结束
+		if (isBpw6EmotionMeasure() && isBpw6PpgPeerBusy()) {
+			logQx('唤醒跳过', '血压后/其它PPG占用中，等待传输结束')
+			return 'already-running'
+		}
 		if (!shouldPreemptMeasureForSlot(nextAt) && !isNewSlotDueNeedingDispatch(nextAt)) {
 			const busyLabel = isMainSleepAlertMeasureBusy() ? 'Main测量中' : '调度忙'
 			const hasRealSession = hasQxRealMeasureSession()
@@ -2021,6 +2065,9 @@ export function tickQxBleBackgroundCatchup() {
  * 熄屏必须与前台一致：到点立刻 runQxBleScheduleWakeTick，禁止干等回前台补发
  */
 export function onQxBleNativeKeepAlivePulse(source = 'native-keepalive') {
+	try {
+		uni.$emit('qxBle:bpw6PpgAfterBpTick')
+	} catch (e) {}
 	if (!isSwitchOn() || !isCurrentlyInScheduleWindow()) return
 	reconcileQxScheduleBusyState()
 	const nextAt = readNextFireAt()
@@ -2125,6 +2172,9 @@ export function scheduleQxBleNativeAlarm() {
 
 /** 保活闹钟触发：到点发测量（与前台 js-timer 同路径；勿每次重置定位） */
 export async function handleQxBleKeepAliveWake() {
+	try {
+		uni.$emit('qxBle:bpw6PpgAfterBpTick')
+	} catch (e) {}
 	if (!isSwitchOn()) return
 	reconcileQxScheduleBusyState()
 	// 只轻量续闹钟周期（不变则无原生调用），禁止 ensureQxBleBackgroundRuntime 重开定位
@@ -2178,9 +2228,8 @@ export function invalidateQxEmotionBindingCache(deviceModelId, mac = '') {
 		if (!normMac || !storedBpw6 || normalizeBleDeviceId(storedBpw6) === normMac) {
 			uni.removeStorageSync('BPW6devicemac')
 		}
-		if (isBpw6EmotionMeasure()) {
-			uni.setStorageSync(QX_BPW6_EMOTION_MEASURE_KEY, false)
-		}
+		// 解绑 BPW6 一律清情绪通道标记，避免仅绑 BPW1 时调度仍打印/走 BPW6
+		uni.setStorageSync(QX_BPW6_EMOTION_MEASURE_KEY, false)
 	} else if (modelId === BPW1_MODEL_ID) {
 		if (!normMac || !storedBpw1 || normalizeBleDeviceId(storedBpw1) === normMac) {
 			uni.removeStorageSync('deviceIdwatch')

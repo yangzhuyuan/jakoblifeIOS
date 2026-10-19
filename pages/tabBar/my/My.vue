@@ -90,6 +90,9 @@
 		mapState,
 		mapMutations
 	} from 'vuex';
+	import {
+		showNetworkErrorToast
+	} from '@/pages/api/networkErrorToast.js'
 	export default {
 		computed: {
 			...mapState(['getpendinglenth'])
@@ -205,10 +208,7 @@
 							break
 					}
 				}).catch(error => {
-					uni.showToast({
-						title: this.$t("网络连接异常"),
-						icon: 'none'
-					});
+					showNetworkErrorToast(this.$t("网络连接异常"));
 				})
 			},
 			// 处理用户信息

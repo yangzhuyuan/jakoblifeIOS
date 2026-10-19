@@ -33,8 +33,9 @@
 			"path": "pages/tabBar/tendency/Tendency",
 			"style": {
 				"navigationBarTitleText": "趋势",
-				"navigationBarBackgroundColor": "#EFEFF4",
+				"navigationBarBackgroundColor": "#F8F9FB",
 				"navigationBarTextStyle": "black",
+				"backgroundColor": "#F8F9FB",
 				"enablePullDownRefresh": true,
 				"app-plus": {
 					"titleNView": {
@@ -43,7 +44,7 @@
 							"text": "\ue8bd",
 							"fontSrc": "/static/ted.ttf",
 							"fontSize": "22px",
-							"color": "#000"
+							"color": "#007AFF"
 						}]
 					}
 				}

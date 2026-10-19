@@ -21,7 +21,7 @@
 					<view class="steps-info">
 						<text class="steps-label">{{ $t('步数') }}</text>
 						<text class="steps-value">{{ displaySteps }}</text>
-						<text class="steps-sub">{{ $t('今日') }}</text>
+						<text class="steps-sub">{{ dateLabel }}</text>
 					</view>
 				</view>
 				<view class="col-divider"></view>
@@ -238,19 +238,9 @@
 				return series.some(v => Number(v) > 0)
 			},
 			dateLabel() {
-				const raw = String(this.bushu_time || '').trim()
-				if (!raw || raw === '--/--' || raw === '-/-') {
-					return this.formatDateFromParts(new Date())
-				}
-				const parts = raw.split(/[\/\-.]/)
-				if (parts.length >= 2) {
-					const month = parseInt(parts[0], 10)
-					const day = parseInt(parts[1], 10)
-					if (!isNaN(month) && !isNaN(day)) {
-						return this.formatDateLabel(month, day)
-					}
-				}
-				return raw
+				const md = this.normalizeMd(this.bushu_time)
+				if (md) return md
+				return this.todayMd
 			}
 		},
 		methods: {
@@ -295,17 +285,6 @@
 					return `${md[1].padStart(2, '0')}/${md[2].padStart(2, '0')}`
 				}
 				return ''
-			},
-			formatDateFromParts(date) {
-				return this.formatDateLabel(date.getMonth() + 1, date.getDate())
-			},
-			formatDateLabel(month, day) {
-				const locale = (this.$i18n && this.$i18n.locale) || uni.getLocale() || ''
-				if (locale.indexOf('zh') === 0) {
-					return `${month}${this.$t('月')}${day}${this.$t('日')}`
-				}
-				const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-				return `${months[month - 1] || month} ${day}`
 			}
 		}
 	}
@@ -464,7 +443,8 @@
 	.steps-sub {
 		margin-top: 2px;
 		font-size: 12px;
-		color: #8a94a6;
+		font-weight: 700;
+		color: #1a2b4a;
 		line-height: 1.2;
 	}
 

@@ -135,6 +135,9 @@
 	} from '../api/appBaseHosts.js'
 
 	import codeCountdownMixin from '../api/codeCountdownMixin.js'
+	import {
+		showNetworkErrorToast
+	} from '@/pages/api/networkErrorToast.js'
 
 	export default {
 		mixins: [codeCountdownMixin],
@@ -612,7 +615,6 @@
 					username: this.unername,
 					password: this.passwrod,
 				}
-				console.log("登录参数" + this.$url_APP_IP, data)
 				this.$post(this.$url_APP_IP + "/prod-api/app/user_login", data, {
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(res => {
@@ -648,10 +650,7 @@
 				}).catch(erro => {
 					uni.hideLoading();
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
-						uni.showToast({
-							title: this.$t("网络连接异常"),
-							icon: 'none'
-						})
+						showNetworkErrorToast(this.$t("网络连接异常"))
 					} else {
 						uni.showToast({
 							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
@@ -697,10 +696,7 @@
 				}).catch(erro => {
 					uni.hideLoading()
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
-						uni.showToast({
-							title: this.$t("网络连接异常"),
-							icon: 'none'
-						})
+						showNetworkErrorToast(this.$t("网络连接异常"))
 					} else {
 						uni.showToast({
 							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
@@ -742,10 +738,7 @@
 				}).catch(erro => {
 					uni.hideLoading()
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
-						uni.showToast({
-							title: this.$t("网络连接异常"),
-							icon: 'none'
-						})
+						showNetworkErrorToast(this.$t("网络连接异常"))
 					} else {
 						uni.showToast({
 							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
@@ -1048,10 +1041,7 @@
 					}
 				}).catch(erro => {
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
-						uni.showToast({
-							title: this.$t("网络连接异常"),
-							icon: 'none'
-						})
+						showNetworkErrorToast(this.$t("网络连接异常"))
 					} else {
 						uni.showToast({
 							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
@@ -1092,10 +1082,7 @@
 					}
 				}).catch(erro => {
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
-						uni.showToast({
-							title: this.$t("网络连接异常"),
-							icon: 'none'
-						})
+						showNetworkErrorToast(this.$t("网络连接异常"))
 					} else {
 						uni.showToast({
 							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),
@@ -1135,10 +1122,7 @@
 					}
 				}).catch(erro => {
 					if (erro.errMsg.includes("fail abort statusCode:-1")) {
-						uni.showToast({
-							title: this.$t("网络连接异常"),
-							icon: 'none'
-						})
+						showNetworkErrorToast(this.$t("网络连接异常"))
 					} else {
 						uni.showToast({
 							title: this.$t("网络超时请检查是手机否连接到网络然后重试"),

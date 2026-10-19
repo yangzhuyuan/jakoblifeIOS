@@ -3,6 +3,7 @@ import { CaptiveNetwork, kCNNetworkInfoKeySSID, kCNNetworkInfoKeyBSSID } from 'S
 import { NSArray, NSDictionary } from 'Foundation';
 import { CFString } from 'CoreFoundation';
 import { UIDevice } from 'UIKit';
+import { NEHotspotNetwork } from 'NetworkExtension';
 import { UniWifiResultCallbackWithPartialInfo, UniGetWifiListCallback, UniWifiResultCallback, WifiOption, WifiConnectOption, GetConnectedWifiOptions, UniWifiInfo, UniWifiResult, UniWifiCallback, StartWifi, StopWifi, GetWifiList, OnGetWifiList, OffGetWifiList, GetConnectedWifi, ConnectWifi, OnWifiConnected, OnWifiConnectedWithPartialInfo, OffWifiConnected, OffWifiConnectedWithPartialInfo, SetWifiList } from "../interface.uts";
 import { WifiFailImpl, getErrcode } from '../unierror';
 /*
@@ -28,14 +29,16 @@ class LocationPromiseService implements CLLocationManagerDelegate {
             LocationPromiseService.promiseCompletionHandler.forEach((handler): void => {
                 handler(true);
             });
+            LocationPromiseService.promiseCompletionHandler = [];
         }
         else if (status == CLAuthorizationStatus.notDetermined) {
             manager.requestWhenInUseAuthorization();
         }
-        else if (status == CLAuthorizationStatus.denied) {
+        else if (status == CLAuthorizationStatus.denied || status == CLAuthorizationStatus.restricted) {
             LocationPromiseService.promiseCompletionHandler.forEach((handler): void => {
                 handler(false);
             });
+            LocationPromiseService.promiseCompletionHandler = [];
         }
     }
     requestPromise(
@@ -51,11 +54,8 @@ class LocationPromiseService implements CLLocationManagerDelegate {
         else if (status == CLAuthorizationStatus.authorizedAlways || status == CLAuthorizationStatus.authorizedWhenInUse) {
             completion(true);
         }
-        else if (status == CLAuthorizationStatus.denied) {
-            if (CLLocationManager.locationServicesEnabled() == false && this.initlizeManager() == true) {
-                this.manager!.requestWhenInUseAuthorization();
-                LocationPromiseService.promiseCompletionHandler.push(completion);
-            }
+        else {
+            completion(false);
         }
     }
 }
@@ -68,10 +68,49 @@ function requestLocationPromise(
 completion: (res: boolean) => void) {
     locationPromiseService.requestPromise(completion);
 }
+function resolveWifiSuccess(option: GetConnectedWifiOptions, wifiInfo: UniWifiInfo) {
+    let res: UniWifiResult = {
+        errSubject: "uni-getConnectedWifi",
+        errCode: 0,
+        errMsg: "getConnectedWifi:ok",
+        wifi: wifiInfo,
+    };
+    option.success?.(res);
+    option.complete?.(res);
+}
+function resolveWifiFail(option: GetConnectedWifiOptions) {
+    let err = new WifiFailImpl(getErrcode(12010));
+    option.fail?.(err);
+    option.complete?.(err);
+}
 /*
- * 获取当前连接的wifi信息（通过定位权限）
+ * iOS 14+ 推荐使用 NEHotspotNetwork.fetchCurrent
+ * UTS 调用带标签的 Swift 参数使用 name=value 写法
  */
-function fetchConnectedWifiWithLocationPromise(option: GetConnectedWifiOptions) {
+function fetchConnectedWifiByHotspotNetwork(option: GetConnectedWifiOptions) {
+    NEHotspotNetwork.fetchCurrent(completionHandler = (network: NEHotspotNetwork | null): void => {
+        if (network != null) {
+            let current = network!;
+            let wifiInfo: UniWifiInfo = {
+                BSSID: current.bssid,
+                SSID: current.ssid,
+                secure: current.isSecure,
+                signalStrength: current.signalStrength,
+                frequency: 0
+            };
+            if (wifiInfo.SSID.length > 0) {
+                resolveWifiSuccess(option, wifiInfo);
+                return;
+            }
+        }
+        // 回退旧接口
+        fetchConnectedWifiByCaptiveNetwork(option);
+    });
+}
+/*
+ * 旧接口：CNCopyCurrentNetworkInfo（部分新系统会返回空，触发 12010）
+ */
+function fetchConnectedWifiByCaptiveNetwork(option: GetConnectedWifiOptions) {
     let arr = CNCopySupportedInterfaces();
     let wifiInfo: UniWifiInfo = {
         BSSID: "",
@@ -91,11 +130,12 @@ function fetchConnectedWifiWithLocationPromise(option: GetConnectedWifiOptions) 
                 let dict = dic! as NSDictionary;
                 let SSID = dict[kCNNetworkInfoKeySSID as string];
                 let BSSID = dict[kCNNetworkInfoKeyBSSID as string];
-                if (SSID != null && BSSID != null) {
+                if (SSID != null) {
                     let ssid = SSID! as string;
-                    let bssid = BSSID! as string;
                     wifiInfo.SSID = ssid;
-                    wifiInfo.BSSID = bssid;
+                    if (BSSID != null) {
+                        wifiInfo.BSSID = BSSID! as string;
+                    }
                     wifiInfo.secure = false;
                     wifiInfo.signalStrength = 0;
                     wifiInfo.frequency = 0;
@@ -104,26 +144,22 @@ function fetchConnectedWifiWithLocationPromise(option: GetConnectedWifiOptions) 
             }
             index++;
         }
-        if (wifiInfo.BSSID!.length > 0 && wifiInfo.SSID.length > 0) {
-            let res: UniWifiResult = {
-                errSubject: "uni-getConnectedWifi",
-                errCode: 0,
-                errMsg: "getConnectedWifi:ok",
-                wifi: wifiInfo,
-            };
-            option.success?.(res);
-            option.complete?.(res);
-        }
-        else {
-            let err = new WifiFailImpl(getErrcode(12010));
-            option.fail?.(err);
-            option.complete?.(err);
+        // partialInfo 仅需 SSID；完整信息再要求 BSSID
+        if (wifiInfo.SSID.length > 0) {
+            if (option.partialInfo == true || (wifiInfo.BSSID != null && wifiInfo.BSSID!.length > 0)) {
+                resolveWifiSuccess(option, wifiInfo);
+                return;
+            }
         }
     }
+    resolveWifiFail(option);
+}
+function fetchConnectedWifiWithLocationPromise(option: GetConnectedWifiOptions) {
+    if (UIDevice.current.systemVersion >= "14.0") {
+        fetchConnectedWifiByHotspotNetwork(option);
+    }
     else {
-        let err = new WifiFailImpl(getErrcode(12010));
-        option.fail?.(err);
-        option.complete?.(err);
+        fetchConnectedWifiByCaptiveNetwork(option);
     }
 }
 /*

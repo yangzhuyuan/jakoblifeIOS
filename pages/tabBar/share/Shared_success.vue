@@ -19,7 +19,6 @@
 		},
 
 		onLoad(res) {
-			console.log(res.NAME)
 			this.name = res.NAME
 		},
 

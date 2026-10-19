@@ -29,9 +29,8 @@ export async function isInChinaByIP() {
 				method: 'GET',
 				timeout: 3000
 			});
-
 			if (error2) {
-				console.error('ipinfo.io 网络错误:', error2);
+				// console.log('ipinfo.io 网络错误:', error2);
 				return false;
 			}
 			if (res2?.statusCode === 200 && res2?.data?.country) {

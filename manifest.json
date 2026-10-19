@@ -2,8 +2,8 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "4.1.107",
-    "versionCode" : 491,
+    "versionName" : "4.4.010",
+    "versionCode" : 545,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
@@ -20,7 +20,9 @@
                 "Foundation.framework",
                 "AVFoundation.framework",
                 "AudioToolbox.framework",
-                "HealthKit.framework"
+                "HealthKit.framework",
+                "NetworkExtension.framework",
+                "SystemConfiguration.framework"
             ],
             "deploymentTarget" : "15.0", //可选，字符串类型，iOS支持的最低版本
             "UIBackgroundModes" : [
@@ -59,7 +61,8 @@
             },
             "UIRequiredDeviceCapabilities" : [ "healthkit" ],
             "entitlements" : {
-                "com.apple.developer.healthkit" : true
+                "com.apple.developer.healthkit" : true,
+                "com.apple.developer.networking.wifi-info" : true
             },
             // "com.apple.developer.healthkit.access" : [
             //     "health-records" // 改为配置文件支持的类型
@@ -87,7 +90,9 @@
                         "Foundation.framework",
                         "AVFoundation.framework",
                         "AudioToolbox.framework",
-                        "HealthKit.framework"
+                        "HealthKit.framework",
+                        "NetworkExtension.framework",
+                        "SystemConfiguration.framework"
                     ],
                     "deploymentTarget" : "15.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
@@ -132,7 +137,8 @@
                             "HKQuantityTypeIdentifierStepCount",
                             "HKQuantityTypeIdentifierHeartRate",
                             "HKQuantityTypeIdentifierDistanceWalkingRunning"
-                        ]
+                        ],
+                        "com.apple.developer.networking.wifi-info" : true
                     }
                 }
             },
@@ -151,7 +157,9 @@
                         "Foundation.framework",
                         "AVFoundation.framework",
                         "AudioToolbox.framework",
-                        "HealthKit.framework"
+                        "HealthKit.framework",
+                        "NetworkExtension.framework",
+                        "SystemConfiguration.framework"
                     ],
                     "deploymentTarget" : "15.0", //可选，字符串类型，iOS支持的最低版本
                     "UIBackgroundModes" : [
@@ -196,7 +204,8 @@
                             "HKQuantityTypeIdentifierStepCount",
                             "HKQuantityTypeIdentifierHeartRate",
                             "HKQuantityTypeIdentifierDistanceWalkingRunning"
-                        ]
+                        ],
+                        "com.apple.developer.networking.wifi-info" : true
                     }
                 }
             }
@@ -208,8 +217,8 @@
             }
         },
         "compatible" : {
-            "runtimeVersion" : "5.24", //根据实际情况填写  
-            "compilerVersion" : "5.24", //根据实际情况填写  
+            "runtimeVersion" : "5.26", //根据实际情况填写  
+            "compilerVersion" : "5.26", //根据实际情况填写  
             "ignoreVersion" : true
         },
         "usingComponents" : true,
@@ -293,7 +302,9 @@
                     "Foundation.framework",
                     "AVFoundation.framework",
                     "AudioToolbox.framework",
-                    "HealthKit.framework"
+                    "HealthKit.framework",
+                    "NetworkExtension.framework",
+                    "SystemConfiguration.framework"
                 ],
                 "deploymentTarget" : "15.0", //可选，字符串类型，iOS支持的最低版本
                 "UIBackgroundModes" : [
@@ -338,7 +349,8 @@
                         "HKQuantityTypeIdentifierStepCount",
                         "HKQuantityTypeIdentifierHeartRate",
                         "HKQuantityTypeIdentifierDistanceWalkingRunning"
-                    ]
+                    ],
+                    "com.apple.developer.networking.wifi-info" : true
                 }
             },
             "sdkConfigs" : {

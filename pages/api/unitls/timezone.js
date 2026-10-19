@@ -315,6 +315,43 @@ export function chinaDetailToLocalWall(chinaDateYmd, chinaTime) {
 	}
 }
 
+/** 是否与中国墙钟同一时区（UTC+8；港澳同属 +8，保持国内规则） */
+export function isChinaTimezoneAligned(date = new Date()) {
+	return getDeviceTimezoneOffsetMinutes(date) === CHINA_OFFSET_MINUTES
+}
+
+/** 中国 YMD 加减天（按日历日，不依赖本地时区） */
+export function addChinaYmdDays(ymd, days) {
+	const m = String(ymd || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+	if (!m) return String(ymd || '')
+	const base = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+	if (!Number.isFinite(base)) return String(ymd || '')
+	const out = new Date(base + Number(days || 0) * 86400000)
+	return `${out.getUTCFullYear()}-${pad2(out.getUTCMonth() + 1)}-${pad2(out.getUTCDate())}`
+}
+
+/**
+ * 报告查询用中国日期 YMD（24h / 7 天 / 无感国外 profDate 同一套）
+ * - 国内 UTC+8：凌晨 1 点前用前一天，过了用当天（不变）
+ * - 国外：按中国日历。例：手机 5 号、中国已是 6 号
+ *   已过 6 号凌晨 1 点 → 传 6 号
+ *   6 号 00:00–00:59 → 先传 5 号，无数据再回退 4 号（见 shouldOverseasMidnightFallback）
+ */
+export function getReportProfChinaYmd(date = new Date()) {
+	const chinaNow = getChinaTimeAllJSON(date)
+	const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
+	if (!(chinaHour < 1)) {
+		return chinaNow.YMD
+	}
+	return addChinaYmdDays(chinaNow.YMD, -1)
+}
+
+/** 国外且中国时间 00:00–00:59：允许 5 号无数据时回退到 4 号 */
+export function shouldOverseasMidnightFallback(date = new Date()) {
+	if (isChinaTimezoneAligned(date)) return false
+	return Number(getChinaTimeAllJSON(date).YMDHMS.slice(11, 13)) < 1
+}
+
 /**
  * 手机本地所选报告日 → 中国报告日（供接口 / 下页传参）
  * 选 D，对照中国时间是否已过 (D+1) 日 01:00：
@@ -351,4 +388,16 @@ export function localSelectedYmdToChinaYmd(selectedYmd) {
 	const gateMs = chinaWallClockToMs(`${chinaNextDay} 01:00:00`)
 	if (!Number.isFinite(gateMs)) return selected
 	return Date.now() >= gateMs ? chinaNextDay : selected
+}
+
+/**
+ * 国外 24h 报告「监测时间」展示结束日（手机本地日历）
+ * 例：手机已是 6 号
+ * - 未过 7 号中国 01:00 → 结束日 5 号（窗口 4–5）
+ * - 已过 → 结束日 6 号（窗口 5–6）
+ * 接口 profDate 仍用 getReportProfChinaYmd，不在这里改。
+ */
+export function getOverseas24hDisplayEndYmd(date = new Date()) {
+	const localYmd = getLocalTimeAllJSON(date).YMD
+	return addChinaYmdDays(localSelectedYmdToChinaYmd(localYmd), -1)
 }

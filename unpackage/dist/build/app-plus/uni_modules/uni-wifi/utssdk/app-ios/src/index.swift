@@ -2,6 +2,7 @@ import CoreFoundation
 import CoreLocation
 import DCloudUTSFoundation
 import Foundation
+import NetworkExtension
 import UIKit
 import SystemConfiguration.CaptiveNetwork
 @objc(UTSSDKModulesUniWifiWifiOption)
@@ -310,13 +311,15 @@ public class LocationPromiseService : NSObject, CLLocationManagerDelegate {
             (handler) -> Void in
             handler(true)
             })
+            LocationPromiseService.promiseCompletionHandler = []
         } else if (status == CLAuthorizationStatus.notDetermined) {
             manager.requestWhenInUseAuthorization()
-        } else if (status == CLAuthorizationStatus.denied) {
+        } else if (status == CLAuthorizationStatus.denied || status == CLAuthorizationStatus.restricted) {
             LocationPromiseService.promiseCompletionHandler.forEach({
             (handler) -> Void in
             handler(false)
             })
+            LocationPromiseService.promiseCompletionHandler = []
         }
     }
     public func requestPromise(_ completion: @escaping (_ res: Bool) -> Void) {
@@ -328,11 +331,8 @@ public class LocationPromiseService : NSObject, CLLocationManagerDelegate {
             }
         } else if (status == CLAuthorizationStatus.authorizedAlways || status == CLAuthorizationStatus.authorizedWhenInUse) {
             completion(true)
-        } else if (status == CLAuthorizationStatus.denied) {
-            if (CLLocationManager.locationServicesEnabled() == false && self.initlizeManager() == true) {
-                self.manager!.requestWhenInUseAuthorization()
-                LocationPromiseService.promiseCompletionHandler.push(completion)
-            }
+        } else {
+            completion(false)
         }
     }
 }
@@ -340,7 +340,42 @@ public var locationPromiseService: LocationPromiseService = LocationPromiseServi
 public func requestLocationPromise(_ completion: @escaping (_ res: Bool) -> Void) {
     locationPromiseService.requestPromise(completion)
 }
-public func fetchConnectedWifiWithLocationPromise(_ option: GetConnectedWifiOptions) {
+public func resolveWifiSuccess(_ option: GetConnectedWifiOptions, _ wifiInfo: UniWifiInfo) {
+    var res = UniWifiResult(UTSJSONObject([
+        "errSubject": "uni-getConnectedWifi",
+        "errCode": 0 as NSNumber,
+        "errMsg": "getConnectedWifi:ok",
+        "wifi": wifiInfo
+    ]))
+    option.success?(res)
+    option.complete?(res)
+}
+public func resolveWifiFail(_ option: GetConnectedWifiOptions) {
+    var err = WifiFailImpl(getErrcode(12010))
+    option.fail?(err)
+    option.complete?(err)
+}
+public func fetchConnectedWifiByHotspotNetwork(_ option: GetConnectedWifiOptions) {
+    NEHotspotNetwork.fetchCurrent(completionHandler: {
+    (network: NEHotspotNetwork?) -> Void in
+    if (network != nil) {
+        var current = network!
+        var wifiInfo = UniWifiInfo(UTSJSONObject([
+            "BSSID": current.bssid,
+            "SSID": current.ssid,
+            "secure": current.isSecure,
+            "signalStrength": current.signalStrength,
+            "frequency": 0 as NSNumber
+        ]))
+        if (wifiInfo.SSID.length > 0) {
+            resolveWifiSuccess(option, wifiInfo)
+            return
+        }
+    }
+    fetchConnectedWifiByCaptiveNetwork(option)
+    })
+}
+public func fetchConnectedWifiByCaptiveNetwork(_ option: GetConnectedWifiOptions) {
     var arr = CNCopySupportedInterfaces()
     var wifiInfo = UniWifiInfo(UTSJSONObject([
         "BSSID": "",
@@ -360,11 +395,12 @@ public func fetchConnectedWifiWithLocationPromise(_ option: GetConnectedWifiOpti
                 var dict = dic! as! NSDictionary
                 var SSID = dict[kCNNetworkInfoKeySSID as! String]
                 var BSSID = dict[kCNNetworkInfoKeyBSSID as! String]
-                if (SSID != nil && BSSID != nil) {
+                if (SSID != nil) {
                     var ssid = SSID! as! String
-                    var bssid = BSSID! as! String
                     wifiInfo.SSID = ssid
-                    wifiInfo.BSSID = bssid
+                    if (BSSID != nil) {
+                        wifiInfo.BSSID = BSSID! as! String
+                    }
                     wifiInfo.secure = false
                     wifiInfo.signalStrength = 0
                     wifiInfo.frequency = 0
@@ -373,24 +409,20 @@ public func fetchConnectedWifiWithLocationPromise(_ option: GetConnectedWifiOpti
             }
             index++
         }
-        if (wifiInfo.BSSID!.length > 0 && wifiInfo.SSID.length > 0) {
-            var res = UniWifiResult(UTSJSONObject([
-                "errSubject": "uni-getConnectedWifi",
-                "errCode": 0 as NSNumber,
-                "errMsg": "getConnectedWifi:ok",
-                "wifi": wifiInfo
-            ]))
-            option.success?(res)
-            option.complete?(res)
-        } else {
-            var err = WifiFailImpl(getErrcode(12010))
-            option.fail?(err)
-            option.complete?(err)
+        if (wifiInfo.SSID.length > 0) {
+            if (option.partialInfo == true || (wifiInfo.BSSID != nil && wifiInfo.BSSID!.length > 0)) {
+                resolveWifiSuccess(option, wifiInfo)
+                return
+            }
         }
+    }
+    resolveWifiFail(option)
+}
+public func fetchConnectedWifiWithLocationPromise(_ option: GetConnectedWifiOptions) {
+    if (UIDevice.current.systemVersion >= "14.0") {
+        fetchConnectedWifiByHotspotNetwork(option)
     } else {
-        var err = WifiFailImpl(getErrcode(12010))
-        option.fail?(err)
-        option.complete?(err)
+        fetchConnectedWifiByCaptiveNetwork(option)
     }
 }
 @objc(UTSSDKModulesUniWifiUniWiFiModuleGloabInfo)

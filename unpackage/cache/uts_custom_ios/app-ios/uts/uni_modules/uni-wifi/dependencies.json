@@ -3,7 +3,8 @@
   "dependencies": {
     "frameworks": [
       "CoreLocation.framework",
-      "SystemConfiguration.framework"
+      "SystemConfiguration.framework",
+      "NetworkExtension.framework"
     ]
   }
 }

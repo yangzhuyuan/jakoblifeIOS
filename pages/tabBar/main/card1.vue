@@ -87,21 +87,18 @@
 						</view>
 						<view
 							style="color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
-							<view style="width: 90px;display: flex;justify-content: flex-end;">95%</view>
-							<view style="width: 60px;"></view>
-							<view style="width: 90px;display: flex;justify-content: flex-start;">98%</view>
+							<view style="width: 120px;display: flex;justify-content: flex-end;">92%</view>
+							<view style="width: 120px;"></view>
 						</view>
 						<view
 							style="color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
-							<view style="background: #FCCD41; width: 80px;height: 10px;"></view>
-							<view style="background: #7AE545;width: 80px;height: 10px;"></view>
-							<view style="background: #58BF78;width: 80px;height: 10px;"></view>
+							<view style="background: #FCCD41; width: 120px;height: 10px;"></view>
+							<view style="background: #7AE545;width: 120px;height: 10px;"></view>
 						</view>
 						<view
 							style="color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
-							<view style="width: 80px;height: 10px;">{{$t('偏低')}}</view>
-							<view style="width: 80px;height: 10px;">{{$t('正常')}}</view>
-							<view style="width: 80px;height: 10px;">{{$t('偏高')}}</view>
+							<view style="width: 120px;height: 10px;text-align: center;">{{$t('偏低')}}</view>
+							<view style="width: 120px;height: 10px;text-align: center;">{{$t('正常')}}</view>
 						</view>
 						<view
 							style="padding: 10px; color: gray;font-size: 12px;margin-top: 10px;display: flex; justify-content: center; align-items: center;flex-direction: row;">
@@ -365,15 +362,12 @@
 				const xueyang = oxygenData.value;
 				bloodOxygenItem.Step_number = xueyang !== null && xueyang !== undefined ? xueyang : "0";
 				const val = parseInt(xueyang);
-				if (isNaN(val) || val <= 95) {
+				if (isNaN(val) || val <= 92) {
 					bloodOxygenItem.BMI_ys = that.$t('偏低');
 					bloodOxygenItem.BMI_TF = 0;
-				} else if (val < 98) {
+				} else {
 					bloodOxygenItem.BMI_ys = that.$t('正常');
 					bloodOxygenItem.BMI_TF = 1;
-				} else {
-					bloodOxygenItem.BMI_ys = that.$t('偏高');
-					bloodOxygenItem.BMI_TF = 10;
 				}
 				const xueyangtime = that.formatDate(oxygenData.time);
 				bloodOxygenItem.Step_count = !xueyangtime || xueyangtime === 'NaN/NaN' ? "-/-" : xueyangtime;

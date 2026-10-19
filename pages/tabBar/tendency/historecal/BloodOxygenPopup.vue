@@ -3,19 +3,16 @@
 		<view class="popup-content">
 			<view class="popup-title">{{$t('血氧分类')}}</view>
 			<view class="scale-labels">
-				<text>95%</text>
-				<text></text>
-				<text>98%</text>
+				<text class="label-left">92%</text>
+				<text class="label-right"></text>
 			</view>
 			<view class="scale-bars">
 				<view class="bar low"></view>
 				<view class="bar normal"></view>
-				<view class="bar high"></view>
 			</view>
 			<view class="scale-names">
 				<text>{{$t('偏低')}}</text>
 				<text>{{$t('正常')}}</text>
-				<text>{{$t('偏高')}}</text>
 			</view>
 			<view class="desc">{{$t('血氧3')}}</view>
 			<view class="desc">{{$t('血氧2')}}</view>
@@ -64,6 +61,20 @@
 		padding: 0 10px;
 	}
 
+	.scale-labels .label-left {
+		flex: 1;
+		text-align: right;
+	}
+
+	.scale-labels .label-right {
+		flex: 1;
+	}
+
+	.scale-names text {
+		flex: 1;
+		text-align: center;
+	}
+
 	.scale-bars {
 		display: flex;
 		justify-content: center;
@@ -71,7 +82,7 @@
 	}
 
 	.bar {
-		width: 80px;
+		width: 120px;
 		height: 10px;
 	}
 
@@ -81,10 +92,6 @@
 
 	.bar.normal {
 		background: #7AE545;
-	}
-
-	.bar.high {
-		background: #58BF78;
 	}
 
 	.desc {

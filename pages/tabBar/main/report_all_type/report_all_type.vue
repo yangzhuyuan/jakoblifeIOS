@@ -35,14 +35,15 @@
 			<uni-icons type="right" size="16" color="#C0C8D4"></uni-icons>
 		</view>
 
-		<view class="report-card" @click="goToSupplementdata">
+		<view class="report-card" :class="{ 'report-card-disabled': !sensorlessModelReady }" @click="goToSupplementdata">
 			<image src="/static/page_icon/baogao_4.png" class="report-icon" mode="aspectFit"></image>
 			<view class="report-info">
 				<text class="report-card-title">{{ $t('无感血压报告') }}</text>
 				<text class="report-card-desc">{{ $t('查看可用的夜间无气囊充气血压估算与趋势') }}</text>
 			</view>
-			<uni-icons type="right" size="16" color="#C0C8D4"></uni-icons>
+			<uni-icons type="right" size="16" :color="sensorlessModelReady ? '#C0C8D4' : '#C8CDD6'"></uni-icons>
 		</view>
+		<view v-if="!sensorlessModelReady" class="sensorless-model-tip">{{ $t('无感血压AI模型建立中提示') }}</view>
 
 		<view class="report-tip">
 			<uni-icons type="info" size="16" color="#3298F7"></uni-icons>
@@ -52,9 +53,20 @@
 </template>
 
 <script>
+	function isSensorlessModelEstablished() {
+		const modeltipsbool = uni.getStorageSync('temperature')
+		return !!(modeltipsbool && modeltipsbool !== '-/-' && Number(modeltipsbool) >= 500)
+	}
+
 	export default {
+		data() {
+			return {
+				sensorlessModelReady: isSensorlessModelEstablished(),
+			}
+		},
 		onShow() {
 			let that = this
+			that.sensorlessModelReady = isSensorlessModelEstablished()
 			uni.setNavigationBarTitle({
 				title: that.$t("报告")
 			})
@@ -71,6 +83,8 @@
 				})
 			},
 			goToSupplementdata() {
+				this.sensorlessModelReady = isSensorlessModelEstablished()
+				if (!this.sensorlessModelReady) return
 				uni.navigateTo({
 					url: '/pages/tabBar/main/report_all_type/Smooth_BP_Data'
 				})
@@ -179,6 +193,31 @@
 		font-size: 12px;
 		color: #8a94a6;
 		line-height: 1.4;
+	}
+
+	.report-card-disabled {
+		background: #f3f4f6;
+	}
+
+	.report-card-disabled .report-card-title,
+	.report-card-disabled .report-card-desc {
+		color: #b0b6c0;
+	}
+
+	.report-card-disabled .report-icon {
+		opacity: 0.45;
+	}
+
+	.sensorless-model-tip {
+		position: relative;
+		z-index: 1;
+		margin: -8px 0 20px;
+		color: #e67e22;
+		font-size: 13px;
+		line-height: 1.6;
+		background: #fff8f0;
+		padding: 12px 14px;
+		border-radius: 14px;
 	}
 
 	.report-tip {

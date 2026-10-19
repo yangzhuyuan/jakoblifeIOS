@@ -2,11 +2,11 @@
   "version": "1",
   "env": {
     "vapor": false,
-    "compilerVersion": "5.24"
+    "compilerVersion": "5.26"
   },
   "files": {
     "utssdk/app-ios/index.uts": {
-      "md5": "0eaa4c217ed3520f9834cb16710fc59b"
+      "md5": "71d691bb11127e11cbdcf89610f8a6b7"
     },
     "utssdk/interface.uts": {
       "md5": "3f602b40f95a6bfc0ca17f015c93aa66"
@@ -15,7 +15,7 @@
       "md5": "c84b45c8ef5661d3bfa4eb34436115ba"
     },
     "package.json": {
-      "md5": "14bb47fe31bfbbf346ca8aed1e23bdc7"
+      "md5": "9e8b4e078513bde7228fb55f9800f556"
     },
     "utssdk/app-ios/Info.plist": {
       "md5": "611a7961e4cd69fde29626324273e3e3"
@@ -24,7 +24,7 @@
       "md5": "74d1b0f26e57351ad4519464756567b1"
     },
     "utssdk/app-ios/config.json": {
-      "md5": "d8b2de535088671c3f347b5926d825bc"
+      "md5": "43afb74ed04c3fee59c5d28b51289778"
     }
   }
 }

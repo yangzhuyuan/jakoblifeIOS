@@ -105,6 +105,8 @@
 						let uniqueArr = uni.getStorageSync("listdadsa").filter((item, index, self) => {
 							return self.findIndex(t => t.name === item.name) === index;
 						});
+						// 与当前绑定对齐：该型号已解绑则不再展示在「已连接过的设备」
+						uniqueArr = that.pruneListdadsaByBoundDevices(uniqueArr)
 						that.bluetoothList1 = uniqueArr
 					} else {
 						that.bluetoothList1 = []
@@ -170,6 +172,61 @@
 			//返回按钮
 			back() {
 				uni.navigateBack()
+			},
+			/**
+			 * 按当前绑定列表清理「已连接过」缓存：
+			 * - 已知型号广播名：仅当该型号仍有绑定时保留
+			 * - 未知名：保留（不影响其它设备）
+			 * 不改扫描/配对流程，只避免解绑后仍显示。
+			 */
+			pruneListdadsaByBoundDevices(list) {
+				if (!Array.isArray(list) || !list.length) {
+					return []
+				}
+				const aliasToModels = {
+					'EL2': ['20000', '20001'],
+					'JL-S260': ['20000'],
+					'JL-S100': ['20001'],
+					'TSB-617B-T': ['10000'],
+					'JL-BP68W': ['10001'],
+					'JL-BP67W': ['10002'],
+					'JL-BP68G': ['10003'],
+					'JL-BP67G': ['10004'],
+					'ZK-B872B': ['10005', '10006'],
+					'ZK-B872': ['10005', '10006'],
+					'ZK-872': ['10005', '10006'],
+					'ZK872': ['10005', '10006'],
+					'ZK872B': ['10005', '10006'],
+					'BPW1': ['30000'],
+					'BPW6': ['30001'],
+					'U19M': ['30001'],
+					'U16H': ['30001']
+				}
+				let boundModels = new Set()
+				try {
+					const raw = uni.getStorageSync('lixianlist')
+					const rows = Array.isArray(raw) ? raw : ((raw && raw.rows) || [])
+					;(rows || []).forEach((row) => {
+						if (row && row.deviceModelId != null) {
+							boundModels.add(String(row.deviceModelId))
+						}
+					})
+				} catch (e) {}
+				const next = list.filter((item) => {
+					const name = String((item && item.name) || '').trim().toUpperCase()
+					if (!name) return true
+					const models = aliasToModels[name]
+					if (!models || !models.length) return true
+					return models.some((m) => boundModels.has(String(m)))
+				})
+				try {
+					if (next.length === 0) {
+						uni.removeStorageSync('listdadsa')
+					} else if (next.length !== list.length) {
+						uni.setStorageSync('listdadsa', next)
+					}
+				} catch (e) {}
+				return next
 			},
 			clearHeartbeatInterval() {
 				if (Vue.prototype.$globalTimers.heartbeatInterval) {
@@ -338,30 +395,48 @@
 			createBLEConnection(deviceId, item) {
 				console.log("createBLEConnection", deviceId)
 				let that = this;
+				const proceedConnected = () => {
+					if (item != "") {
+						that.bluetoothList1.push(item)
+						uni.setStorageSync("listdadsa", that.bluetoothList1)
+					}
+					//需延时连接，不然会报错
+					setTimeout(function() {
+						//设置MTU
+						uni.setBLEMTU({
+							deviceId: deviceId,
+							mtu: 512,
+							success(resMTU) {
+								console.log("设置蓝牙最大传输单元", resMTU);
+							}
+						})
+						that.getBLEDeviceServices(deviceId)
+					}, 2000);
+				}
 				that.$refs.popup.open("bottom")
 				uni.createBLEConnection({
 					deviceId: deviceId,
+					timeout: 15000,
 					success: (res) => {
 						console.log("连接低功耗蓝牙设备成功", res);
-						if (item != "") {
-							that.bluetoothList1.push(item)
-							uni.setStorageSync("listdadsa", that.bluetoothList1)
-						}
-						//需延时连接，不然会报错
-						setTimeout(function() {
-							//设置MTU
-							uni.setBLEMTU({
-								deviceId: deviceId,
-								mtu: 512,
-								success(resMTU) {
-									console.log("设置蓝牙最大传输单元", resMTU);
-								}
-							})
-							that.getBLEDeviceServices(deviceId)
-						}, 2000);
+						proceedConnected()
 					},
 					fail(erro) {
+						const msg = String((erro && erro.errMsg) || '')
+						const code = erro && erro.errCode
+						// 手机已显示连接：不要关适配器，直接继续发现服务
+						if (code === -1 || /already\s*connect/i.test(msg)) {
+							console.log("蓝牙已处于连接", erro)
+							proceedConnected()
+							return
+						}
 						that.$refs.popup.close()
+						uni.closeBluetoothAdapter()
+						uni.openBluetoothAdapter()
+						uni.showToast({
+							title: that.$t("连接超时"),
+							icon: "none"
+						});
 						console.log("连接低功耗蓝牙设备失败", erro);
 					}
 				});
@@ -415,9 +490,6 @@
 			turesss() {
 				let that = this
 				that.$refs.popup1.close()
-				console.log("turesss _deviceId：" + that.deviceId)
-				console.log("turesss_serviceId：" + that.serviceId)
-				console.log("turesss_characteristicId：" + that.uuid)
 				uni.navigateTo({
 					url: '../../Bind/Bing_xueya/Bing_xueya_2?deviceId=' + that.deviceId +
 						"&serviceId=" + that.serviceId + "&uuid=" + that.uuid + "&sn=" + that.sn +

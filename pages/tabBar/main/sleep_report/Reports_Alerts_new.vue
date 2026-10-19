@@ -88,6 +88,9 @@
 
 <script>
 	import {
+		showNetworkErrorToast
+	} from '@/pages/api/networkErrorToast.js'
+	import {
 		startGlobalQxBleAlignedSchedule,
 		stopGlobalQxBleAlignedSchedule,
 		QX_BPW6_EMOTION_MEASURE_KEY,
@@ -471,11 +474,6 @@
 			clickset() {
 				const that = this
 				const anyOn = that.isAnyScheduleOn()
-				console.log('clickset', {
-					scheduleMode: that.scheduleMode,
-					switchHER: that.switchHER,
-					switchEmotion: that.switchEmotion
-				})
 				if (anyOn) {
 					try {
 						enableAudioKeepAlive(true)
@@ -525,7 +523,6 @@
 					dataType: 'QX_DATA',
 					data: this.formatDatacard([postData])
 				}
-				console.log('editData', editData)
 				this.$post(this.$url_APP_IP + '/prod-api/device/data/editData', editData, {
 					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/json'
@@ -539,16 +536,15 @@
 							uni.removeStorageSync('sendwatch')
 						}
 						this.afterQxSavedStartBleSchedule()
-						setTimeout(() => {
-							uni.switchTab({
-								url: '/pages/tabBar/main/Main'
-							})
-						}, 1000)
 					} else {
 						uni.showToast({
 							title: this.$t('失败'),
 							icon: 'none'
 						})
+					}
+				}).catch(err => {
+					if (err.errMsg === "request:fail abort statusCode:-1 似乎已断开与互联网的连接。(-1009)") {
+						showNetworkErrorToast(this.$t("网络连接异常"))
 					}
 				})
 			},

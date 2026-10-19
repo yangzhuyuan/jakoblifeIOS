@@ -582,7 +582,12 @@
 		savePdfToFile
 	} from '../../../api/unitls/imageToPdf.js';
 	import {
-		getChinaTimeAllJSON
+		getChinaTimeAllJSON,
+		isChinaTimezoneAligned,
+		getReportProfChinaYmd,
+		addChinaYmdDays,
+		shouldOverseasMidnightFallback,
+		getOverseas24hDisplayEndYmd
 	} from '@/pages/api/unitls/timezone.js'
 	export default {
 		data() {
@@ -728,6 +733,7 @@
 				currentDateTime: '',
 				canvasWidth: 750,
 				canvasHeight: 2000,
+				overseasProfYmd: '',
 			};
 		},
 		computed: {
@@ -840,16 +846,34 @@
 				const timesssaa = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 				return timesssaa
 			},
-			calculateTimeRange() {
+			calculateTimeRange(endYmdOverride) {
+				if (!isChinaTimezoneAligned()) {
+					this.overseasProfYmd = endYmdOverride || getReportProfChinaYmd()
+					const endYmd = getOverseas24hDisplayEndYmd()
+					const startYmd = addChinaYmdDays(endYmd, -6)
+					this.monitorInfo.startTime = `${startYmd} 08:00:00`
+					this.monitorInfo.endTime = `${endYmd} 21:05:00`
+					return
+				}
+				this.overseasProfYmd = ''
 				const now = new Date();
-				const endTime =
+				this.monitorInfo.endTime =
 					`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} 21:05:00`;
 				const startDate = new Date(now);
 				startDate.setDate(startDate.getDate() - 6);
-				const startTime =
+				this.monitorInfo.startTime =
 					`${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')} 08:00:00`;
-				this.monitorInfo.startTime = startTime;
-				this.monitorInfo.endTime = endTime;
+			},
+			getQueryMonitorRange() {
+				if (this.overseasProfYmd) {
+					const endYmd = this.overseasProfYmd
+					const startYmd = addChinaYmdDays(endYmd, -6)
+					return {
+						startTime: `${startYmd} 08:00:00`,
+						endTime: `${endYmd} 21:05:00`
+					}
+				}
+				return this.monitorInfo
 			},
 
 
@@ -1315,25 +1339,26 @@
 			},
 
 			// ==================== API 请求 ====================
-			get_retVarList() {
-				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
-				const chinaNow = getChinaTimeAllJSON()
-				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
-				const profYmd = chinaHour < 1
-					? getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD
-					: chinaNow.YMD
+			get_retVarList(isFallback) {
+				const profYmd = this.overseasProfYmd || getReportProfChinaYmd()
 				const data = {
 					userId: uni.getStorageSync("userid"),
 					profDate: profYmd + ' 00:00:00',
 					filterVarList: this.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				};
-				// console.log('7天报告数据明细（传入的时间以中国时间为准）：', data)
 				this.$post(this.$url_APP_IP + '/prod-api/device_app/get_retVarList', data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((res) => {
-					// console.log('7天报告数据结果：', res);
+					const raw = res && res.data && res.data.retVarList
+					const empty = !(res && res.code === 200 && raw && String(raw).trim())
+					if (!isFallback && shouldOverseasMidnightFallback() && empty) {
+						this.calculateTimeRange(addChinaYmdDays(profYmd, -1))
+						this.get_retVarList(true)
+						this.get_trend_data()
+						return
+					}
 					if (res.code === 200 && res.data && res.data.retVarList) {
 						this.monitorData = this.processRetVarList(res.data.retVarList);
 						this.updateStatistics(this.monitorData);
@@ -1360,8 +1385,8 @@
 							register: "weight"
 						}
 					],
-					startTime: this.monitorInfo.startTime,
-					endTime: this.monitorInfo.endTime,
+					startTime: this.getQueryMonitorRange().startTime,
+					endTime: this.getQueryMonitorRange().endTime,
 					aggregateType: "average"
 				}
 				console.log("get_trend_data", data)
@@ -1409,8 +1434,8 @@
 							})
 						}
 
-						let startDate = new Date(this.monitorInfo.startTime)
-						let endDate = new Date(this.monitorInfo.endTime)
+						let startDate = new Date(this.getQueryMonitorRange().startTime)
+						let endDate = new Date(this.getQueryMonitorRange().endTime)
 						let dateList = []
 						let currentDate = new Date(startDate)
 						while (currentDate <= endDate) {
@@ -1494,8 +1519,8 @@
 					});
 				}
 
-				const startDate = new Date(this.monitorInfo.startTime);
-				const endDate = new Date(this.monitorInfo.endTime);
+				const startDate = new Date(this.getQueryMonitorRange().startTime);
+				const endDate = new Date(this.getQueryMonitorRange().endTime);
 				const dateList = [];
 				let currentDate = new Date(startDate);
 				while (currentDate <= endDate) {
@@ -1536,8 +1561,8 @@
 						slaveSn: '3',
 						register: 'highPressure'
 					}],
-					startTime: this.monitorInfo.startTime,
-					endTime: this.monitorInfo.endTime
+					startTime: this.getQueryMonitorRange().startTime,
+					endTime: this.getQueryMonitorRange().endTime
 				};
 
 				this.$post(this.$url_APP_IP + this.$url_query_month_avg, data, {

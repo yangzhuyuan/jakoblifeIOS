@@ -454,7 +454,7 @@
 					startTime,
 					endTime,
 				};
-				console.log("【原始血压数据传参】" + this.$url_APP_IP, data);
+				console.log("【原始血压数据传参】" + uni.getStorageSync("token"), data);
 				const res = await this.$post(this.$url_APP_IP + this.$url_query_log_v2, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
@@ -615,17 +615,46 @@
 				const high = isDetail ? data.highPressure : data.highPressureAvg;
 
 				let level, xueyalist;
+				const lowNum = Number(low);
+				const highNum = Number(high);
+				if (!Number.isFinite(lowNum) || !Number.isFinite(highNum)) {
+					level = this.$t("未知");
+					xueyalist = 4;
+					return isDetail ? {
+						...data,
+						level2: level,
+						xueyalist1: xueyalist
+					} : {
+						...data,
+						level,
+						xueyalist,
+						expanded: false
+					};
+				}
 
-				if ((low >= 61 && low <= 80) && (high >= 91 && high <= 120)) {
+				// 血压偏低优先：收缩压<90 或 舒张压<60；正常血压两者都满足；其余等级优先收缩压
+				if (highNum < 91 || lowNum < 61) {
+					level = this.$t("血压偏低");
+					xueyalist = 5;
+				} else if (highNum >= 91 && highNum <= 120 && lowNum >= 61 && lowNum <= 80) {
 					level = this.$t("正常血压");
 					xueyalist = 0;
-				} else if ((low >= 81 && low <= 90) || (high >= 121 && high <= 140)) {
+				} else if (highNum >= 121 && highNum <= 140) {
 					level = this.$t("正常高血压值");
 					xueyalist = 1;
-				} else if ((low >= 91 && low <= 100) || (high >= 141 && high <= 160)) {
+				} else if (highNum >= 141 && highNum <= 160) {
 					level = this.$t("一级高血压");
 					xueyalist = 2;
-				} else if ((low >= 101 && low <= 110) || (high >= 161 && high <= 180)) {
+				} else if (highNum >= 161 && highNum <= 180) {
+					level = this.$t("二级高血压");
+					xueyalist = 3;
+				} else if (lowNum >= 81 && lowNum <= 90) {
+					level = this.$t("正常高血压值");
+					xueyalist = 1;
+				} else if (lowNum >= 91 && lowNum <= 100) {
+					level = this.$t("一级高血压");
+					xueyalist = 2;
+				} else if (lowNum >= 101 && lowNum <= 110) {
 					level = this.$t("二级高血压");
 					xueyalist = 3;
 				} else {
@@ -645,7 +674,7 @@
 				};
 			},
 
-			// 计算血氧等级（与首页卡片一致：≤95偏低，96–97正常，≥98偏高）
+			// 计算血氧等级（与首页卡片一致：≤92偏低，>92正常）
 			calculateBloodOxygenLevel(data, isDetail = false) {
 				if (!data) {
 					return isDetail ? {
@@ -667,15 +696,12 @@
 				if (isNaN(spo2)) {
 					level = this.$t("未知");
 					oxygenlist = 3;
-				} else if (spo2 <= 95) {
+				} else if (spo2 <= 92) {
 					level = this.$t("偏低");
 					oxygenlist = 0;
-				} else if (spo2 < 98) {
+				} else {
 					level = this.$t("正常");
 					oxygenlist = 1;
-				} else {
-					level = this.$t("偏高");
-					oxygenlist = 2;
 				}
 				if (isDetail) {
 					return {

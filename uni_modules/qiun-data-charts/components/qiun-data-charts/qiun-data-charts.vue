@@ -505,7 +505,11 @@ export default {
     );
     // #endif
   },
+  beforeDestroy(){
+    this._chartDestroyed = true
+  },
   destroyed(){
+    this._chartDestroyed = true
     if(this.echarts === true){
       delete cfe.option[this.cid]
       delete cfe.instance[this.cid]
@@ -637,6 +641,9 @@ export default {
   },
   methods: {
     beforeInit(){
+      if (this._chartDestroyed) {
+        return;
+      }
       this.mixinDatacomErrorMessage = null;
       if (typeof this.chartData === 'object' && this.chartData != null && this.chartData.series !== undefined && this.chartData.series.length > 0) {
         //拷贝一下chartData，为了opts变更后统一数据来源
@@ -783,6 +790,9 @@ export default {
       }
     },
     checkData(anyData) {
+      if (this._chartDestroyed) {
+        return;
+      }
       let cid = this.cid
       //复位opts或eopts
       if(this.echarts === true){
@@ -818,6 +828,9 @@ export default {
       }
     },
     resizeHandler() {
+      if (this._chartDestroyed) {
+        return;
+      }
       //渲染防抖
       let currTime = Date.now();
       let lastDrawTime = this.lastDrawTime?this.lastDrawTime:currTime-3000;
@@ -830,6 +843,9 @@ export default {
         // #endif
         .select('#ChartBoxId'+this.cid)
         .boundingClientRect(data => {
+          if (this._chartDestroyed || !data) {
+            return;
+          }
           this.showchart = true;
           if (data.width > 0 && data.height > 0) {
             if (data.width !== this.cWidth || data.height !== this.cHeight) {
@@ -875,6 +891,9 @@ export default {
     },
     init() {
       let cid = this.cid
+      if (this._chartDestroyed) {
+        return;
+      }
       let chartdom = uni
         .createSelectorQuery()
         // #ifndef MP-ALIPAY
@@ -882,13 +901,19 @@ export default {
         // #endif
         .select('#ChartBoxId'+cid)
         .boundingClientRect(data => {
-          if (data.width > 0 && data.height > 0) {
+          if (this._chartDestroyed) {
+            return;
+          }
+          if (data && data.width > 0 && data.height > 0) {
             this.mixinDatacomLoading = false;
             this.showchart = true;
             this.lastDrawTime = Date.now();
             this.cWidth = data.width;
             this.cHeight = data.height;
             if(this.echarts !== true){
+              if (!cfu.option[cid]) {
+                return;
+              }
               cfu.option[cid].background = this.background == 'rgba(0,0,0,0)' ? '#FFFFFF' : this.background;
               cfu.option[cid].canvas2d = this.type2d;
               cfu.option[cid].pixelRatio = this.pixel;
@@ -910,6 +935,9 @@ export default {
             //如果是H5或者App端，采用renderjs渲染图表
             if (this.inH5 || this.inApp) {
               if (this.echarts == true) {
+                if (!cfe.option[cid]) {
+                  return;
+                }
                 cfe.option[cid].ontap = this.ontap;
                 cfe.option[cid].onmouse = this.openmouse;
                 cfe.option[cid].tooltipShow = this.tooltipShow;
@@ -947,6 +975,9 @@ export default {
                           canvas._width = data.width * this.pixel;
                           canvas._height = data.height * this.pixel;
                           setTimeout(()=>{
+                            if (this._chartDestroyed || !cfu.option[cid] || !cfu.option[cid].context) {
+                              return;
+                            }
                             cfu.option[cid].context.restore();
                             cfu.option[cid].context.save();
                             this._newChart(cid)
@@ -966,6 +997,9 @@ export default {
                     this._updataUChart(cid)
                   }else{
                     setTimeout(()=>{
+                      if (this._chartDestroyed || !cfu.option[cid] || !cfu.option[cid].context) {
+                        return;
+                      }
                       cfu.option[cid].context.restore();
                       cfu.option[cid].context.save();
                       this._newChart(cid)
@@ -1032,7 +1066,7 @@ export default {
     },
     // #ifndef APP-VUE || H5
     _newChart(cid) {
-      if (this.mixinDatacomLoading == true) {
+      if (this.mixinDatacomLoading == true || this._chartDestroyed || !cfu.option[cid]) {
         return;
       }
       this.showchart = true;
@@ -1049,6 +1083,9 @@ export default {
       });
     },
     _updataUChart(cid) {
+      if (!cfu.instance[cid] || !cfu.option[cid]) {
+        return;
+      }
       cfu.instance[cid].updateData(cfu.option[cid])
     },
     _tooltipDefault(item, category, index, opts) {
@@ -1068,6 +1105,9 @@ export default {
     },
     _showTooltip(e) {
       let cid = this.cid
+      if (!cfu.option[cid] || !cfu.instance[cid]) {
+        return;
+      }
       let tc = cfu.option[cid].tooltipCustom
       if (tc && tc !== undefined && tc !== null) {
         let offset = undefined;
@@ -1100,6 +1140,9 @@ export default {
     },
     _tap(e,move) {
       let cid = this.cid
+      if (!cfu.option[cid] || !cfu.instance[cid]) {
+        return;
+      }
       let currentIndex = null;
       let legendIndex = null;
       if (this.inScrollView === true || this.inAli) {
@@ -1158,6 +1201,9 @@ export default {
     },
     _touchStart(e) {
       let cid = this.cid
+      if (!cfu.option[cid] || !cfu.instance[cid]) {
+        return;
+      }
       lastMoveTime=Date.now();
       if(cfu.option[cid].enableScroll === true && e.touches.length == 1){
         cfu.instance[cid].scrollStart(e);
@@ -1166,6 +1212,9 @@ export default {
     },
     _touchMove(e) {
       let cid = this.cid
+      if (!cfu.option[cid] || !cfu.instance[cid]) {
+        return;
+      }
       let currMoveTime = Date.now();
       let duration = currMoveTime - lastMoveTime;
       let touchMoveLimit = cfu.option[cid].touchMoveLimit || 24;
@@ -1184,6 +1233,9 @@ export default {
     },
     _touchEnd(e) {
       let cid = this.cid
+      if (!cfu.option[cid] || !cfu.instance[cid]) {
+        return;
+      }
       if(cfu.option[cid].enableScroll === true && e.touches.length == 0){
         cfu.instance[cid].scrollEnd(e);
       }
@@ -1420,6 +1472,9 @@ export default {
           this.updataUChart()
         }else{
           setTimeout(()=>{
+            if(!cfu.option[cid] || !cfu.option[cid].context){
+              return;
+            }
             cfu.option[cid].context.restore();
             cfu.option[cid].context.save();
             this.newUChart()
@@ -1429,6 +1484,9 @@ export default {
     },
     newUChart() {
       let cid = this.rid
+      if(!cfu.option[cid]){
+        return;
+      }
       cfu.instance[cid] = new uChartsRD(cfu.option[cid])
       cfu.instance[cid].addEventListener('renderComplete', () => {
         that[cid].callMethod('emitMsg',{name:"complete",params:{type:"complete",complete:true,id:cid, opts: cfu.instance[cid].opts}})
@@ -1443,6 +1501,9 @@ export default {
     },
     updataUChart() {
       let cid = this.rid
+      if(!cfu.instance[cid] || !cfu.option[cid]){
+        return;
+      }
       cfu.instance[cid].updateData(cfu.option[cid])
     },
     tooltipDefault(item, category, index, opts) {
@@ -1461,6 +1522,9 @@ export default {
       }
     },
     showTooltip(e,cid) {
+      if(!cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let tc = cfu.option[cid].tooltipCustom
       if (tc && tc !== undefined && tc !== null) {
         let offset = undefined;
@@ -1493,6 +1557,9 @@ export default {
     },
     tap(e) {
       let cid = this.rid
+      if(!cid || !cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let ontap = cfu.option[cid].ontap
       let tooltipShow = cfu.option[cid].tooltipShow
       let tapLegend = cfu.option[cid].tapLegend
@@ -1520,6 +1587,9 @@ export default {
     },
     touchStart(e) {
       let cid = this.rid
+      if(!cid || !cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let ontouch = cfu.option[cid].ontouch
       if(ontouch == false) return;
       if(cfu.option[cid].enableScroll === true && e.touches.length == 1){
@@ -1529,6 +1599,9 @@ export default {
     },
     touchMove(e) {
       let cid = this.rid
+      if(!cid || !cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let ontouch = cfu.option[cid].ontouch
       if(ontouch == false) return;
       if(cfu.option[cid].enableScroll === true && e.changedTouches.length == 1){
@@ -1549,6 +1622,9 @@ export default {
     },
     touchEnd(e) {
       let cid = this.rid
+      if(!cid || !cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let ontouch = cfu.option[cid].ontouch
       if(ontouch == false) return;
       if(cfu.option[cid].enableScroll === true && e.touches.length == 0){
@@ -1558,6 +1634,9 @@ export default {
     },
     mouseDown(e) {
       let cid = this.rid
+      if(!cid || !cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let onmouse = cfu.option[cid].onmouse
       if(onmouse == false) return;
       let rchartdom = document.getElementById('UC'+cid).getBoundingClientRect()
@@ -1571,6 +1650,9 @@ export default {
     },
     mouseMove(e) {
       let cid = this.rid
+      if(!cid || !cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let onmouse = cfu.option[cid].onmouse
       let tooltipShow = cfu.option[cid].tooltipShow
       if(onmouse == false) return;
@@ -1590,6 +1672,9 @@ export default {
     },
     mouseUp(e) {
       let cid = this.rid
+      if(!cid || !cfu.option[cid] || !cfu.instance[cid]){
+        return;
+      }
       let onmouse = cfu.option[cid].onmouse
       if(onmouse == false) return;
       let rchartdom = document.getElementById('UC'+cid).getBoundingClientRect()

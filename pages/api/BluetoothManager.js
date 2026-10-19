@@ -1,7 +1,21 @@
 // BluetoothManager.js
 import Bluetooth from './bluetoothService.js';
 
+const forceReconnectIds = {};
+const forceReconnectInFlight = {};
+// 心跳 500ms 一轮，且不 await 上一轮：同一 deviceId 并发 createBLEConnection
+// 在 iOS 上会「连接成功」立刻再报断开，大约 1 秒一拍。
+const connectInflight = {};
+const connectCooldownUntil = {};
+const CONNECT_RETRY_GAP_MS = 2500;
 
+function bleKey(id) {
+	return String(id || '').toUpperCase();
+}
+
+function sameBleId(a, b) {
+	return bleKey(a) === bleKey(b);
+}
 
 export default class BluetoothManager {
 	constructor() {
@@ -12,8 +26,8 @@ export default class BluetoothManager {
 		return new Promise((resolve, reject) => {
 			uni.getConnectedBluetoothDevices({
 				success: (res) => {
-					const isConnected = res.devices.some((device) => device.deviceId ===
-						deviceId);
+					const isConnected = res.devices.some((device) => sameBleId(device.deviceId,
+						deviceId));
 					resolve(isConnected);
 				},
 				fail: (err) => {
@@ -25,18 +39,114 @@ export default class BluetoothManager {
 		});
 	}
 
-	async connectDevice(deviceId) {
-		// 如果设备已连接，直接返回
-		if (this.connectedDevices[deviceId]) {
-			// console.log(`0设备 ${deviceId} 已连接，无需重复连接`);
-			return this.connectedDevices[deviceId];
+	markForceReconnect(deviceId) {
+		if (!deviceId) return;
+		forceReconnectIds[bleKey(deviceId)] = true;
+		this._dropStoredDevice(deviceId);
+	}
+
+	forgetDevice(deviceId) {
+		this._dropStoredDevice(deviceId);
+	}
+
+	_storedDevice(deviceId) {
+		if (!deviceId) return null;
+		if (this.connectedDevices[deviceId]) return this.connectedDevices[deviceId];
+		const key = bleKey(deviceId);
+		const ids = Object.keys(this.connectedDevices);
+		for (let i = 0; i < ids.length; i++) {
+			if (bleKey(ids[i]) === key) return this.connectedDevices[ids[i]];
 		}
+		return null;
+	}
+
+	_dropStoredDevice(deviceId) {
+		if (!deviceId) return;
+		const key = bleKey(deviceId);
+		Object.keys(this.connectedDevices).forEach((id) => {
+			if (bleKey(id) === key) delete this.connectedDevices[id];
+		});
+	}
+
+	_shouldForceReconnect(deviceId) {
+		return !!forceReconnectIds[bleKey(deviceId)];
+	}
+
+	_clearForceReconnect(deviceId) {
+		const key = bleKey(deviceId);
+		delete forceReconnectIds[key];
+		delete forceReconnectInFlight[key];
+	}
+
+	_inConnectCooldown(deviceId) {
+		const until = connectCooldownUntil[bleKey(deviceId)];
+		return !!(until && Date.now() < until);
+	}
+
+	_armConnectCooldown(deviceId) {
+		if (!deviceId) return;
+		connectCooldownUntil[bleKey(deviceId)] = Date.now() + CONNECT_RETRY_GAP_MS;
+	}
+
+	async connectDevice(deviceId) {
+		if (!deviceId) return;
+		const key = bleKey(deviceId);
+		const force = this._shouldForceReconnect(deviceId);
+		if (connectInflight[key]) {
+			return connectInflight[key];
+		}
+		if (force && forceReconnectInFlight[key]) {
+			return forceReconnectInFlight[key];
+		}
+		const stored = this._storedDevice(deviceId);
+		// 刚结束一轮建连：心跳不要立刻再 create，否则 iOS 会把刚连上的链路拆掉
+		if (this._inConnectCooldown(deviceId)) {
+			return stored || connectInflight[key];
+		}
+		// 如果设备已连接，直接返回
+		if (!force && stored) {
+			return stored;
+		}
+		if (force) {
+			this._dropStoredDevice(deviceId);
+			const run = this._connectDeviceForced(deviceId);
+			forceReconnectInFlight[key] = run;
+			try {
+				return await run;
+			} finally {
+				this._armConnectCooldown(deviceId);
+				delete forceReconnectInFlight[key];
+			}
+		}
+		const run = this._connectDeviceNormal(deviceId);
+		connectInflight[key] = run;
+		try {
+			return await run;
+		} finally {
+			this._armConnectCooldown(deviceId);
+			if (connectInflight[key] === run) {
+				delete connectInflight[key];
+			}
+		}
+	}
+
+	async _connectDeviceNormal(deviceId) {
 		const bluetooth = new Bluetooth(deviceId);
 		const isAlreadyConnected = await this.isDeviceConnected(deviceId);
 		if (isAlreadyConnected) {
 			// 系统层已连接：勿再 createBLEConnection（会反复打「连接成功」并干扰 notify）
+			// 但关开蓝牙/久离后常见「系统已连、服务空」假连接：空服务则强制 recreate
 			bluetooth.connected = true;
-			await bluetooth.getServices();
+			try {
+				await bluetooth.getServices();
+			} catch (e) {
+				this.markForceReconnect(deviceId);
+				return this._connectDeviceForced(deviceId);
+			}
+			if (!bluetooth.services || !bluetooth.services.length) {
+				this.markForceReconnect(deviceId);
+				return this._connectDeviceForced(deviceId);
+			}
 			// 根据服务数量处理不同的逻辑
 			switch (bluetooth.services.length) {
 				case 1:
@@ -103,6 +213,45 @@ export default class BluetoothManager {
 		// console.log(`设备 ${deviceId} 已成功连接并存储`, this.connectedDevices[deviceId]);
 	}
 
+	/** 手机蓝牙关开后：不信任系统「已连接」缓存，必须重新 createBLEConnection */
+	async _connectDeviceForced(deviceId) {
+		const bluetooth = new Bluetooth(deviceId);
+		try {
+			await bluetooth.connect();
+			await bluetooth.delay(400);
+			await bluetooth.getServices();
+			switch (bluetooth.services.length) {
+				case 1:
+					uni.setBLEMTU({
+						deviceId: deviceId,
+						mtu: 512,
+					});
+					await bluetooth.getCharacteristics1(bluetooth.services[0].uuid);
+					break;
+				case 2:
+					await bluetooth.getCharacteristics1(bluetooth.services[1].uuid);
+					break;
+				case 3:
+					await bluetooth.getCharacteristics3(bluetooth.services[1].uuid);
+					break;
+				case 4:
+					if (bluetooth.services[0].uuid === "6E40FFF0-B5A3-F393-E0A9-E50E24DCCA9E") {
+						await bluetooth.getCharacteristics6(bluetooth.services[0].uuid);
+					} else {
+						await bluetooth.getCharacteristics1(bluetooth.services[3].uuid);
+					}
+					break;
+				default:
+					break;
+			}
+			this.connectedDevices[deviceId] = bluetooth;
+			this._clearForceReconnect(deviceId);
+			return this.connectedDevices[deviceId];
+		} catch (err) {
+			delete this.connectedDevices[deviceId];
+			throw err;
+		}
+	}
 
 	// 断开单个设备连接
 	async disconnectDevice(deviceId) {

@@ -22,7 +22,7 @@
 			</view>
 		</view>
 
-		<view class="monitor-card" @click="goToTest">
+		<view class="monitor-card" :class="{ 'monitor-card-disabled': !sensorlessModelReady }" @click="goToTest">
 			<view class="monitor-icon-wrap">
 				<image src="/static/page_icon/jiance_1.png" class="monitor-icon" mode="aspectFit"></image>
 			</view>
@@ -31,17 +31,18 @@
 				<text class="monitor-card-desc">{{ $t('配置夜间无气囊充气测量估算') }}</text>
 			</view>
 			<view class="monitor-right">
-				<text class="monitor-status">{{ $t('关闭') }}</text>
-				<uni-icons type="right" size="14" color="#C0C8D4"></uni-icons>
+				<text class="monitor-status" :class="sensorlessModelReady ? 'status-view' : 'status-disabled'">{{ $t('查看') }}</text>
+				<uni-icons type="right" size="14" :color="sensorlessModelReady ? '#C0C8D4' : '#C8CDD6'"></uni-icons>
 			</view>
 		</view>
+		<view v-if="!sensorlessModelReady" class="sensorless-model-tip">{{ $t('无感定时测量模型建立中提示') }}</view>
 
 		<view v-if="isZh" class="monitor-card" @click="goToPulseDiagnosis">
 			<view class="monitor-icon-wrap">
 				<image src="/static/page_icon/jiance_6.png" class="monitor-icon" mode="aspectFit"></image>
 			</view>
 			<view class="monitor-info">
-				<text class="monitor-card-title">中医脉诊健康管理（仅支持U19M模型）</text>
+				<text class="monitor-card-title">{{ $t('脉诊健康管理') }}</text>
 			</view>
 			<view class="monitor-right">
 				<text class="monitor-status status-view">{{ $t('查看') }}</text>
@@ -58,7 +59,7 @@
 				<text class="monitor-card-desc">{{ $t('选择设备自动测量血压的时间') }}</text>
 			</view>
 			<view class="monitor-right">
-				<text class="monitor-status">{{ $t('未设置') }}</text>
+				<text class="monitor-status status-view">{{ $t('查看') }}</text>
 				<uni-icons type="right" size="14" color="#C0C8D4"></uni-icons>
 			</view>
 		</view>
@@ -100,10 +101,16 @@
 				bpTimerDisabled: true,
 				BPW6deviceId: uni.getStorageSync("BPW6devicemac"),
 				isZh: lan === 'zh-Hans' || lan === 'zh-Hant',
+				/** 与无感报告一致：体温有效且 >= 500 才允许进入无感定时 */
+				sensorlessModelReady: (function() {
+					const modeltipsbool = uni.getStorageSync('temperature')
+					return !!(modeltipsbool && modeltipsbool !== '-/-' && Number(modeltipsbool) >= 500)
+				})(),
 			}
 		},
 		onShow() {
 			let that = this
+			that.refreshSensorlessModelReady()
 			uni.setNavigationBarTitle({
 				title: that.$t("定时监测")
 			})
@@ -125,6 +132,10 @@
 		},
 
 		methods: {
+			refreshSensorlessModelReady() {
+				const modeltipsbool = uni.getStorageSync('temperature')
+				this.sensorlessModelReady = !!(modeltipsbool && modeltipsbool !== '-/-' && Number(modeltipsbool) >= 500)
+			},
 			// 跳转到监测报告页面
 			goToReport() {
 				uni.navigateTo({
@@ -137,8 +148,10 @@
 					url: '../../main/globalweather/custom_index'
 				})
 			},
-			// 跳转到无感定时测量设置（只显示无感）
+			// 跳转到无感定时测量设置（只显示无感）；模型未建立时停在本页
 			goToTest() {
+				this.refreshSensorlessModelReady()
+				if (!this.sensorlessModelReady) return
 				uni.navigateTo({
 					url: '../../main/sleep_report/Reports_Alerts_new?scheduleMode=sensorless&devicetype=' + this
 						.devicetype
@@ -357,6 +370,36 @@
 	.status-view {
 		color: #3298F7;
 		background: #eaf4ff;
+	}
+
+	.monitor-card-disabled {
+		background: #f3f4f6;
+	}
+
+	.monitor-card-disabled .monitor-card-title,
+	.monitor-card-disabled .monitor-card-desc {
+		color: #b0b6c0;
+	}
+
+	.monitor-card-disabled .monitor-icon-wrap {
+		opacity: 0.45;
+	}
+
+	.status-disabled {
+		color: #b0b6c0;
+		background: #e6e8ec;
+	}
+
+	.sensorless-model-tip {
+		position: relative;
+		z-index: 1;
+		margin: -8px 0 20px;
+		color: #e67e22;
+		font-size: 13px;
+		line-height: 1.6;
+		background: #fff8f0;
+		padding: 12px 14px;
+		border-radius: 14px;
 	}
 
 	.monitor-tip {

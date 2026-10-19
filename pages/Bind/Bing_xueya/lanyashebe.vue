@@ -171,7 +171,7 @@
 			},
 			//获取蓝牙设备设置图标
 			getDeviceImage(deviceName) {
-				if (deviceName.includes('U19M')) return '/static/page_icon/shoubiao.png';
+				if (deviceName.includes('U19M')||deviceName.includes('U16H')) return '/static/page_icon/shoubiao.png';
 				if (deviceName === 'BPW1') return '/static/page_icon/shoubiao.png';
 				if (deviceName === 'EL2') return '/static/page_icon/lanya.png';
 				return '/static/page_icon/lanya.png';

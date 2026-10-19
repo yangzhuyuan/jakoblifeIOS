@@ -113,6 +113,13 @@
 		mapState,
 		mapMutations
 	} from 'vuex'
+	import {
+		initKeepAlive,
+		startBackgroundTask,
+		scheduleBackgroundRefresh,
+		enableAudioKeepAlive,
+		enableLocationKeepAlive
+	} from '@/nativeplugins/KeepAlivesdkplugin/ios/keepAlive.js'; // 严格按 keepAlive.js API
 	const systemInfo = uni.getSystemInfoSync();
 	export default {
 		data() {
@@ -265,6 +272,8 @@
 				uni.clearStorage()
 				uni.setStorageSync("last_app_version", systemInfo.appVersion)
 				uni.setStorageSync('agree', 1)
+				enableAudioKeepAlive(false)
+				enableLocationKeepAlive(false)
 				uni.reLaunch({
 					url: '/pages/login/login_land'
 				})

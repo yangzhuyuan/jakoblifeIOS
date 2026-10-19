@@ -27,6 +27,7 @@ export default class BluetoothService {
 		return new Promise((resolve, reject) => {
 			uni.createBLEConnection({
 				deviceId: this.deviceId,
+				timeout: 12000,
 				success: (res) => {
 					console.log("连接成功", this.deviceId);
 					this.connected = true;

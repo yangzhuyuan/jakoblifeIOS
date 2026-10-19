@@ -657,11 +657,11 @@ export class U16ProProtocol {
 		}
 
 		if (!result.crcValid) {
-			console.warn('BC包CRC16校验失败', {
-				cmd: cmd.toString(16),
-				receivedCrc: receivedCrc.toString(16),
-				calculatedCrc: calculatedCrc.toString(16)
-			})
+			// console.warn('BC包CRC16校验失败', {
+			// 	cmd: cmd.toString(16),
+			// 	receivedCrc: receivedCrc.toString(16),
+			// 	calculatedCrc: calculatedCrc.toString(16)
+			// })
 		}
 
 		switch (cmd) {
@@ -942,17 +942,23 @@ export class U16ProProtocol {
 				result.data = this.parseBPHistory(bytes)
 				break
 			case CMD.HR_MEASUREMENT:
-				console.log('【解析心率测量响应】', bytes)
+				// 0x38 仅为发起测量 ACK，真实数据等 DATA_CHANGED 再拉历史
+				result.data = {
+					success: 0x38,
+					type: 'HR_MEASUREMENT'
+				}
+				console.log('【解析心率测量响应】', result.data)
 				break
 			case CMD.READ_HR_HISTORY:
 				result.data = this.parseHRHistory(bytes)
 				break
 			case CMD.SpO2_MEASUREMENT:
+				// 0x39 仅为发起测量 ACK，真实数据等 DATA_CHANGED 再拉历史
 				result.data = {
 					success: 0x39,
-					type: "SpO2_MEASUREMENT"
+					type: 'SpO2_MEASUREMENT'
 				}
-				console.log('【解析血压测量响应】', result.data)
+				console.log('【解析血氧测量响应】', result.data)
 				break
 			case CMD.READ_SPO2_HISTORY:
 				result.data = this.parseSpO2History(bytes)

@@ -15,32 +15,38 @@
 				<view class="pagedsismj_4">
 					<picker @change="types_change" :value="types_index" :range="types_array">
 						<view class="pagedsismj_5">
-							<view style="font-size: 14px;color: black;">{{types_array[types_index]}}</view>
-							<uni-icons type="bottom" size="18"></uni-icons>
+							<image v-if="Number(types_index) === 0" class="filter-type-icon"
+								src="../../../static/page_icon/shoubiao.png" mode="aspectFit"></image>
+							<image v-else-if="Number(types_index) === 1" class="filter-type-icon"
+								src="/static/page_icon/lanya.png" mode="aspectFit"></image>
+							<image v-else class="filter-type-icon" src="../../../static/icons/6.png" mode="aspectFit">
+							</image>
+							<view class="filter-pill-text">{{types_array[types_index]}}</view>
+							<uni-icons type="bottom" size="14" color="#8A94A6"></uni-icons>
 						</view>
 					</picker>
 				</view>
 				<view v-if="data_type === 0" class="data_type_0">
 					<picker fields="day" mode="date" @change="bindDateChange1">
-						<view style="display: flex;flex-direction: row;">
-							<view style="font-size: 18px;color: gray;">{{date_0}}</view>
-							<uni-icons type="bottom" size="18"></uni-icons>
+						<view class="date-pill">
+							<view class="date-pill-text">{{date_0}}</view>
+							<uni-icons type="bottom" size="14" color="#8A94A6"></uni-icons>
 						</view>
 					</picker>
 				</view>
 				<view v-else-if="data_type === 1" class="data_type_0">
 					<picker fields="month" mode="date" @change="bindDateChange2">
-						<view style="display: flex;flex-direction: row;">
-							<view style="font-size: 18px;color: gray;">{{date_1}}</view>
-							<uni-icons type="bottom" size="18"></uni-icons>
+						<view class="date-pill">
+							<view class="date-pill-text">{{date_1}}</view>
+							<uni-icons type="bottom" size="14" color="#8A94A6"></uni-icons>
 						</view>
 					</picker>
 				</view>
 				<view v-else-if="data_type === 2" class="data_type_0">
 					<picker fields="year" mode="date" @change="bindDateChange3">
-						<view style="display: flex;flex-direction: row;">
-							<view style="font-size: 18px;color: gray;">{{date_2}}</view>
-							<uni-icons type="bottom" size="18"></uni-icons>
+						<view class="date-pill">
+							<view class="date-pill-text">{{date_2}}</view>
+							<uni-icons type="bottom" size="14" color="#8A94A6"></uni-icons>
 						</view>
 					</picker>
 				</view>
@@ -52,188 +58,198 @@
 		</view>
 		<view v-if="tendentypes" class="pagedsismj_1">
 			<view class="table_bg">
-				<view class="table_jjj_1">
-					<view>
-						<view class="pingjun">
-							<view class="pingjun_1" />
-							<view class="pingjun_3">{{$t('平均收缩压')}}/{{Blood}}</view>
+				<view class="chart-card-header">
+					<text class="chart-card-title">{{$t('血压趋势')}}</text>
+					<view class="table_jjj_1">
+						<view class="chart-avg-block">
+							<text class="chart-avg-label">{{ act ? $t('平均值') : $t('最高值') }}</text>
+							<view class="bp-reading">
+								<text class="bp-sys">{{Systolic_blood_pressure}}</text>
+								<text class="bp-slash"> / </text>
+								<text class="bp-dia">{{Diastolic_blood_pressure}}</text>
+							</view>
+							<text class="bp-unit">{{Blood}}</text>
 						</view>
-						<view class="table_item_text">{{Systolic_blood_pressure}}</view>
-					</view>
-					<view style="margin-left: 20px;">
-						<view class="pingjun">
-							<view class="pingjun_2" />
-							<view class="pingjun_3">{{$t('平均舒张压')}}/{{Blood}}</view>
+						<view class="chart-legend-inline">
+							<view class="pingjun">
+								<view class="pingjun_1" />
+								<view class="pingjun_3">{{$t('收缩压')}}</view>
+							</view>
+							<view class="pingjun pingjun-gap">
+								<view class="pingjun_2" />
+								<view class="pingjun_3">{{$t('舒张压')}}</view>
+							</view>
 						</view>
-						<view class="table_item_text">{{Diastolic_blood_pressure}}</view>
 					</view>
 				</view>
 				<view class="charts-box">
-					<qiun-data-charts :canvas2d="true" type="line" :canvas-id="'tendBp' + chartRev" :opts="xeuyaopts"
-						:chartData="chartData" :key="'tendBp' + chartRev" />
+					<qiun-data-charts :canvas2d="true" type="line" canvas-id="tendBp" :opts="xeuyaopts"
+						:chartData="chartData" />
 				</view>
 			</view>
-			<view class="icon_item_bgsdsadsa">
+			<view class="icon_item_bgsdsadsa" @tap="BMI_tap">
 				<view class="icon_item_bg_1">
-					<image lazy-load src="../../../static/icons/3.png" class="img_iocn_bg" mode="aspectFit" />
-					<view class="xueyastylesss">{{$t('最近血压')}}</view>
+					<view class="card-icon-wrap card-icon-bp">
+						<uni-icons type="heart-filled" size="24" color="#007AFF"></uni-icons>
+					</view>
 				</view>
 				<view class="typesstyle_title">
-					<view class="title_type_bg">
+					<view class="xueyastylesss">{{$t('最近血压')}}</view>
+					<view class="bp-reading">
+						<text class="bp-sys">{{lately_Systolic_blood_pressure}}</text>
+						<text class="bp-slash"> / </text>
+						<text class="bp-dia">{{lately_Diastolic_blood_pressure}}</text>
+						<text class="bp-unit">{{Blood}}</text>
+					</view>
+					<view class="bp-meta-row">
+						<uni-icons type="heart" size="12" color="#8A94A6"></uni-icons>
+						<text class="bp-meta-text">{{lately_pulse}} bpm</text>
+					</view>
+				</view>
+				<view class="card-right">
+					<view class="status-badge">
 						<view class="xueya_type" :style="bg(lately_Blood_pressure)" />
 						<view class="title_font_bg">{{lately_Blood_pressure}}</view>
-						<uni-icons type="help" size="15" @tap="BMI_tap"></uni-icons>
 					</view>
-					<view class="border_bg" />
-					<view class="title_all_bg">
-						<view>
-							<view class="text_item_bg">{{$t('收缩压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{lately_Systolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('舒张压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{lately_Diastolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('脉搏')}}/BPM</view>
-							<view class="text_item_bg_1">{{lately_pulse}}</view>
-						</view>
-					</view>
+					<!-- <uni-icons type="right" size="16" color="#C0C7D1"></uni-icons> -->
 				</view>
 			</view>
-			<view class="icon_item_bg">
+			<view class="icon_item_bg" @tap="BMI_tap">
 				<view class="icon_item_bg_1">
-					<image lazy-load src="../../../static/icons/3.png" class="img_iocn_bg" mode="aspectFit" />
-					<view class="xueyastylesss">{{$t('平均血压')}}</view>
+					<view class="card-icon-wrap card-icon-avg">
+						<uni-icons type="bars" size="24" color="#34C759"></uni-icons>
+					</view>
 				</view>
 				<view class="typesstyle_title">
-					<view class="title_type_bg">
+					<view class="xueyastylesss">{{$t('平均血压')}}</view>
+					<view class="bp-reading">
+						<text class="bp-sys">{{average_Systolic_blood_pressure}}</text>
+						<text class="bp-slash"> / </text>
+						<text class="bp-dia">{{average_Diastolic_blood_pressure}}</text>
+						<text class="bp-unit">{{Blood}}</text>
+					</view>
+					<view class="bp-meta-row">
+						<uni-icons type="heart" size="12" color="#8A94A6"></uni-icons>
+						<text class="bp-meta-text">{{average_pulse}} bpm</text>
+					</view>
+				</view>
+				<view class="card-right">
+					<view class="status-badge">
 						<view class="xueya_type" :style="bg(average_Blood_pressure)" />
 						<view class="title_font_bg">{{average_Blood_pressure}}</view>
-						<uni-icons type="help" size="15" @tap="BMI_tap"></uni-icons>
 					</view>
-					<view class="border_bg" />
-					<view class="title_all_bg">
-						<view>
-							<view class="text_item_bg">{{$t('收缩压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{average_Systolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('舒张压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{average_Diastolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('脉搏')}}/BPM</view>
-							<view class="text_item_bg_1">{{average_pulse}}</view>
-						</view>
-					</view>
+					<!-- <uni-icons type="right" size="16" color="#C0C7D1"></uni-icons> -->
 				</view>
 			</view>
-			<view class="icon_item_bg">
+			<view class="icon_item_bg" @tap="BMI_tap">
 				<view class="icon_item_bg_1">
-					<image lazy-load src="../../../static/icons/3.png" class="img_iocn_bg" mode="aspectFit" />
-					<view class="xueyastylesss">{{$t('最高血压')}}</view>
+					<view class="card-icon-wrap card-icon-max">
+						<uni-icons type="arrow-up" size="24" color="#FC7F41"></uni-icons>
+					</view>
 				</view>
 				<view class="typesstyle_title">
-					<view class="title_type_bg">
+					<view class="xueyastylesss">{{$t('最高血压')}}</view>
+					<view class="bp-reading">
+						<text class="bp-sys">{{Maximum_Systolic_blood_pressure}}</text>
+						<text class="bp-slash"> / </text>
+						<text class="bp-dia">{{Maximum_Diastolic_blood_pressure}}</text>
+						<text class="bp-unit">{{Blood}}</text>
+					</view>
+					<view class="bp-meta-row">
+						<uni-icons type="heart" size="12" color="#8A94A6"></uni-icons>
+						<text class="bp-meta-text">{{Maximum_pulse}} bpm</text>
+					</view>
+				</view>
+				<view class="card-right">
+					<view class="status-badge">
 						<view class="xueya_type" :style="bg(Maximum_Blood_pressure)" />
 						<view class="title_font_bg">{{Maximum_Blood_pressure}}</view>
-						<uni-icons type="help" size="15" @tap="BMI_tap"></uni-icons>
 					</view>
-					<view class="border_bg" />
-					<view class="title_all_bg">
-						<view>
-							<view class="text_item_bg">{{$t('收缩压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{Maximum_Systolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('舒张压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{Maximum_Diastolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('脉搏')}}/BPM</view>
-							<view class="text_item_bg_1">{{Maximum_pulse}}</view>
-						</view>
-					</view>
+					<!-- <uni-icons type="right" size="16" color="#C0C7D1"></uni-icons> -->
 				</view>
 			</view>
-			<view class="icon_item_bg">
+			<view class="icon_item_bg" @tap="BMI_tap">
 				<view class="icon_item_bg_1">
-					<image lazy-load src="../../../static/icons/3.png" class="img_iocn_bg" mode="aspectFit" />
-					<view class="xueyastylesss">{{$t('最低血压')}}</view>
+					<view class="card-icon-wrap card-icon-min">
+						<uni-icons type="arrow-down" size="24" color="#007AFF"></uni-icons>
+					</view>
 				</view>
 				<view class="typesstyle_title">
-					<view class="title_type_bg">
+					<view class="xueyastylesss">{{$t('最低血压')}}</view>
+					<view class="bp-reading">
+						<text class="bp-sys">{{Minimum_Systolic_blood_pressure}}</text>
+						<text class="bp-slash"> / </text>
+						<text class="bp-dia">{{Minimum_Diastolic_blood_pressure}}</text>
+						<text class="bp-unit">{{Blood}}</text>
+					</view>
+					<view class="bp-meta-row">
+						<uni-icons type="heart" size="12" color="#8A94A6"></uni-icons>
+						<text class="bp-meta-text">{{Minimum_pulse}} bpm</text>
+					</view>
+				</view>
+				<view class="card-right">
+					<view class="status-badge">
 						<view class="xueya_type" :style="bg(Minimum_Blood_pressure)" />
 						<view class="title_font_bg">{{Minimum_Blood_pressure}}</view>
-						<uni-icons type="help" size="15" @tap="BMI_tap"></uni-icons>
 					</view>
-					<view class="border_bg" />
-					<view class="title_all_bg">
-						<view>
-							<view class="text_item_bg">{{$t('收缩压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{Minimum_Systolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('舒张压')}}/{{Blood}}</view>
-							<view class="text_item_bg_1">{{Minimum_Diastolic_blood_pressure}}</view>
-						</view>
-						<view>
-							<view class="text_item_bg">{{$t('脉搏')}}/BPM</view>
-							<view class="text_item_bg_1">{{Minimum_pulse}}</view>
-						</view>
-					</view>
+					<!-- <uni-icons type="right" size="16" color="#C0C7D1"></uni-icons> -->
 				</view>
 			</view>
 		</view>
-		<view v-else style="padding-bottom: 40px;">
+		<view v-else class="pagedsismj_1 weight-section">
 			<view class="table_bg">
-				<view class="text_title_types_1">
-					<view style="display: flex;flex-direction: column; align-items: center;">
-						<text class="text_title_types_2">{{$t('最近7天平均体重')}}/kg</text>
-						<view style="font-size: 16px; font-weight: 600; color: #1A1A1A; ">{{Mean_value}}</view>
-					</view>
-					<view style="display: flex;flex-direction: column; align-items: center;width: 33%;">
-						<text class="text_title_types_2">BMI</text>
-						<view style="font-size: 16px; font-weight: 600; color: #1A1A1A; ">{{bmi}}</view>
-
-					</view>
-					<view style="display: flex;flex-direction: column; align-items: center;width: 33%;">
-						<text class="text_title_types_2">{{$t('变化速度')}}</text>
-						<view style="font-size: 16px; font-weight: 600; color: #1A1A1A; ">{{weight_value}}</view>
+				<view class="chart-card-header">
+					<text class="chart-card-title">{{$t('今日体重')}}</text>
+					<view class="text_title_types_1">
+						<view class="weight-stat">
+							<text class="text_title_types_2">{{$t('最近7天平均体重')}}/kg</text>
+							<view class="weight-stat-value">{{Mean_value}}</view>
+						</view>
+						<view class="weight-stat">
+							<text class="text_title_types_2">BMI</text>
+							<view class="weight-stat-value">{{bmi}}</view>
+						</view>
+						<view class="weight-stat">
+							<text class="text_title_types_2">{{$t('变化速度')}}</text>
+							<view class="weight-stat-value">{{weight_value}}</view>
+						</view>
 					</view>
 				</view>
 				<view class="charts-box">
-					<qiun-data-charts :canvas2d="true" type="line" :canvas-id="'tendWt' + chartRev" :opts="tizhonngopts"
-						:chartData="chartData2" :key="'tendWt' + chartRev" />
+					<qiun-data-charts :canvas2d="true" type="line" canvas-id="tendWt" :opts="tizhonngopts"
+						:chartData="chartData2" />
 				</view>
 			</view>
-			<view class="icon_item_bg">
+			<view class="icon_item_bg" @tap="BMI_tap2">
 				<view class="icon_item_bg_1">
-					<image lazy-load src="../../../static/icons/6.png" class="img_iocn_bg" mode="aspectFit" />
-					<view class="xueyastylesss">{{$t('今日体重')}}</view>
+					<view class="card-icon-wrap card-icon-weight">
+						<image lazy-load src="../../../static/icons/6.png" class="img_iocn_bg" mode="aspectFit" />
+					</view>
 				</view>
 				<view class="typesstyle_title">
-					<view class="title_type_bg">
-						<view class="xueya_type" :style="bg1(level_weight)" />
-						<view class="title_font_bg">{{level_weight}}</view>
-						<uni-icons type="help" size="15" style="" @tap="BMI_tap2"></uni-icons>
-					</view>
-					<view class="border_bg" />
-					<view class="title_all_bg">
+					<view class="xueyastylesss">{{$t('今日体重')}}</view>
+					<view class="weight-main-value">{{avg_weight}} <text class="bp-unit">{{newweightKG}}</text></view>
+					<view class="title_all_bg weight-sub-stats">
 						<view>
-							<view class="text_item_bg">{{$t('最高体重')}}/{{newweightKG}}</view>
+							<view class="text_item_bg">{{$t('最高体重')}}</view>
 							<view class="text_item_bg_1">{{max_weight}}</view>
 						</view>
 						<view>
-							<view class="text_item_bg">{{$t('最低体重')}}/{{newweightKG}}</view>
+							<view class="text_item_bg">{{$t('最低体重')}}</view>
 							<view class="text_item_bg_1">{{min_weight}}</view>
 						</view>
 						<view>
-							<view class="text_item_bg">{{$t('平均体重')}}/{{newweightKG}}</view>
+							<view class="text_item_bg">{{$t('平均体重')}}</view>
 							<view class="text_item_bg_1">{{avg_weight}}</view>
 						</view>
 					</view>
+				</view>
+				<view class="card-right">
+					<view class="status-badge">
+						<view class="xueya_type" :style="bg1(level_weight)" />
+						<view class="title_font_bg">{{level_weight}}</view>
+					</view>
+					<!-- <uni-icons type="right" size="16" color="#C0C7D1"></uni-icons> -->
 				</view>
 			</view>
 			<view class="icon_item_bg_toast">{{Detection_result}}</view>
@@ -461,6 +477,13 @@
 						<view style="flex: 1;text-align: center;">{{$t("收缩压")}}</view>
 						<view style="flex: 1;text-align: center;">{{$t("和或")}}</view>
 						<view style="flex: 1;text-align: center;">{{$t("舒张压")}}</view>
+					</view>
+					<view
+						style="background:#FFF176; color: black;padding: 10px; margin:0 10px; display: flex;justify-content: center; align-items: center;width: 90%;">
+						<view style="flex: 1;text-align: center;">{{$t("血压偏低")}}</view>
+						<view style="flex: 1;text-align: center;">&lt;90</view>
+						<view style="flex: 1;text-align: center;">{{$t("或")}}</view>
+						<view style="flex: 1;text-align: center;">&lt;60</view>
 					</view>
 					<view
 						style="background:#A6CE39; color: black;padding: 10px; margin:0 10px; display: flex;justify-content: center; align-items: center;width: 90%;">
@@ -821,7 +844,6 @@
 				rawTrendBpHigh: [],
 				rawTrendBpLow: [],
 				rawTrendWeightKg: [],
-				chartRev: 0,
 			};
 		},
 
@@ -987,7 +1009,6 @@
 						})]
 					})
 				})
-				this.chartRev += 1
 			},
 			Unitlist() {
 				const data = {
@@ -1693,13 +1714,17 @@
 				}
 			},
 			getcolor(id) {
+				const active = id === this.$t("平均")
 				return {
-					color: id === this.$t("平均") ? "#3298F7" : "black"
+					color: active ? "#FFFFFF" : "#3A4656",
+					background: active ? "#007AFF" : "transparent"
 				}
 			},
 			getcolor1(id) {
+				const active = id === this.$t("最高")
 				return {
-					color: id === this.$t("最高") ? "#3298F7" : "black"
+					color: active ? "#FFFFFF" : "#3A4656",
+					background: active ? "#007AFF" : "transparent"
 				}
 			},
 			//获取设备基础信息
@@ -2290,6 +2315,7 @@
 			},
 			bg(bg) {
 				const bloodPressureColors = {
+					[this.$t("血压偏低")]: "#FFF176",
 					[this.$t("正常血压")]: "#58BF78",
 					[this.$t("正常高血压值")]: "#FFEC01",
 					[this.$t("一级高血压")]: "#FCCD41",
@@ -2300,25 +2326,25 @@
 				};
 			},
 			bgaaa(lowPressure, highPressure) {
-				let that = this;
-				const getBloodPressureLevel = (lowPressure, highPressure) => {
-					if ((lowPressure >= 61 && lowPressure <= 80) && (highPressure >= 91 && highPressure <= 120)) {
-						return that.$t("正常血压");
-					} else if ((lowPressure >= 81 && lowPressure <= 90) || (highPressure >= 121 && highPressure <=
-							140)) {
-						return that.$t("正常高血压值");
-					} else if ((lowPressure >= 91 && lowPressure <= 100) || (highPressure >= 141 && highPressure <=
-							160)) {
-						return that.$t("一级高血压");
-					} else if ((lowPressure >= 101 && lowPressure <= 110) || (highPressure >= 161 && highPressure <=
-							180)) {
-						return that.$t("二级高血压");
-					} else {
-						return that.$t("未知");
-					}
-				};
-				let leve = getBloodPressureLevel(lowPressure, highPressure);
-				return leve;
+				const low = Number(lowPressure);
+				const high = Number(highPressure);
+				if (!Number.isFinite(low) || !Number.isFinite(high)) {
+					return this.$t("未知");
+				}
+				// 血压偏低优先：收缩压<90 或 舒张压<60；正常血压两者都满足；其余等级优先收缩压
+				if (high < 91 || low < 61) {
+					return this.$t("血压偏低");
+				}
+				if (high >= 91 && high <= 120 && low >= 61 && low <= 80) {
+					return this.$t("正常血压");
+				}
+				if (high >= 121 && high <= 140) return this.$t("正常高血压值");
+				if (high >= 141 && high <= 160) return this.$t("一级高血压");
+				if (high >= 161 && high <= 180) return this.$t("二级高血压");
+				if (low >= 81 && low <= 90) return this.$t("正常高血压值");
+				if (low >= 91 && low <= 100) return this.$t("一级高血压");
+				if (low >= 101 && low <= 110) return this.$t("二级高血压");
+				return this.$t("未知");
 			},
 			bg1(bg) {
 				const weightStatusColors = {
@@ -2477,18 +2503,22 @@
 
 <style lang="scss" scoped>
 	.pagedsismj {
-		color: black;
-		height: 100vh;
-		background: #EFEFF4;
+		color: #1A2B4A;
+		min-height: 100vh;
+		background: #F8F9FB;
 	}
 
 	.pagedsismj_1 {
-		background: #EFEFF4;
+		background: #F8F9FB;
 		padding-bottom: 120px;
 	}
 
+	.weight-section {
+		padding-bottom: 40px;
+	}
+
 	.pagedsismj_2 {
-		padding-top: 20px;
+		padding: 20px 16px 4px;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -2504,11 +2534,11 @@
 		position: fixed;
 		width: 100vw;
 		top: 0;
-		background: #F7F7F7;
+		background: #F8F9FB;
 	}
 
 	.title {
-		color: black;
+		color: #1A2B4A;
 		text-align: center;
 		width: 85%;
 		font-weight: bold;
@@ -2517,29 +2547,69 @@
 
 
 	.title_time {
-		border-radius: 10px;
-		background: #3298F7;
+		width: 100%;
+		border-radius: 12px;
+		background: #EEF1F5;
 		display: flex;
-		padding: 5px;
+		padding: 4px;
 		flex-direction: row;
 		justify-content: center;
 		align-items: center;
 		text-align: center;
+		box-sizing: border-box;
 		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.table_bg {
 		width: auto;
-		background: white;
-		margin: 20px;
-		padding: 20px 20px 0 15px;
-		border-radius: 20px;
+		background: #FFFFFF;
+		margin: 12px 16px 0;
+		padding: 16px 14px 8px;
+		border-radius: 16px;
 		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+	}
+
+	.chart-card-header {
+		padding: 0 4px;
+	}
+
+	.chart-card-title {
+		font-size: 17px;
+		font-weight: 700;
+		color: #1A2B4A;
+		line-height: 1.3;
+	}
+
+	.chart-avg-block {
+		flex: 1;
+	}
+
+	.chart-avg-label {
+		font-size: 12px;
+		color: #8A94A6;
+		margin-top: 6px;
+		display: block;
+	}
+
+	.chart-legend-inline {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		align-items: flex-start;
+		padding-left: 12px;
+		border-left: 1px solid #E8ECF1;
+		margin-left: 8px;
+	}
+
+	.pingjun-gap {
+		margin-top: 6px;
 	}
 
 	.table_jjj_1 {
 		display: flex;
 		flex-direction: row;
+		align-items: flex-end;
+		margin-top: 4px;
 	}
 
 	.pingjun {
@@ -2550,22 +2620,73 @@
 
 	.pingjun_1 {
 		background: #FC7F41;
-		width: 10px;
-		height: 10px;
-		border-radius: 5px
+		width: 8px;
+		height: 8px;
+		border-radius: 4px;
+		flex-shrink: 0;
 	}
 
 	.pingjun_2 {
 		background: #7AE545;
-		width: 10px;
-		height: 10px;
-		border-radius: 5px
+		width: 8px;
+		height: 8px;
+		border-radius: 4px;
+		flex-shrink: 0;
 	}
 
 	.pingjun_3 {
 		margin-left: 5px;
-		color: #999999;
-		font-size: 10px;
+		color: #8A94A6;
+		font-size: 11px;
+	}
+
+	.bp-reading {
+		display: flex;
+		flex-direction: row;
+		align-items: baseline;
+		margin-top: 2px;
+		flex-wrap: wrap;
+	}
+
+	.bp-sys {
+		font-size: 26px;
+		font-weight: 700;
+		color: #FC7F41;
+		line-height: 1.2;
+	}
+
+	.bp-slash {
+		font-size: 20px;
+		font-weight: 600;
+		color: #C0C7D1;
+		margin: 0 2px;
+	}
+
+	.bp-dia {
+		font-size: 26px;
+		font-weight: 700;
+		color: #7AE545;
+		line-height: 1.2;
+	}
+
+	.bp-unit {
+		font-size: 12px;
+		color: #8A94A6;
+		margin-left: 6px;
+		font-weight: 400;
+	}
+
+	.bp-meta-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		margin-top: 4px;
+	}
+
+	.bp-meta-text {
+		font-size: 12px;
+		color: #8A94A6;
+		margin-left: 4px;
 	}
 
 	.table_item_text {
@@ -2576,40 +2697,84 @@
 	}
 
 	.img_iocn_bg {
-		width: 48px;
-		height: 48px;
+		width: 28px;
+		height: 28px;
 		object-fit: contain;
 	}
 
+	.card-icon-wrap {
+		width: 48px;
+		height: 48px;
+		border-radius: 14px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.card-icon-bp {
+		background: rgba(0, 122, 255, 0.12);
+	}
+
+	.card-icon-avg {
+		background: rgba(52, 199, 89, 0.14);
+	}
+
+	.card-icon-max {
+		background: rgba(252, 127, 65, 0.14);
+	}
+
+	.card-icon-min {
+		background: rgba(0, 122, 255, 0.1);
+	}
+
+	.card-icon-weight {
+		background: rgba(122, 229, 69, 0.16);
+	}
+
 	.xueya_type {
-		width: 14px;
-		height: 14px;
-		border-radius: 10px;
+		width: 8px;
+		height: 8px;
+		border-radius: 4px;
 		background: #258C41;
-		margin-left: 10px;
+		flex-shrink: 0;
 	}
 
 	.title_font_bg {
-		margin-left: 5px;
-		font-size: 14px;
-		font-weight: 400
+		margin-left: 4px;
+		font-size: 11px;
+		font-weight: 400;
+		color: #5B6B7C;
+		max-width: 72px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.xueyastylesss {
-		margin-top: 10px;
-		text-align: center;
-		line-height: 15px;
-		width: 52px;
+		text-align: left;
+		line-height: 1.2;
+		width: auto;
 		font-size: 13px;
 		font-weight: 400;
+		color: #8A94A6;
 	}
 
 	.typesstyle_title {
 		display: flex;
 		flex-direction: column;
-		margin-left: 10px;
-		margin-right: 10px;
-		flex: 4;
+		margin-left: 12px;
+		margin-right: 8px;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.typesstyle_title .bp-sys,
+	.typesstyle_title .bp-dia {
+		font-size: 22px;
+	}
+
+	.typesstyle_title .bp-slash {
+		font-size: 18px;
 	}
 
 	.title_type_bg {
@@ -2621,7 +2786,7 @@
 
 	.border_bg {
 		width: auto;
-		background: #CCCCCC;
+		background: #E8ECF1;
 		height: 1px;
 		margin-top: 5px;
 	}
@@ -2634,16 +2799,28 @@
 		align-items: center;
 	}
 
+	.weight-sub-stats {
+		margin-top: 8px;
+	}
+
+	.weight-main-value {
+		font-size: 22px;
+		font-weight: 700;
+		color: #1A2B4A;
+		margin-top: 2px;
+	}
+
 	.text_item_bg {
 		font-size: 10px;
-		color: #999999;
-		margin-top: 5px;
+		color: #8A94A6;
+		margin-top: 2px;
 	}
 
 	.text_item_bg_1 {
-		font-weight: bold;
-		margin-top: 10px;
-		font-size: 16px;
+		font-weight: 600;
+		margin-top: 2px;
+		font-size: 14px;
+		color: #1A2B4A;
 	}
 
 	.tizhongsds {
@@ -2656,42 +2833,51 @@
 		margin-top: 20px;
 	}
 
-	.icon_item_bg {
+	.icon_item_bg,
+	.icon_item_bgsdsadsa {
 		width: auto;
-		height: 116px;
+		min-height: 96px;
 		margin-top: 20px;
-		margin-left: 20px;
-		margin-right: 20px;
+		margin-left: 16px;
+		margin-right: 16px;
+		padding: 14px 12px;
 		display: flex;
-		justify-content: left;
+		justify-content: flex-start;
 		align-items: center;
 		flex-direction: row;
-		background: white;
-		border-radius: 20px;
+		background: #FFFFFF;
+		border-radius: 16px;
 		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		box-sizing: border-box;
 	}
 
-	.icon_item_bgsdsadsa {
-		height: 116px;
-		margin-left: 20px;
-		margin-right: 20px;
+	.card-right {
 		display: flex;
-		justify-content: left;
-		align-items: center;
 		flex-direction: row;
-		background: white;
+		align-items: center;
+		flex-shrink: 0;
+		margin-left: 4px;
+	}
+
+	.status-badge {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		background: #F2F4F7;
 		border-radius: 20px;
-		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		padding: 6px 10px;
+		margin-right: 4px;
+		max-width: 110px;
 	}
 
 
 	.icon_item_bg_toast {
 		text-align: center;
-		margin: 20px;
-		color: #3298F7;
-		padding: 15px 0 15px 0;
-		background: white;
-		border-radius: 15px;
+		margin: 12px 16px;
+		color: #007AFF;
+		padding: 15px 0;
+		background: #FFFFFF;
+		border-radius: 16px;
 		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
@@ -2714,15 +2900,15 @@
 	.butonsd {
 		margin: 40px 50px 20px 50px;
 		border-radius: 30px;
-		background: #3298F7;
+		background: #007AFF;
 		color: white;
 	}
 
 
 
 	.icon_item_bg_1 {
-		flex: 1;
-		margin-left: 10px;
+		flex: none;
+		margin-left: 0;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -2730,42 +2916,42 @@
 	}
 
 	.button_time_1 {
-		width: 18vw;
-		height: 30px;
+		flex: 1;
+		height: 34px;
 		font-size: 14px;
-		color: black;
+		font-weight: 600;
+		color: #FFFFFF;
 		display: flex;
-		background: white;
+		background: #007AFF;
 		border-radius: 10px;
 		justify-content: center;
 		align-items: center;
-		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.button_time_2 {
-		width: 18vw;
-		height: 30px;
+		flex: 1;
+		height: 34px;
 		font-size: 14px;
+		font-weight: 500;
 		display: flex;
-		background: none;
+		background: transparent;
 		justify-content: center;
 		border: none;
-		color: white;
+		color: #3A4656;
 		align-items: center;
 	}
 
 	.pagedsismj_3 {
-		width: 80vw;
-		margin-left: 20px;
-		margin-right: 20px;
+		width: 100%;
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
-		margin-top: 20px;
+		margin-top: 12px;
+		gap: 8px;
 	}
 
 	.pagedsismj_4 {
-		flex: 1;
+		flex: 0 0 auto;
 		display: flex;
 		flex-direction: row;
 		align-items: center;
@@ -2776,67 +2962,119 @@
 		flex-direction: row;
 		justify-content: center;
 		align-items: center;
+		background: #FFFFFF;
+		border-radius: 20px;
+		padding: 7px 10px;
+		border: 1px solid #E5E9EF;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+	}
+
+	.filter-type-icon {
+		width: 18px;
+		height: 18px;
+		flex-shrink: 0;
+	}
+
+	.filter-pill-text {
+		font-size: 13px;
+		color: #1A2B4A;
+		margin: 0 4px;
+		font-weight: 500;
 	}
 
 	.data_type_0 {
-		flex: 1.5;
+		flex: 1;
 		display: flex;
 		justify-content: center;
 		align-items: center;
+		min-width: 0;
 	}
 
-	.pagedsismj_6 {
-		flex: 1;
+	.date-pill {
 		display: flex;
 		flex-direction: row;
 		align-items: center;
 		justify-content: center;
+		padding: 4px 2px;
+	}
+
+	.date-pill-text {
+		font-size: 13px;
+		color: #5B6B7C;
+		font-weight: 500;
+		margin-right: 2px;
+	}
+
+	.pagedsismj_6 {
+		flex: 0 0 auto;
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		background: #EEF1F5;
+		border-radius: 8px;
+		padding: 3px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.text_title_types_1 {
-		width: auto;
-		margin-left: 20px;
+		width: 100%;
+		margin-left: 0;
+		margin-top: 10px;
 		display: flex;
 		flex-direction: row;
 		justify-content: space-between;
 		align-items: center;
 	}
 
+	.weight-stat {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.weight-stat-value {
+		font-size: 16px;
+		font-weight: 600;
+		color: #1A1A1A;
+		margin-top: 4px;
+	}
+
 	.text_title_types_2 {
 		width: auto;
-		margin-top: 15px;
+		margin-top: 0;
 		text-align: center;
-		color: #999999;
+		color: #8A94A6;
 		font-weight: 400;
-		font-size: 10px;
+		font-size: 11px;
 	}
 
 	.view_bor {
-		height: 30px;
-		background: white;
+		height: 16px;
+		background: #D8DEE6;
 		width: 1px;
-		margin-left: 4px;
-		margin-right: 4px;
+		margin: 0 2px;
+		align-self: center;
 	}
 
 	.charts-box {
-		margin-top: 20px;
-		padding: 5px;
-		background: white;
-		border-radius: 20px;
+		margin-top: 12px;
+		padding: 0;
+		background: transparent;
+		border-radius: 0;
 		width: 100%;
-		height: 300px;
+		height: 280px;
 	}
 
-	.ziti {
-		font-weight: 600;
-		margin-right: 5px;
-		margin-left: 10px;
-	}
-
+	.ziti,
 	.ziti_1 {
 		font-weight: 600;
-		margin-left: 5px;
+		font-size: 12px;
+		padding: 6px 10px;
+		border-radius: 6px;
+		margin: 0;
+		line-height: 1.2;
 	}
 
 	.showTotal {

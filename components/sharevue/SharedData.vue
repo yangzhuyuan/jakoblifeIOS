@@ -1,38 +1,37 @@
 <template>
-	<view style="display: flex; align-items: center; flex-direction: column; padding-left: 15px; margin-top: 20px;">
-		<view style="margin-top: 10px; font-weight: 600; font-size: 16px; color: black; text-align: center;">
-			{{ show1 ? $t('您正在与') + " "+item.receiverName + " "+ $t('共享') : " "+item.shareName + " "+ $t('正在与您共享以下健康数据') }}
-		</view>
-		<view style="font-size: 12px; color: #999999; margin: 5px 0 10px; text-align: center;">
-			{{$t('注本页面显示均为最近测量数据')}}
-		</view>
-		<scroll-view scroll-y="true" class="scroll-view">
-			<view style="margin-top: 20px;" v-for="(dataPoint, index) in dataPoints" :key="index">
-				<view style="display: flex; flex-direction: row; padding: 15px; align-items: center;">
-					<view style="font-weight: 400; width: 65vw; font-size: 16px; color: #1A1A1A;">
-						{{ getRegisterName(dataPoint.register) }}
-					</view>
-					<view
-						style="width: 20vw; color: #999999; font-weight: 400; font-size: 16px; text-align: right; margin-right: 15px;">
-						{{ getRegisterValue(dataPoint.register, dataPoint.registerVal) }}
-					</view>
-					<view v-if="show1">
-						<uni-icons type="right" size="16"></uni-icons>
-					</view>
-					<view v-else>
-						<view v-if="getRegisterValueICON(dataPoint.register, dataPoint.registerVal)">
-							<image @click="viewHistory(getRegisterName(dataPoint.register),item.sharerId)"
-								mode="aspectFit" style="width: 24px; height: 24px;object-fit: contain;"
-								:src="getRegisterValueICON(dataPoint.register, dataPoint.registerVal)"></image>
+	<view class="shared-data-root">
+		<view class="data-card">
+			<view class="data-list">
+				<view class="data-row" v-for="(dataPoint, index) in dataPoints" :key="index">
+					<view class="data-row-inner">
+						<view class="data-icon-wrap">
+							<image class="data-icon" mode="aspectFit" :src="getRegisterIcon(dataPoint.register)">
+							</image>
 						</view>
-						<view v-else>
-							<uni-icons type="right" size="16"></uni-icons>
+						<view class="data-label">
+							{{ getRegisterName(dataPoint.register) }}
+						</view>
+						<view class="data-value">
+							{{ getRegisterValue(dataPoint.register, dataPoint.registerVal) }}
+						</view>
+						<view v-if="show1" class="data-arrow">
+							<uni-icons type="right" size="16" color="#C0C7D1"></uni-icons>
+						</view>
+						<view v-else class="data-arrow">
+							<view v-if="getRegisterValueICON(dataPoint.register, dataPoint.registerVal)">
+								<image @click="viewHistory(getRegisterName(dataPoint.register),item.sharerId)"
+									mode="aspectFit" class="history-icon"
+									:src="getRegisterValueICON(dataPoint.register, dataPoint.registerVal)"></image>
+							</view>
+							<view v-else>
+								<uni-icons type="right" size="16" color="#C0C7D1"></uni-icons>
+							</view>
 						</view>
 					</view>
+					<view v-if="index < dataPoints.length - 1" class="data-divider"></view>
 				</view>
-				<view style="background: gainsboro; height: 1px; width: 100vw;"></view>
 			</view>
-		</scroll-view>
+		</view>
 	</view>
 </template>
 
@@ -104,6 +103,28 @@
 				};
 				return `${imageicon[register] || ''}`;
 			},
+			getRegisterIcon(register) {
+				// 与首页 Health_Summary / Main 卡片图标一致
+				const icons = {
+					lowPressure: "/static/icons/3.png",
+					highPressure: "/static/icons/3.png",
+					pressure: "/static/icons/3.png",
+					heartrate: "/static/icons/5.png",
+					oxygen: "/static/page_icon/10.png",
+					mood_index: "/static/icons/5.png",
+					depression_risk_score: "/static/icons/5.png",
+					stress_index: "/static/icons/5.png",
+					fatigue_index: "/static/icons/5.png",
+					recovery_index: "/static/icons/5.png",
+					height: "/static/icons/2.png",
+					weight: "/static/icons/6.png",
+					start_weight: "/static/icons/6.png",
+					goal_weight: "/static/icons/6.png",
+					bmi: "/static/icons/6.png",
+					temperature: "/static/icons/4.png",
+				};
+				return icons[register] || "/static/icons/3.png";
+			},
 			// 新增：查看历史
 			viewHistory(register, shareid) {
 				// console.log("register", register)
@@ -124,3 +145,88 @@
 		}
 	}
 </script>
+
+<style scoped>
+	.shared-data-root {
+		display: flex;
+		flex-direction: column;
+		margin-top: 12px;
+		box-sizing: border-box;
+	}
+
+	.data-card {
+		background: #FFFFFF;
+		border-radius: 16px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		overflow: hidden;
+		padding: 4px 0;
+		box-sizing: border-box;
+	}
+
+	.data-list {
+		width: 100%;
+	}
+
+	.data-row {
+		padding: 0 16px;
+	}
+
+	.data-row-inner {
+		display: flex;
+		flex-direction: row;
+		padding: 18px 0;
+		align-items: center;
+		min-height: 56px;
+	}
+
+	.data-icon-wrap {
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		margin-right: 12px;
+	}
+
+	.data-icon {
+		width: 28px;
+		height: 28px;
+	}
+
+	.data-label {
+		font-weight: 600;
+		flex: 1;
+		min-width: 0;
+		font-size: 17px;
+		color: #1A2B4A;
+	}
+
+	.data-value {
+		color: #1A2B4A;
+		font-weight: 600;
+		font-size: 16px;
+		text-align: right;
+		margin-right: 8px;
+		flex-shrink: 0;
+	}
+
+	.data-arrow {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+	}
+
+	.history-icon {
+		width: 24px;
+		height: 24px;
+		object-fit: contain;
+	}
+
+	.data-divider {
+		background: #E8ECF1;
+		height: 1px;
+		width: 100%;
+		margin-left: 52px;
+	}
+</style>

@@ -7,11 +7,10 @@
 			</view>
 			<image class="hero-img" src="/static/page_icon/app_icon_all.jpg" mode="aspectFit"></image>
 		</view>
-		<view class="emotion-tip-card" @click="onAiNote">
+		<!-- <view class="emotion-tip-card" @click="onAiNote">
 			<uni-icons type="info" size="18" color="#3298F7"></uni-icons>
 			<text class="emotion-tip-text">{{ $t('血压计注意事项') }}</text>
-		</view>
-
+		</view> -->
 		<view class="status-card">
 			<view class="status-main">
 				<view class="status-icon-wrap" :class="toneToStatusClass(overall.tone)">
@@ -39,9 +38,12 @@
 					<text class="metric-name">{{ m.name }}</text>
 					<text class="metric-value-num">{{ m.value }}</text>
 					<text v-if="m.unit" class="metric-value-unit">{{ m.unit }}</text>
+					<text v-if="m.date" class="metric-date">{{ m.date }}</text>
 					<view class="metric-status-row" v-if="m.status">
-						<view class="status-dot" :class="toneToDotClass(m.tone)"></view>
-						<text class="metric-status" :class="toneToDotClass(m.tone)">{{ m.status }}</text>
+						<view class="status-dot" :class="toneToDotClass(m.tone)"
+							:style="m.statusColor ? { background: m.statusColor } : null"></view>
+						<text class="metric-status" :class="toneToDotClass(m.tone)"
+							:style="m.statusColor ? { color: m.statusColor } : null">{{ m.status }}</text>
 						<uni-icons v-if="m.help" type="help" size="15" class="metric-help"
 							@click="onStatusHelp(m)"></uni-icons>
 					</view>
@@ -57,14 +59,12 @@
 				</view>
 				<text class="trend-label">{{ t.name }}</text>
 				<view class="sparkline" :class="t.tone">
-					<qiun-data-charts :canvas2d="true" type="line"
-						:canvas-id="'hsSpark' + t.key + t.tone + sparkChartRev" :opts="t.opts" :chartData="t.chartData"
-						:ontouch="false" :key="t.key + t.tone + sparkChartRev" />
+					<qiun-data-charts :canvas2d="true" type="line" :canvas-id="'hsSpark' + t.key" :opts="t.opts"
+						:chartData="t.chartData" :ontouch="false" :inScrollView="true" :reshow="sparkReshow" />
 				</view>
 				<text class="trend-status" :class="toneToDotClass(t.tone)">{{ t.status }}</text>
 			</view>
 		</view>
-
 		<view class="ai-insight-card">
 			<view class="ai-insight-header">
 				<view class="ai-insight-avatar">
@@ -87,6 +87,9 @@
 
 <script>
 	import WeightConverter from '@/pages/api/unitls/weightConverter.js'
+	import {
+		getChinaTimeAllJSON
+	} from '@/pages/api/unitls/timezone.js'
 
 	export default {
 		name: 'HealthSummaryPanel',
@@ -110,11 +113,35 @@
 			syncPulse: {
 				type: [String, Number],
 				default: ''
+			},
+			syncHrDate: {
+				type: String,
+				default: ''
+			},
+			syncSpo2: {
+				type: [String, Number],
+				default: ''
+			},
+			syncSpo2Date: {
+				type: String,
+				default: ''
+			},
+			syncBpDate: {
+				type: String,
+				default: ''
+			},
+			syncHeight: {
+				type: [String, Number],
+				default: ''
+			},
+			syncHeightDate: {
+				type: String,
+				default: ''
 			}
 		},
 		data() {
 			const sparkBase = {
-				padding: [10, 6, 4, 6],
+				padding: [6, 4, 6, 4],
 				legend: {
 					show: false
 				},
@@ -145,7 +172,7 @@
 					}
 				}
 			};
-			const sparkCats = ['', '', '', '', '', '', ''];
+			const sparkCats = [' ', ' ', ' ', ' ', ' ', ' ', ' '];
 			const emptyWeek = [null, null, null, null, null, null, null];
 			return {
 				rangeIndex: 0,
@@ -154,13 +181,25 @@
 				highPressure: '-',
 				lowPressure: '-',
 				pulse: '-',
+				bpDate: '',
+				hrDate: '',
+				spo2Date: '',
+				heightDate: '',
 				dayAvgHigh: null,
 				dayAvgLow: null,
 				dayAvgHr: null,
 				weekAvgHigh: null,
 				weekAvgLow: null,
 				weekAvgHr: null,
-				sparkChartRev: 0,
+				sparkReshow: false,
+				sparkYBp: {
+					min: 0,
+					max: 200
+				},
+				sparkYHr: {
+					min: 40,
+					max: 120
+				},
 				sparkOptsBp: Object.assign({}, sparkBase, {
 					color: ['#FC7F41', '#7AE545']
 				}),
@@ -267,113 +306,120 @@
 				if (!this.isValidMetric(this.highPressure) || !this.isValidMetric(this.lowPressure)) {
 					return {
 						text: this.$t('暂无数据'),
-						tone: 'mute'
+						tone: 'mute',
+						color: ''
 					};
 				}
 				const highPressure = Number(this.highPressure);
 				const lowPressure = Number(this.lowPressure);
-				const pressureRanges = [{
-						lowMin: 61,
-						lowMax: 80,
-						highMin: 91,
-						highMax: 120,
+				// 颜色与「？」血压分类弹窗一致
+				// 血压偏低优先：收缩压<90 或 舒张压<60；正常血压需两者都满足；其余等级优先收缩压
+				const levels = [{
+						level: -1,
+						color: '#FFF176',
+						name: this.$t('血压偏低')
+					},
+					{
 						level: 0,
+						color: '#A6CE39',
 						name: this.$t('正常血压')
 					},
 					{
-						lowMin: 81,
-						lowMax: 90,
-						highMin: 121,
-						highMax: 140,
 						level: 1,
+						color: '#FFEC01',
 						name: this.$t('正常高值')
 					},
 					{
-						lowMin: 91,
-						lowMax: 100,
-						highMin: 141,
-						highMax: 160,
 						level: 2,
+						color: '#FFB602',
 						name: this.$t('一级高血压')
 					},
 					{
-						lowMin: 101,
-						lowMax: 110,
-						highMin: 161,
-						highMax: 180,
 						level: 3,
+						color: '#BB3A01',
 						name: this.$t('二级高血压')
 					}
 				];
-				for (let i = 0; i < pressureRanges.length; i++) {
-					const range = pressureRanges[i];
-					if ((lowPressure >= range.lowMin && lowPressure <= range.lowMax) ||
-						(highPressure >= range.highMin && highPressure <= range.highMax)) {
-						return {
-							text: range.name,
-							tone: range.level === 0 ? 'ok' : 'warn'
-						};
-					}
+				const toStatus = (idx) => ({
+					text: levels[idx].name,
+					tone: levels[idx].level === 0 ? 'ok' : 'warn',
+					color: levels[idx].color
+				});
+				if (highPressure < 91 || lowPressure < 61) {
+					return toStatus(0);
 				}
+				if (highPressure >= 91 && highPressure <= 120 && lowPressure >= 61 && lowPressure <= 80) {
+					return toStatus(1);
+				}
+				if (highPressure >= 121 && highPressure <= 140) return toStatus(2);
+				if (highPressure >= 141 && highPressure <= 160) return toStatus(3);
+				if (highPressure >= 161 && highPressure <= 180) return toStatus(4);
+				if (lowPressure >= 81 && lowPressure <= 90) return toStatus(2);
+				if (lowPressure >= 91 && lowPressure <= 100) return toStatus(3);
+				if (lowPressure >= 101 && lowPressure <= 110) return toStatus(4);
 				return {
 					text: this.$t('未知'),
-					tone: 'mute'
+					tone: 'mute',
+					color: ''
 				};
 			},
 			hrStatus() {
 				if (!this.isValidMetric(this.pulse)) {
 					return {
 						text: this.$t('暂无数据'),
-						tone: 'mute'
+						tone: 'mute',
+						color: ''
 					};
 				}
 				const hr = Number(this.pulse);
 				if (hr < 60) {
 					return {
 						text: this.$t('过慢'),
-						tone: 'warn'
+						tone: 'warn',
+						color: ''
 					};
 				}
 				if (hr > 100) {
 					return {
 						text: this.$t('过快'),
-						tone: 'warn'
+						tone: 'warn',
+						color: ''
 					};
 				}
 				return {
 					text: this.$t('正常'),
-					tone: 'ok'
+					tone: 'ok',
+					color: ''
 				};
 			},
 			spo2Status() {
 				if (!this.isValidMetric(this.spo2)) {
 					return {
 						text: this.$t('暂无数据'),
-						tone: 'mute'
+						tone: 'mute',
+						color: ''
 					};
 				}
 				const val = parseInt(this.spo2, 10);
 				if (isNaN(val)) {
 					return {
 						text: this.$t('暂无数据'),
-						tone: 'mute'
+						tone: 'mute',
+						color: ''
 					};
 				}
-				if (val <= 95) {
+				// 颜色与「？」血氧分类弹窗一致：≤92 偏低(橙)，>92 正常(绿)
+				if (val <= 92) {
 					return {
 						text: this.$t('偏低'),
-						tone: 'warn'
-					};
-				}
-				if (val < 98) {
-					return {
-						text: this.$t('正常'),
-						tone: 'ok'
+						tone: 'warn',
+						color: '#FCCD41'
 					};
 				}
 				return {
-					text: this.$t('偏高'),
-					tone: 'warn'
+					text: this.$t('正常'),
+					tone: 'ok',
+					color: '#7AE545'
 				};
 			},
 			metrics() {
@@ -385,8 +431,10 @@
 						help: 'bp',
 						value: this.bpValue,
 						unit: this.bloodUnit,
+						date: this.bpDate,
 						status: this.bpStatus.text,
-						tone: this.bpStatus.tone
+						tone: this.bpStatus.tone,
+						statusColor: this.bpStatus.color
 					},
 					{
 						name: this.$t('心率'),
@@ -395,8 +443,10 @@
 						measureType: 0,
 						value: this.hrValue,
 						unit: this.isValidMetric(this.pulse) ? 'BPM' : 'BPM',
+						date: this.hrDate,
 						status: this.hrStatus.text,
-						tone: this.hrStatus.tone
+						tone: this.hrStatus.tone,
+						statusColor: this.hrStatus.color
 					},
 					{
 						name: this.$t('血氧'),
@@ -406,8 +456,10 @@
 						help: 'spo2',
 						value: this.spo2Value,
 						unit: '%',
+						date: this.spo2Date,
 						status: this.spo2Status.text,
-						tone: this.spo2Status.tone
+						tone: this.spo2Status.tone,
+						statusColor: this.spo2Status.color
 					},
 					{
 						name: this.$t('身高'),
@@ -415,8 +467,10 @@
 						measurable: false,
 						value: this.heightValue,
 						unit: this.isValidMetric(this.heightVal) ? this.heightUnit : '',
+						date: this.heightDate,
 						status: '',
-						tone: 'ok'
+						tone: 'ok',
+						statusColor: ''
 					}
 				];
 			},
@@ -456,7 +510,7 @@
 						key: 'bp',
 						name: this.$t('血压'),
 						icon: '/static/icons/3.png',
-						opts: this.sparkOptsBp,
+						opts: this.withSparkYAxis(this.sparkOptsBp, this.sparkYBp),
 						chartData: this.sparkChartBp,
 						status: bp.text,
 						tone: bp.tone
@@ -465,7 +519,7 @@
 						key: 'hr',
 						name: this.$t('心率'),
 						icon: '/static/icons/5.png',
-						opts: this.sparkOptsByTone[hr.tone],
+						opts: this.withSparkYAxis(this.sparkOptsByTone[hr.tone] || this.sparkOptsByTone.mute, this.sparkYHr),
 						chartData: this.sparkChartHr,
 						status: hr.text,
 						tone: hr.tone
@@ -504,6 +558,7 @@
 		beforeDestroy() {
 			uni.$off('unit-settings-changed', this.syncUnitSettings);
 			if (this._homeSyncTimer) clearTimeout(this._homeSyncTimer);
+			if (this._sparkNudgeTimer) clearTimeout(this._sparkNudgeTimer);
 		},
 		watch: {
 			syncHighPressure() {
@@ -513,6 +568,24 @@
 				this.scheduleHomeSync();
 			},
 			syncPulse() {
+				this.scheduleHomeSync();
+			},
+			syncHrDate() {
+				this.scheduleHomeSync();
+			},
+			syncSpo2() {
+				this.scheduleHomeSync();
+			},
+			syncSpo2Date() {
+				this.scheduleHomeSync();
+			},
+			syncBpDate() {
+				this.scheduleHomeSync();
+			},
+			syncHeight() {
+				this.scheduleHomeSync();
+			},
+			syncHeightDate() {
 				this.scheduleHomeSync();
 			}
 		},
@@ -559,12 +632,14 @@
 						this.loadHomeMetrics();
 						this.loadTrendStability();
 						this.loadWeekTrendChart();
+						this.nudgeSparkCharts();
 					}, 250);
 					return;
 				}
 				this.loadHomeMetrics();
 				this.loadTrendStability();
 				this.loadWeekTrendChart();
+				this.nudgeSparkCharts();
 			},
 			scheduleHomeSync() {
 				if (this._homeSyncTimer) clearTimeout(this._homeSyncTimer);
@@ -573,19 +648,12 @@
 				}, 150);
 			},
 			localYmd() {
-				const now = new Date();
-				const y = now.getFullYear();
-				const m = now.getMonth() + 1;
-				const d = now.getDate();
-				return y + '-' + (m >= 10 ? m : '0' + m) + '-' + (d >= 10 ? d : '0' + d);
+				return getChinaTimeAllJSON().YMD;
 			},
 			shiftYmd(daysBack) {
 				const d = new Date();
 				d.setDate(d.getDate() - daysBack);
-				const y = d.getFullYear();
-				const m = d.getMonth() + 1;
-				const day = d.getDate();
-				return y + '-' + (m >= 10 ? m : '0' + m) + '-' + (day >= 10 ? day : '0' + day);
+				return getChinaTimeAllJSON(d).YMD;
 			},
 			buildWeekDates() {
 				const list = [];
@@ -600,19 +668,124 @@
 				}
 				return list;
 			},
+			toYmd(value) {
+				if (value == null || value === '') return '';
+				const raw = String(value).trim();
+				if (!raw) return '';
+				const wallMatch = raw.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+				if (wallMatch && !/^\d+$/.test(raw) && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(raw)) {
+					return wallMatch[1] + '-' + wallMatch[2].padStart(2, '0') + '-' + wallMatch[3].padStart(2, '0');
+				}
+				const ts = this.parseTimeToMs(value);
+				if (!Number.isFinite(ts) || ts <= 0) return '';
+				return getChinaTimeAllJSON(new Date(ts)).YMD || '';
+			},
+			toFiniteNumber(value) {
+				if (!this.isValidMetric(value)) return null;
+				const n = Number(value);
+				return Number.isFinite(n) ? n : null;
+			},
+			parseTrendPoint(item) {
+				if (item == null) return {
+					value: null,
+					dateStr: ''
+				};
+				if (Array.isArray(item)) {
+					let value = this.toFiniteNumber(item[0]);
+					let dateStr = this.toYmd(item[1]);
+					if (!dateStr) {
+						dateStr = this.toYmd(item[0]);
+						value = this.toFiniteNumber(item[1]);
+					}
+					return {
+						value,
+						dateStr
+					};
+				}
+				if (typeof item === 'object') {
+					return {
+						value: this.toFiniteNumber(item.value != null ? item.value : item.avg),
+						dateStr: this.toYmd(item.time || item.timestamp || item.dateTime || item.date)
+					};
+				}
+				return {
+					value: null,
+					dateStr: ''
+				};
+			},
 			timestampToDateStr(timestamp) {
-				let ts = parseInt(timestamp, 10);
-				if (!Number.isFinite(ts)) return '';
-				if (ts < 10000000000) ts = ts * 1000;
-				const date = new Date(ts);
-				const y = date.getFullYear();
-				const m = date.getMonth() + 1;
-				const d = date.getDate();
-				return y + '-' + (m >= 10 ? m : '0' + m) + '-' + (d >= 10 ? d : '0' + d);
+				return this.toYmd(timestamp);
+			},
+			sparkYRange(values, fallbackMin, fallbackMax) {
+				const nums = [];
+				(values || []).forEach((v) => {
+					const n = this.toFiniteNumber(v);
+					if (n != null) nums.push(n);
+				});
+				if (!nums.length) {
+					return {
+						min: fallbackMin,
+						max: fallbackMax
+					};
+				}
+				let min = Math.min.apply(null, nums);
+				let max = Math.max.apply(null, nums);
+				if (min === max) {
+					min = Math.max(0, min - 10);
+					max = max + 10;
+				} else {
+					const pad = Math.max(4, (max - min) * 0.18);
+					min = Math.max(0, min - pad);
+					max = max + pad;
+				}
+				return {
+					min,
+					max
+				};
+			},
+			withSparkYAxis(opts, range) {
+				const y = range || {};
+				return Object.assign({}, opts, {
+					yAxis: {
+						disabled: true,
+						disableGrid: true,
+						disableLine: true,
+						data: [{
+							min: y.min,
+							max: y.max,
+							axisLine: false
+						}]
+					}
+				});
+			},
+			nudgeSparkCharts() {
+				if (this._sparkNudgeTimer) clearTimeout(this._sparkNudgeTimer);
+				this.sparkReshow = false;
+				this._sparkNudgeTimer = setTimeout(() => {
+					this._sparkNudgeTimer = null;
+					this.$nextTick(() => {
+						this.sparkReshow = true;
+					});
+				}, 400);
+			},
+			weekBpMapHasValues(dateList, bpMap) {
+				if (!bpMap || !dateList) return false;
+				for (let i = 0; i < dateList.length; i++) {
+					const dayData = bpMap.get(dateList[i].dateStr);
+					if (dayData && (dayData.high != null || dayData.low != null)) return true;
+				}
+				return false;
+			},
+			weekHrMapHasValues(dateList, hrMap) {
+				if (!hrMap || !dateList) return false;
+				for (let i = 0; i < dateList.length; i++) {
+					if (hrMap.has(dateList[i].dateStr) && hrMap.get(dateList[i].dateStr) != null) return true;
+				}
+				return false;
 			},
 			applyBpWeekChart(dateList, bpMap) {
 				const cats = dateList.map(function() {
-					return '';
+					return ' ';
 				});
 				const highs = [];
 				const lows = [];
@@ -621,6 +794,7 @@
 					highs.push(dayData && dayData.high != null ? dayData.high : null);
 					lows.push(dayData && dayData.low != null ? dayData.low : null);
 				}
+				this.sparkYBp = this.sparkYRange(highs.concat(lows), 0, 200);
 				this.sparkChartBp = {
 					categories: cats,
 					series: [{
@@ -633,27 +807,17 @@
 						connectNulls: true
 					}]
 				};
-				this.sparkChartRev += 1;
+				this.nudgeSparkCharts();
 			},
-			fillHrSparkFromLogs(list) {
-				const dateList = this.buildWeekDates();
-				const hrMap = new Map();
-				if (Array.isArray(list)) {
-					for (let i = 0; i < list.length; i++) {
-						const d = this.itemYmd(list[i]);
-						const s = this.getLogSummary(list[i]);
-						if (d && s && this.isValidMetric(s.heartrateAvg)) {
-							hrMap.set(d, Number(s.heartrateAvg));
-						}
-					}
-				}
+			applyHrWeekChart(dateList, hrMap) {
 				const data = [];
 				for (let i = 0; i < dateList.length; i++) {
 					data.push(hrMap.has(dateList[i].dateStr) ? hrMap.get(dateList[i].dateStr) : null);
 				}
+				this.sparkYHr = this.sparkYRange(data, 40, 120);
 				this.sparkChartHr = {
 					categories: dateList.map(function() {
-						return '';
+						return ' ';
 					}),
 					series: [{
 						name: '',
@@ -661,13 +825,43 @@
 						connectNulls: true
 					}]
 				};
-				this.sparkChartRev += 1;
+				this.nudgeSparkCharts();
+			},
+			fillWeekSparkFromLogs(list) {
+				const dateList = this.buildWeekDates();
+				const hrMap = new Map();
+				const bpMap = new Map();
+				if (Array.isArray(list)) {
+					for (let i = 0; i < list.length; i++) {
+						const d = this.itemYmd(list[i]);
+						const s = this.getLogSummary(list[i]);
+						if (!d || !s) continue;
+						if (this.isValidMetric(s.heartrateAvg)) {
+							hrMap.set(d, Number(s.heartrateAvg));
+						}
+						const high = this.toFiniteNumber(s.highPressureAvg);
+						const low = this.toFiniteNumber(s.lowPressureAvg);
+						if (high != null || low != null) {
+							const prev = bpMap.get(d) || {
+								high: null,
+								low: null
+							};
+							bpMap.set(d, {
+								high: high != null ? high : prev.high,
+								low: low != null ? low : prev.low
+							});
+						}
+					}
+				}
+				if (hrMap.size) this.applyHrWeekChart(dateList, hrMap);
+				if (this.weekBpMapHasValues(dateList, bpMap)) this.applyBpWeekChart(dateList, bpMap);
 			},
 			loadWeekTrendChart() {
+				const userid = uni.getStorageSync('userid');
+				if (!userid || !uni.getStorageSync('token')) return;
 				const ymd = this.localYmd();
 				const todayEnd = ymd + ' 23:59:59';
 				const weekStart = this.shiftYmd(6) + ' 00:00:00';
-				const userid = uni.getStorageSync('userid');
 				const typesIndex = Number(uni.getStorageSync('types_index') || 0);
 				const slaveSn = typesIndex == 1 ? '2' : '3';
 				const dateList = this.buildWeekDates();
@@ -685,6 +879,10 @@
 								register: 'lowPressure'
 							},
 							{
+								slaveSn: sn,
+								register: 'heartrate'
+							},
+							{
 								slaveSn: '0',
 								register: 'weight'
 							}
@@ -697,47 +895,58 @@
 				const parseBpMap = (res) => {
 					const bpMap = new Map();
 					if (!res || res.code != 200 || !res.data) return bpMap;
-					if (res.data.highPressure) {
-						res.data.highPressure.forEach(item => {
-							const dateStr = this.timestampToDateStr(item[1]);
-							if (!dateStr) return;
-							if (!bpMap.has(dateStr)) {
-								bpMap.set(dateStr, {
+					const setVal = (list, field) => {
+						if (!list) return;
+						list.forEach(item => {
+							const point = this.parseTrendPoint(item);
+							if (!point.dateStr || point.value == null) return;
+							if (!bpMap.has(point.dateStr)) {
+								bpMap.set(point.dateStr, {
 									high: null,
 									low: null
 								});
 							}
-							bpMap.get(dateStr).high = item[0] ? parseFloat(item[0]) : null;
+							bpMap.get(point.dateStr)[field] = point.value;
 						});
-					}
-					if (res.data.lowPressure) {
-						res.data.lowPressure.forEach(item => {
-							const dateStr = this.timestampToDateStr(item[1]);
-							if (!dateStr) return;
-							if (!bpMap.has(dateStr)) {
-								bpMap.set(dateStr, {
-									high: null,
-									low: null
-								});
-							}
-							bpMap.get(dateStr).low = item[0] ? parseFloat(item[0]) : null;
-						});
-					}
+					};
+					setVal(res.data.highPressure, 'high');
+					setVal(res.data.lowPressure, 'low');
 					return bpMap;
 				};
+				const parseHrMap = (res) => {
+					const hrMap = new Map();
+					if (!res || res.code != 200 || !res.data || !res.data.heartrate) return hrMap;
+					res.data.heartrate.forEach(item => {
+						const point = this.parseTrendPoint(item);
+						if (!point.dateStr || point.value == null) return;
+						hrMap.set(point.dateStr, point.value);
+					});
+					return hrMap;
+				};
 				postTrend(slaveSn).then(res => {
-					let bpMap = parseBpMap(res);
-					if (bpMap.size) {
-						this.applyBpWeekChart(dateList, bpMap);
-						return;
-					}
+					const bpMap = parseBpMap(res);
+					const hrMap = parseHrMap(res);
+					const hasBp = this.weekBpMapHasValues(dateList, bpMap);
+					const hasHr = this.weekHrMapHasValues(dateList, hrMap);
+					if (hasBp) this.applyBpWeekChart(dateList, bpMap);
+					if (hasHr) this.applyHrWeekChart(dateList, hrMap);
+					if (hasBp && hasHr) return;
 					const otherSn = slaveSn === '2' ? '3' : '2';
 					return postTrend(otherSn).then(res2 => {
-						this.applyBpWeekChart(dateList, parseBpMap(res2));
+						if (!hasBp) {
+							const otherBp = parseBpMap(res2);
+							if (this.weekBpMapHasValues(dateList, otherBp)) {
+								this.applyBpWeekChart(dateList, otherBp);
+							}
+						}
+						if (!hasHr) {
+							const otherHr = parseHrMap(res2);
+							if (this.weekHrMapHasValues(dateList, otherHr)) {
+								this.applyHrWeekChart(dateList, otherHr);
+							}
+						}
 					});
-				}).catch(() => {
-					this.applyBpWeekChart(dateList, new Map());
-				});
+				}).catch(() => {});
 			},
 			getLogObject(item) {
 				if (!item) return null;
@@ -795,8 +1004,8 @@
 				return n ? (sum / n) : null;
 			},
 			itemYmd(item) {
-				const dt = (item && (item.dateTime || item.date)) || '';
-				return String(dt).slice(0, 10);
+				const dt = (item && (item.dateTime || item.date || item.time || item.timestamp)) || '';
+				return this.toYmd(dt);
 			},
 			pickTodayItem(list, ymd) {
 				if (!Array.isArray(list) || !list.length) return null;
@@ -849,7 +1058,14 @@
 					'content-type': 'application/json;charset=UTF-8'
 				};
 			},
-			fetchWeekMinmax(userid, slaveSn, weekStart, todayEnd, header) {
+			fetchWeekMinmax(userid, slaveSn, weekStart, todayEnd, header, onSettled) {
+				const finish = (avg) => {
+					if (typeof onSettled === 'function') {
+						onSettled(avg || null);
+						return;
+					}
+					if (avg) this.applyWeekAvg(avg);
+				};
 				this.$post(this.$url_APP_IP + this.$url_query_minmax, {
 					deviceSn: userid,
 					dataType: 'min',
@@ -869,11 +1085,15 @@
 					startTime: weekStart,
 					endTime: todayEnd
 				}, header).then(res => {
-					if (res && (res.code == 200) && res.data && res.data.avg && this.applyWeekAvg(res.data.avg)) {
+					if (res && (res.code == 200) && res.data && res.data.avg && this.weekAvgHasValue(res.data.avg)) {
+						finish(res.data.avg);
 						return;
 					}
 					const otherSn = slaveSn === '2' ? '3' : '2';
-					if (otherSn === slaveSn) return;
+					if (otherSn === slaveSn) {
+						finish(null);
+						return;
+					}
 					this.$post(this.$url_APP_IP + this.$url_query_minmax, {
 						deviceSn: userid,
 						dataType: 'min',
@@ -884,23 +1104,37 @@
 						startTime: weekStart,
 						endTime: todayEnd
 					}, header).then(res2 => {
-						if (res2 && res2.code == 200 && res2.data && res2.data.avg) {
-							this.applyWeekAvg(res2.data.avg);
+						if (res2 && res2.code == 200 && res2.data && res2.data.avg && this.weekAvgHasValue(res2.data
+								.avg)) {
+							finish(res2.data.avg);
+							return;
 						}
-					}).catch(() => {});
-				}).catch(() => {});
+						finish(null);
+					}).catch(() => {
+						finish(null);
+					});
+				}).catch(() => {
+					finish(null);
+				});
+			},
+			weekAvgHasValue(avg) {
+				return !!(avg && (this.isValidMetric(avg.highPressure) || this.isValidMetric(avg.lowPressure) || this
+					.isValidMetric(avg.heartrate)));
+			},
+			publishTrendStability(seq, daySummary, weekAvg) {
+				if (seq !== this._trendSeq) return;
+				if (daySummary) this.applyDaySummary(daySummary);
+				this.applyDayFromHome();
+				if (weekAvg) this.applyWeekAvg(weekAvg);
 			},
 			loadTrendStability() {
-				this.dayAvgHigh = null;
-				this.dayAvgLow = null;
-				this.dayAvgHr = null;
-				this.weekAvgHigh = null;
-				this.weekAvgLow = null;
-				this.weekAvgHr = null;
+				const userid = uni.getStorageSync('userid');
+				if (!userid || !uni.getStorageSync('token')) return;
+				const seq = (this._trendSeq || 0) + 1;
+				this._trendSeq = seq;
 				const ymd = this.localYmd();
 				const todayEnd = ymd + ' 23:59:59';
 				const weekStart = this.shiftYmd(6) + ' 00:00:00';
-				const userid = uni.getStorageSync('userid');
 				const typesIndex = Number(uni.getStorageSync('types_index') || 0);
 				const slaveSn = typesIndex == 1 ? '2' : '3';
 				const header = this.trendHeader();
@@ -923,26 +1157,29 @@
 					startTime: weekStart,
 					endTime: todayEnd
 				}, header).then(res => {
+					if (seq !== this._trendSeq) return;
 					const list = res && (Array.isArray(res.data) ? res.data : (Array.isArray(res.rows) ? res.rows :
 						[]));
+					let daySummary = null;
+					let weekFallback = null;
 					if (res && res.code == 200 && list.length) {
-						this.applyDaySummary(this.getLogSummary(this.pickTodayItem(list, ymd)));
-						this.fillHrSparkFromLogs(list);
-						if (!this.isValidMetric(this.weekAvgHigh)) {
-							this.weekAvgHigh = this.meanSummaries(list, 'highPressureAvg');
-						}
-						if (!this.isValidMetric(this.weekAvgLow)) {
-							this.weekAvgLow = this.meanSummaries(list, 'lowPressureAvg');
-						}
-						if (!this.isValidMetric(this.weekAvgHr)) {
-							this.weekAvgHr = this.meanSummaries(list, 'heartrateAvg');
-						}
+						daySummary = this.getLogSummary(this.pickTodayItem(list, ymd));
+						this.fillWeekSparkFromLogs(list);
+						weekFallback = {
+							highPressure: this.meanSummaries(list, 'highPressureAvg'),
+							lowPressure: this.meanSummaries(list, 'lowPressureAvg'),
+							heartrate: this.meanSummaries(list, 'heartrateAvg')
+						};
 					}
-					this.applyDayFromHome();
-					this.fetchWeekMinmax(userid, slaveSn, weekStart, todayEnd, header);
+					this.fetchWeekMinmax(userid, slaveSn, weekStart, todayEnd, header, (avg) => {
+						this.publishTrendStability(seq, daySummary, this.weekAvgHasValue(avg) ? avg :
+							weekFallback);
+					});
 				}).catch(() => {
-					this.applyDayFromHome();
-					this.fetchWeekMinmax(userid, slaveSn, weekStart, todayEnd, header);
+					if (seq !== this._trendSeq) return;
+					this.fetchWeekMinmax(userid, slaveSn, weekStart, todayEnd, header, (avg) => {
+						this.publishTrendStability(seq, null, avg);
+					});
 				});
 			},
 			isValidMetric(val) {
@@ -952,6 +1189,44 @@
 				const n = Number(s);
 				if (Number.isFinite(n) && n >= 999999990) return false;
 				return true;
+			},
+			normalizeDateLabel(val) {
+				const raw = String(val == null ? '' : val).trim();
+				if (!raw || raw === '-' || raw === '--' || raw === '--/--' || raw === '-/-') return '';
+				if (/^\d{1,2}\/\d{1,2}$/.test(raw)) {
+					const parts = raw.split('/');
+					return `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}`;
+				}
+				return raw;
+			},
+			parseTimeToMs(value) {
+				if (value == null || value === '') return NaN;
+				if (typeof value === 'number') {
+					return value < 10000000000 ? value * 1000 : value;
+				}
+				const raw = String(value).trim();
+				if (!raw) return NaN;
+				if (/^\d+$/.test(raw)) {
+					const n = Number(raw);
+					return n < 10000000000 ? n * 1000 : n;
+				}
+				const normalized = raw.replace(/T/i, ' ').replace(/-/g, '/');
+				const ms = new Date(normalized).getTime();
+				return Number.isFinite(ms) ? ms : NaN;
+			},
+			formatDateServer(value) {
+				if (value == null || value === '') return '';
+				const raw = String(value).trim();
+				const md = this.normalizeDateLabel(raw);
+				if (md && /^\d{2}\/\d{2}$/.test(md)) return md;
+				const wallMatch = raw.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+				if (wallMatch && !Number.isFinite(Number(value)) && !/[zZ]|[+-]\d{2}:?\d{2}$/.test(raw)) {
+					return `${wallMatch[2].padStart(2, '0')}/${wallMatch[3].padStart(2, '0')}`;
+				}
+				const ts = this.parseTimeToMs(value);
+				if (!Number.isFinite(ts) || ts <= 0) return '';
+				const chinaMd = getChinaTimeAllJSON(new Date(ts)).MD;
+				return this.normalizeDateLabel(chinaMd);
 			},
 			isValidRegisterVal(val) {
 				return val != null && val !== '' && val !== '-/-';
@@ -1020,14 +1295,25 @@
 				const low = uni.getStorageSync('lowPressure');
 				const pulse = uni.getStorageSync('pulse');
 				const spo2 = uni.getStorageSync('xueyang');
+				const height = uni.getStorageSync('home_height_cm');
 				if (this.isValidMetric(high)) this.highPressure = high;
 				if (this.isValidMetric(low)) this.lowPressure = low;
 				if (this.isValidMetric(pulse)) this.pulse = pulse;
 				if (this.isValidMetric(spo2)) this.spo2 = spo2;
+				if (this.isValidMetric(height)) this.heightVal = height;
+				const hrLabel = this.normalizeDateLabel(uni.getStorageSync('pulsetimes'));
+				const spo2Label = this.normalizeDateLabel(uni.getStorageSync('xueyangtimes'));
+				const bpLabel = this.normalizeDateLabel(uni.getStorageSync('xueyatimes'));
+				const heightLabel = this.normalizeDateLabel(uni.getStorageSync('home_height_times'));
+				if (hrLabel) this.hrDate = hrLabel;
+				if (spo2Label) this.spo2Date = spo2Label;
+				if (bpLabel) this.bpDate = bpLabel;
+				if (heightLabel) this.heightDate = heightLabel;
 				this.applyHomeSync();
 			},
-			applyHomeSync() {
+			applyHomeSync(options = {}) {
 				let changed = false;
+				const skip = (options && options.skip) || {};
 				const applyOne = (field, syncVal) => {
 					if (!this.isValidMetric(syncVal)) return;
 					const next = String(syncVal);
@@ -1036,16 +1322,40 @@
 						changed = true;
 					}
 				};
-				applyOne('highPressure', this.syncHighPressure);
-				applyOne('lowPressure', this.syncLowPressure);
-				applyOne('pulse', this.syncPulse);
+				const applyDate = (field, syncVal) => {
+					const label = this.normalizeDateLabel(syncVal);
+					if (!label) return;
+					if (String(this[field] || '') !== label) {
+						this[field] = label;
+						changed = true;
+					}
+				};
+				if (!skip.bp) {
+					applyOne('highPressure', this.syncHighPressure);
+					applyOne('lowPressure', this.syncLowPressure);
+					applyDate('bpDate', this.syncBpDate);
+				}
+				if (!skip.hr) {
+					applyOne('pulse', this.syncPulse);
+					applyDate('hrDate', this.syncHrDate);
+				}
+				if (!skip.spo2) {
+					applyOne('spo2', this.syncSpo2);
+					applyDate('spo2Date', this.syncSpo2Date);
+				}
+				if (!skip.height) {
+					applyOne('heightVal', this.syncHeight);
+					applyDate('heightDate', this.syncHeightDate);
+				}
 				if (changed && this.embedded) {
 					this.applyDayFromHome();
 				}
 			},
 			loadHomeMetrics() {
+				const userid = uni.getStorageSync('userid');
+				if (!userid || !uni.getStorageSync('token')) return;
 				this.$post(this.$url_APP_IP + this.$url_list_recipe, {
-					userId: uni.getStorageSync('userid')
+					userId: userid
 				}, {
 					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/x-www-form-urlencoded;'
@@ -1056,24 +1366,98 @@
 					const sn3 = data.filter(item => item.slaveSn === '3');
 					const latestBp = this.getLatestBloodPressurePair(sn2, sn3);
 					const latestHr = this.getLatestRegisterEntry(sn2, sn3, 'heartrate');
-					const latestO2 = this.getLatestRegisterEntry(sn2, sn3, 'oxygen');
+					// 血氧与 Main.pickLatestRecipeByRegister 一致：扫全部 slaveSn，避免非 2/3 时摘要空白
+					const latestO2Row = this.getLatestRegisterFromList(data, 'oxygen');
+					const latestO2 = latestO2Row ? {
+						value: this.isValidRegisterVal(latestO2Row.registerVal) ? latestO2Row.registerVal : '-/-',
+						time: Number(latestO2Row.updateTime) || 0
+					} : {
+						value: '-/-',
+						time: 0
+					};
+					const nowSec = Math.floor(Date.now() / 1000);
+					const toSec = (t) => {
+						const n = Number(t) || 0;
+						return n > 1e12 ? Math.floor(n / 1000) : Math.floor(n);
+					};
+					let preferLocalBp = false;
+					let preferLocalHr = false;
+					let preferLocalO2 = false;
 					if (this.isValidRegisterVal(latestBp.high) && this.isValidRegisterVal(latestBp.low)) {
-						this.highPressure = latestBp.high;
-						this.lowPressure = latestBp.low;
+						const bpLabel = this.formatDateServer(latestBp.time);
+						const localBpTs = toSec(uni.getStorageSync('bp_measure_ts'));
+						const serverBpSec = toSec(latestBp.time);
+						const bpProtectUntil = Number(uni.getStorageSync('bp_local_protect_until')) || 0;
+						const bpProtectActive = bpProtectUntil > Date.now();
+						const lastKnownServerBpTs = toSec(uni.getStorageSync('bp_server_ts'));
+						const serverBpNewerThanKnown = serverBpSec > 0 && serverBpSec > lastKnownServerBpTs + 30;
+						// 无刚测保护窗，或接口比已同步 server ts 更新 → 跟接口
+						preferLocalBp = !serverBpNewerThanKnown && bpProtectActive && localBpTs > 0 &&
+							(nowSec - localBpTs <= 90) && localBpTs + 30 > serverBpSec;
+						if (!preferLocalBp) {
+							this.highPressure = latestBp.high;
+							this.lowPressure = latestBp.low;
+						}
+						if (preferLocalBp) {
+							const localLabel = this.normalizeDateLabel(uni.getStorageSync('xueyatimes'));
+							if (localLabel) this.bpDate = localLabel;
+							else if (bpLabel) this.bpDate = bpLabel;
+						} else if (bpLabel) {
+							this.bpDate = bpLabel;
+							uni.setStorageSync('xueyatimes', bpLabel);
+						}
 					}
 					if (this.isValidRegisterVal(latestHr.value)) {
-						this.pulse = latestHr.value;
+						const localHrTs = toSec(uni.getStorageSync('pulse_measure_ts'));
+						const serverHrSec = toSec(latestHr.time);
+						preferLocalHr = localHrTs > 0 && (nowSec - localHrTs <= 90) &&
+							localHrTs + 30 > serverHrSec;
+						if (!preferLocalHr) {
+							this.pulse = latestHr.value;
+							const hrLabel = this.formatDateServer(latestHr.time) ||
+								this.normalizeDateLabel(uni.getStorageSync('pulsetimes'));
+							if (hrLabel) this.hrDate = hrLabel;
+						} else {
+							const hrLabel = this.normalizeDateLabel(uni.getStorageSync('pulsetimes')) ||
+								this.formatDateServer(latestHr.time);
+							if (hrLabel) this.hrDate = hrLabel;
+						}
 					}
 					if (this.isValidRegisterVal(latestO2.value)) {
-						this.spo2 = latestO2.value;
+						const localO2Ts = toSec(uni.getStorageSync('oxygen_measure_ts'));
+						const serverO2Sec = toSec(latestO2.time);
+						preferLocalO2 = localO2Ts > 0 && (nowSec - localO2Ts <= 90) &&
+							localO2Ts + 30 > serverO2Sec;
+						if (!preferLocalO2) {
+							this.spo2 = latestO2.value;
+							const spo2Label = this.formatDateServer(latestO2.time) ||
+								this.normalizeDateLabel(uni.getStorageSync('xueyangtimes'));
+							if (spo2Label) this.spo2Date = spo2Label;
+						}
 					} else if (this.isValidMetric(uni.getStorageSync('xueyang'))) {
 						this.spo2 = uni.getStorageSync('xueyang');
+						const spo2Label = this.normalizeDateLabel(uni.getStorageSync('xueyangtimes'));
+						if (spo2Label) this.spo2Date = spo2Label;
 					}
 					const heightRow = this.getLatestRegisterFromList(data, 'height');
+					let preferLocalHeight = false;
 					if (heightRow && this.isValidRegisterVal(heightRow.registerVal)) {
 						this.heightVal = heightRow.registerVal;
+						const heightLabel = this.formatDateServer(heightRow.updateTime);
+						if (heightLabel) this.heightDate = heightLabel;
+						preferLocalHeight = false;
+					} else {
+						preferLocalHeight = true;
 					}
-					this.applyHomeSync();
+					// 仅把「本地刚测优先」的字段从 Main sync 盖回；接口已刷新的字段不要被旧 props 打回
+					this.applyHomeSync({
+						skip: {
+							bp: !preferLocalBp,
+							hr: !preferLocalHr,
+							spo2: !preferLocalO2,
+							height: !preferLocalHeight
+						}
+					});
 				}).catch(() => {});
 			},
 			onTrendTap() {},
@@ -1361,6 +1745,14 @@
 		line-height: 1.2;
 	}
 
+	.metric-date {
+		margin-top: 2px;
+		font-size: 11px;
+		font-weight: 700;
+		color: #1A1C1E;
+		line-height: 1.2;
+	}
+
 	.metric-status-row {
 		display: flex;
 		flex-direction: row;
@@ -1467,9 +1859,9 @@
 
 	.sparkline {
 		flex: 1;
-		height: 36px;
-		min-width: 0;
-		width: 0;
+		height: 44px;
+		min-width: 80px;
+		width: auto;
 	}
 
 	.trend-status {

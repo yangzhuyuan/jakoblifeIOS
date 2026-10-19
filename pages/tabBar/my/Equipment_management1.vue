@@ -1,5 +1,5 @@
 <template>
-	<view class="pagsin" :class="{ 'pagsin-empty': list.length === 0 }">
+	<view class="pagsin" :class="{ 'pagsin-empty': list.length === 0, 'pagsin-filled': list.length > 0 }">
 		<view v-if="list.length === 0" class="empty-page">
 			<view class="hs-header">
 				<view class="empty-header">
@@ -34,31 +34,61 @@
 			</view>
 		</view>
 		<template v-else>
-			<view class="list-container">
-				<view class="list-item">
-					<view class="item-content" @click="btn_add">
-						<image lazy-load style="width: 68px; height: 68px;" :src="imageurl"></image>
+			<view class="filled-page">
+				<view class="hs-header">
+					<view class="empty-header">
+						<text class="empty-title">{{ $t('我的设备') }}</text>
+						<text class="empty-subtitle">{{ $t('连接并管理您的Jakoblife设备') }}</text>
 					</view>
+					<image class="hero-img" src="/static/page_icon/app_icon_all.jpg" mode="aspectFit"></image>
 				</view>
-				<view class="list-item" v-for="(item, index) in list" :key="index" :class="{ active: act === index }"
-					@click="checkClick(index, item)">
-					<view class="item-content">
-						<image lazy-load class="imagesd" mode="aspectFit" :src="getDeviceImage(item.deviceModelId)">
-						</image>
-						<view class="xinghao">{{$t('型号') + (item.name==="BPW6"?"U19M":item.name)}}</view>
-						<view style="font-size: 10px; padding-bottom: 5px; text-align: center;">SN:{{item.deviceSn}}
+				<view class="filled-card">
+					<view class="add-device-btn" @click="btn_add">
+						<view class="add-icon-circle">
+							<text class="add-plus">+</text>
 						</view>
-						<view v-if="item.name==='JL-S260'||item.name==='JL-S100'"></view>
-						<view v-else class="device-ble-status-badge"
-							:class="isDeviceBleConnected(item.mac) ? 'is-on' : 'is-off'">
-							{{ isDeviceBleConnected(item.mac) ? $t('设备已连接') : $t('设备未连接') }}
+						<text class="add-device-text">{{ $t('添加设备') }}</text>
+					</view>
+					<view class="connection-tip">
+						<view class="tip-icon-wrap">
+							<image class="tip-bluetooth-icon" src="/static/page_icon/shebei_2.png" mode="aspectFit">
+							</image>
+						</view>
+						<view class="tip-content">
+							<text class="tip-title">{{ $t('连接提示') }}</text>
+							<text class="tip-desc">{{ $t('请开启蓝牙并将设备靠近手机') }}</text>
+						</view>
+					</view>
+					<view class="list-container">
+						<view class="list-item" v-for="(item, index) in list" :key="getDeviceUniqueKey(item) || index"
+							:class="{ active: act === index }" @click="checkClick(index, item)">
+							<view class="item-content">
+								<image lazy-load class="imagesd"
+									:class="{ 'imagesd-compact': isWifiSettableDevice(item) }" mode="aspectFit"
+									:src="getDeviceImage(item.deviceModelId)">
+								</image>
+								<view class="xinghao">{{$t('型号') + (item.name==="BPW6"?"U19M/U16H":item.name)}}</view>
+								<view style="font-size: 10px; padding-bottom: 5px; text-align: center;">
+									SN:{{item.deviceSn}}
+								</view>
+								<view v-if="item.name==='JL-S260'||item.name==='JL-S100'||item.name==='ZK-B872B'">
+								</view>
+								<view v-else class="device-ble-status-badge"
+									:class="isDeviceBleConnected(item.mac, item) ? 'is-on' : 'is-off'">
+									{{ isDeviceBleConnected(item.mac, item) ? $t('设备已连接') : $t('设备未连接') }}
+								</view>
+								<view v-if="isWifiSettableDevice(item)" class="wifi-set-btn"
+									@tap.stop="onSetWifiClick(item)">
+									{{ $t('设置wifi') }}
+								</view>
+							</view>
 						</view>
 					</view>
 				</view>
 			</view>
 			<view class="bottom-bar">
 				<button plain="true" class="button_bg_color" :style="{ background: act === -1 ? '#DBDBDB' : '#3298F7' }"
-					@tap="deleteDevice()">{{$t('删除该设备')}}
+					@tap="deleteDevice()">{{$t('移除设备')}}
 				</button>
 			</view>
 		</template>
@@ -67,11 +97,13 @@
 
 <script>
 	import {
-		mapMutations
+		mapMutations,
+		mapState
 	} from 'vuex';
 	import BluetoothManager from '../../api/BluetoothManager.js';
 	import {
-		invalidateQxEmotionBindingCache
+		invalidateQxEmotionBindingCache,
+		QX_BPW6_EMOTION_MEASURE_KEY
 	} from '../../api/qxBleAlignedSchedule.js';
 	export default {
 		data() {
@@ -88,29 +120,76 @@
 				bleConnectionStateHandler: null,
 				bleListenPageActive: false,
 				bleStatusPollTimer: null,
+				_bpw6LinkBaselineReady: false,
 			};
 		},
 		onShow() {
+			try {
+				uni.removeStorageSync('wifi_rebind_hold_mac')
+				uni.removeStorageSync('wifi_rebind_hold_ids')
+			} catch (e) {}
 			this.act = -1
+			// 每次进入先建基线，避免首轮「空→已连」误发 link-restored 打断首页已成功会话
+			this._bpw6LinkBaselineReady = false;
 			this.queryDevices();
 			this.refreshBleConnectionState();
-			this.registerBleConnectionListener();
+			// 仅轮询连接态，不注册 onBLEConnectionStateChange，避免覆盖首页回连监听
+			this.bleListenPageActive = true;
+			this.startBleStatusPoll();
+			this.registerAdapterStatusListener();
 			uni.setNavigationBarTitle({
 				title: this.$t('设备管理')
 			});
 		},
 		onHide() {
-			this.unregisterBleConnectionListener();
+			this.bleListenPageActive = false;
+			this._bpw6LinkBaselineReady = false;
+			this.stopBleStatusPoll();
+			this.unregisterAdapterStatusListener();
 		},
 		onUnload() {
-			this.unregisterBleConnectionListener();
+			this.bleListenPageActive = false;
+			this._bpw6LinkBaselineReady = false;
+			this.stopBleStatusPoll();
+			this.unregisterAdapterStatusListener();
 		},
-
+		computed: {
+			...mapState(['acktypes6']),
+		},
 		methods: {
 			...mapMutations(['setacktypes', 'setacktypes6']),
 			normalizeBleDeviceId(id) {
 				if (!id) return '';
 				return String(id).trim().toUpperCase();
+			},
+			/** 宽松 BLE id：去冒号/横杠，兼容服务端 mac 与系统 deviceId 格式差 */
+			normalizeBleDeviceIdLoose(id) {
+				return this.normalizeBleDeviceId(id).replace(/[:\-]/g, '');
+			},
+			isSameBleDeviceId(a, b) {
+				const na = this.normalizeBleDeviceId(a);
+				const nb = this.normalizeBleDeviceId(b);
+				if (na && nb && na === nb) return true;
+				const la = this.normalizeBleDeviceIdLoose(a);
+				const lb = this.normalizeBleDeviceIdLoose(b);
+				return !!(la && lb && la === lb);
+			},
+			/** 解绑时用于清理蓝牙搜索「已连接过」缓存的广播名候选 */
+			getListdadsaNameAliases(deviceModelId) {
+				const map = {
+					'20000': ['EL2', 'JL-S260'],
+					'20001': ['EL2', 'JL-S100'],
+					'10000': ['TSB-617B-T'],
+					'10001': ['JL-BP68W'],
+					'10002': ['JL-BP67W'],
+					'10003': ['JL-BP68G'],
+					'10004': ['JL-BP67G'],
+					'10005': ['ZK-B872B', 'ZK-B872', 'ZK-872', 'ZK872', 'ZK872B'],
+					'10006': ['ZK-B872B', 'ZK-B872', 'ZK-872'],
+					'30000': ['BPW1'],
+					'30001': ['BPW6', 'U19M', 'U16H']
+				};
+				return map[String(deviceModelId)] || [];
 			},
 			buildConnectedBleMacSet(devices) {
 				const set = {};
@@ -121,7 +200,52 @@
 				return set;
 			},
 			setConnectedBleMacSet(set) {
+				const prev = this.connectedBleMacSet || {};
 				this.connectedBleMacSet = set;
+				this.emitBpw6LinkChangeIfNeeded(prev, set);
+				this.emitBpw6HandshakeIfStuck(set);
+			},
+			/** 设备页轮询到 BPW6 断/连：通知首页做回连握手（不抢 BLE 连接监听） */
+			emitBpw6LinkChangeIfNeeded(prevSet, nextSet) {
+				const mac = this.normalizeBleDeviceId(uni.getStorageSync('BPW6devicemac') || this.mac);
+				if (!mac) return;
+				// 首轮只记基线：进入页面时 connectedBleMacSet 为空，会把已连接误判成「恢复」
+				if (!this._bpw6LinkBaselineReady) {
+					this._bpw6LinkBaselineReady = true;
+					return;
+				}
+				const was = !!(prevSet && prevSet[mac]);
+				const now = !!(nextSet && nextSet[mac]);
+				if (was === now) return;
+				try {
+					if (!now) {
+						uni.$emit('bpw6-link-lost', {
+							mac,
+							source: 'equipment-poll'
+						});
+					} else {
+						uni.$emit('bpw6-link-restored', {
+							mac,
+							source: 'equipment-poll'
+						});
+					}
+				} catch (e) {}
+			},
+			/** 系统已连但业务未握手：节流催促首页补握手（不改已连接成功逻辑） */
+			emitBpw6HandshakeIfStuck(nextSet) {
+				const mac = this.normalizeBleDeviceId(uni.getStorageSync('BPW6devicemac') || this.mac);
+				if (!mac || !nextSet || !nextSet[mac]) return;
+				const ackOk = this.acktypes6 === '1' || this.acktypes6 === 1;
+				if (ackOk) return;
+				const now = Date.now();
+				if (this._bpw6StuckHandshakeEmitAt && (now - this._bpw6StuckHandshakeEmitAt) < 4000) return;
+				this._bpw6StuckHandshakeEmitAt = now;
+				try {
+					uni.$emit('bpw6-link-need-handshake', {
+						mac,
+						source: 'equipment-poll-stuck'
+					});
+				} catch (e) {}
 			},
 			applyBleConnectionChange(change) {
 				if (!change || !change.deviceId) return;
@@ -150,37 +274,25 @@
 					this.bleStatusPollTimer = null;
 				}
 			},
-			registerBleConnectionListener() {
-				const canOff = typeof uni.offBLEConnectionStateChange === 'function';
-				if (canOff) {
-					this.unregisterBleConnectionListener();
-				}
-				this.bleListenPageActive = true;
-				this.startBleStatusPoll();
-				if (this.bleConnectionStateHandler) {
-					return;
-				}
-				const self = this;
-				this.bleConnectionStateHandler = function equipmentManagement1BleConnectionStateChange(change) {
-					if (!self.bleListenPageActive) return;
-					self.applyBleConnectionChange(change);
-					self.refreshBleConnectionState();
+			registerAdapterStatusListener() {
+				if (this._onBleAdapterUnavailable) return;
+				this._onBleAdapterUnavailable = () => {
+					this.setConnectedBleMacSet({});
 				};
-				if (typeof uni.onBLEConnectionStateChange === 'function') {
-					uni.onBLEConnectionStateChange(this.bleConnectionStateHandler);
-				}
+				this._onBleAdapterAvailable = () => {
+					this.refreshBleConnectionState();
+				};
+				uni.$on('ble-adapter-unavailable', this._onBleAdapterUnavailable);
+				uni.$on('ble-adapter-available', this._onBleAdapterAvailable);
 			},
-			unregisterBleConnectionListener() {
-				this.bleListenPageActive = false;
-				this.stopBleStatusPoll();
-				if (!this.bleConnectionStateHandler) return;
-				if (typeof uni.offBLEConnectionStateChange === 'function') {
-					try {
-						uni.offBLEConnectionStateChange(this.bleConnectionStateHandler);
-					} catch (e) {
-						console.log('[Equipment1] offBLEConnectionStateChange', e);
-					}
-					this.bleConnectionStateHandler = null;
+			unregisterAdapterStatusListener() {
+				if (this._onBleAdapterUnavailable) {
+					uni.$off('ble-adapter-unavailable', this._onBleAdapterUnavailable);
+					this._onBleAdapterUnavailable = null;
+				}
+				if (this._onBleAdapterAvailable) {
+					uni.$off('ble-adapter-available', this._onBleAdapterAvailable);
+					this._onBleAdapterAvailable = null;
 				}
 			},
 			refreshBleConnectionState() {
@@ -195,13 +307,37 @@
 					});
 				};
 				uni.openBluetoothAdapter({
-					success: queryConnected,
-					fail: queryConnected
+					success: () => {
+						if (this._bleAdapterDown) {
+							this._bleAdapterDown = false;
+							try {
+								uni.$emit('ble-adapter-restored');
+							} catch (e) {}
+						}
+						uni.getBluetoothAdapterState({
+							success: (state) => {
+								if (!state.available) {
+									this.setConnectedBleMacSet({});
+									return;
+								}
+								queryConnected();
+							},
+							fail: queryConnected
+						});
+					},
+					fail: () => {
+						this._bleAdapterDown = true;
+						this.setConnectedBleMacSet({});
+					}
 				});
 			},
-			isDeviceBleConnected(mac) {
+			isDeviceBleConnected(mac, item) {
 				const key = this.normalizeBleDeviceId(mac);
-				return !!(key && this.connectedBleMacSet[key]);
+				if (!key || !this.connectedBleMacSet[key]) return false;
+				if (item && (item.name === 'BPW6' || String(item.deviceModelId) === '30001')) {
+					return this.acktypes6 === '1' || this.acktypes6 === 1;
+				}
+				return true;
 			},
 			async disconnectAll(mac) {
 				this.bluetoothManager = new BluetoothManager();
@@ -221,6 +357,192 @@
 				this.mac = item.mac;
 				this.deviceModelId = item.deviceModelId;
 				this.refreshBleConnectionState();
+			},
+			isWifiSettableDevice(item) {
+				if (!item) return false;
+				const name = item.name || '';
+				const modelId = item.deviceModelId != null ? String(item.deviceModelId) : '';
+				return name === 'JL-BP68W' || name === 'JL-BP67W' || name === 'ZK-B872' || name === 'ZK-B872B' ||
+					name === 'ZK-872' || name === 'ZK872' ||
+					modelId === '10001' || modelId === '10002' || modelId === '10005';
+			},
+			onSetWifiClick(item) {
+				if (!this.isWifiSettableDevice(item)) {
+					return;
+				}
+				const deviceId = item && item.mac ? String(item.mac) : '';
+				const sn = item.deviceSn != null ? String(item.deviceSn) : '';
+				const modelId = item.deviceModelId != null ? String(item.deviceModelId) : '';
+				const modelname = item && item.name ? String(item.name) : '';
+				uni.navigateTo({
+					url: '../../Bind/Bing_xueya/Bing_xueya?fromManage=1' +
+						'&SELECT_TYPE=0' +
+						'&sn=' + encodeURIComponent(sn) +
+						'&modelId=' + encodeURIComponent(modelId) +
+						'&modelname=' + encodeURIComponent(modelname) +
+						'&deviceId=' + encodeURIComponent(deviceId)
+				});
+			},
+			disconnectBleKeepBinding(mac, modelId) {
+				const loose = (id) => String(id || '').trim().toUpperCase().replace(/[:\-]/g, '');
+				const macLoose = loose(mac);
+				const aliases = this.getListdadsaNameAliases(modelId).map((n) => String(n).toUpperCase());
+				const isTargetName = (name) => {
+					const raw = String(name || '').trim().toUpperCase();
+					if (!raw) return false;
+					for (let i = 0; i < aliases.length; i++) {
+						if (aliases[i] && raw.indexOf(aliases[i]) >= 0) return true;
+					}
+					return false;
+				};
+				const ids = [];
+				const push = (id) => {
+					const value = String(id || '').trim();
+					if (value && ids.indexOf(value) < 0) ids.push(value);
+				};
+				const saveHold = () => {
+					try {
+						uni.setStorageSync('wifi_rebind_hold_mac', mac || '');
+						uni.setStorageSync('wifi_rebind_hold_ids', ids.slice());
+					} catch (e) {}
+				};
+				const forceDrop = (deviceId) => {
+					const id = String(deviceId || '').trim();
+					if (!/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i.test(id)) return;
+					uni.closeBLEConnection({
+						deviceId: id,
+						complete: () => {}
+					});
+				};
+				push(mac);
+				try {
+					const list = uni.getStorageSync('listdadsa') || [];
+					if (Array.isArray(list)) {
+						list.forEach((item) => {
+							if (!item || !item.deviceId) return;
+							if ((macLoose && loose(item.deviceId) === macLoose) || isTargetName(item.name || item
+									.localName)) {
+								push(item.deviceId);
+							}
+						});
+					}
+				} catch (e) {}
+				saveHold();
+				ids.forEach(forceDrop);
+				uni.$emit('wifi-rebind-disconnect', {
+					mac: mac,
+					bleIds: ids.slice()
+				});
+				uni.getConnectedBluetoothDevices({
+					services: ['0000FFFF-0000-1000-8000-00805F9B34FB'],
+					success: (res) => {
+						const devices = (res && res.devices) || [];
+						devices.forEach((item) => {
+							if (!item || !item.deviceId) return;
+							push(item.deviceId);
+							forceDrop(item.deviceId);
+						});
+						saveHold();
+						uni.$emit('wifi-rebind-disconnect', {
+							mac: mac,
+							bleIds: ids.slice()
+						});
+					}
+				});
+			},
+			openWifiSettingPage(item) {
+				const deviceId = item && item.mac ? String(item.mac) : '';
+				const sn = item.deviceSn != null ? String(item.deviceSn) : '';
+				const modelId = item.deviceModelId != null ? String(item.deviceModelId) : '';
+				const goWifiPage = (channels) => {
+					const ch = channels || {
+						deviceId: deviceId,
+						serviceId: '',
+						uuid: '',
+						notifyuuid: ''
+					};
+					uni.navigateTo({
+						url: '../../Bind/Bing_xueya/Bing_xueya_2?deviceId=' + encodeURIComponent(ch.deviceId ||
+								deviceId) +
+							'&serviceId=' + encodeURIComponent(ch.serviceId || '') +
+							'&uuid=' + encodeURIComponent(ch.uuid || '') +
+							'&notifyuuid=' + encodeURIComponent(ch.notifyuuid || '') +
+							'&sn=' + encodeURIComponent(sn) +
+							'&modelId=' + encodeURIComponent(modelId) +
+							'&SELECT_TYPE=0&fromManage=1'
+					});
+				};
+				// 无 mac 时仍可进入设置页（先提示后跳转）
+				if (!deviceId) {
+					goWifiPage(null);
+					return;
+				}
+				uni.showLoading({
+					title: this.$t('连接中'),
+					mask: true
+				});
+				this.resolveWifiBleChannels(deviceId, (ok, channels) => {
+					uni.hideLoading();
+					// 未连上蓝牙也可跳转；通道拿不到就带空参数进入
+					goWifiPage(ok && channels ? channels : null);
+				});
+			},
+			resolveWifiBleChannels(deviceId, callback) {
+				const that = this;
+				uni.getBLEDeviceServices({
+					deviceId: deviceId,
+					success: (res) => {
+						const services = (res && res.services) || [];
+						if (!services.length) {
+							callback && callback(false);
+							return;
+						}
+						that.findWifiBleCharacteristics(deviceId, services, 0, callback);
+					},
+					fail: () => {
+						callback && callback(false);
+					}
+				});
+			},
+			findWifiBleCharacteristics(deviceId, services, index, callback) {
+				const that = this;
+				if (!services || index >= services.length) {
+					callback && callback(false);
+					return;
+				}
+				const serviceId = services[index].uuid;
+				uni.getBLEDeviceCharacteristics({
+					deviceId: deviceId,
+					serviceId: serviceId,
+					success: (res) => {
+						const list = (res && res.characteristics) || [];
+						let writeUuid = '';
+						let notifyUuid = '';
+						for (let i = 0; i < list.length; i++) {
+							const item = list[i];
+							const props = item.properties || {};
+							if (props.write || props.writeNoResponse) {
+								writeUuid = item.uuid;
+							}
+							if (props.notify || props.indicate) {
+								notifyUuid = item.uuid;
+							}
+						}
+						if (writeUuid && notifyUuid) {
+							callback && callback(true, {
+								deviceId: deviceId,
+								serviceId: serviceId,
+								uuid: writeUuid,
+								notifyuuid: notifyUuid
+							});
+							return;
+						}
+						that.findWifiBleCharacteristics(deviceId, services, index + 1, callback);
+					},
+					fail: () => {
+						that.findWifiBleCharacteristics(deviceId, services, index + 1, callback);
+					}
+				});
 			},
 			getDeviceImage(deviceModelId) {
 				const devicePictures = {
@@ -329,6 +651,16 @@
 					this.calculateChecksumsss1(this.mac);
 					this.setacktypes6("0")
 					uni.removeStorageSync('BPW6devicemac');
+					try {
+						uni.setStorageSync(QX_BPW6_EMOTION_MEASURE_KEY, false)
+					} catch (e) {}
+					this.clearBpw6LocalReconnectCaches(this.mac);
+					try {
+						uni.$emit('bpw6-device-unbound', {
+							mac: this.mac,
+							deviceSn: this.deviceSn
+						});
+					} catch (e) {}
 				}
 				// 仅当本地缓存 SN 与当前解绑设备一致时清除，避免上传仍带旧 SN
 				if (uni.getStorageSync('deviceSn') === this.deviceSn) {
@@ -422,8 +754,17 @@
 					}
 				});
 			},
+			getDeviceUniqueKey(item) {
+				if (!item) return '';
+				const mac = this.normalizeBleDeviceId(item.mac);
+				const sn = item.deviceSn != null ? String(item.deviceSn).trim() : '';
+				if (mac || sn) {
+					return `${mac}|${sn}`;
+				}
+				return item.name || '';
+			},
 			removeDuplicateDeviceNames() {
-				this.list = [...new Map(this.list.map(item => [item.name, item])).values()];
+				this.list = [...new Map(this.list.map(item => [this.getDeviceUniqueKey(item), item])).values()];
 			},
 			clearHeartbeatInterval() {
 				if (Vue.prototype.$globalTimers.heartbeatInterval) {
@@ -454,6 +795,11 @@
 						invalidateQxEmotionBindingCache(deviceModelId, mac);
 						this.showUnbindSuccessToast();
 						this.removeDeviceFromStorageSync(deviceModelId, mac);
+						if (String(deviceModelId) === '10005') {
+							// 不关适配器。iOS 上紧接着 closeBluetoothAdapter 会让真正的断开变成 not init，控制中心仍显示已连接
+							this.closeZk872BleAfterUnbind(mac);
+							return;
+						}
 						this.disconnectAll(mac);
 						this.closeBLEConnection(mac);
 					} else {
@@ -479,19 +825,70 @@
 						keys
 					}) => {
 						if (!keys.includes('listdadsa')) return;
-						const uniqueArr = uni.getStorageSync('listdadsa');
-						const isWeightScale = deviceModelId === '20000' || deviceModelId === '20001';
-						const deviceIndex = isWeightScale ?
-							uniqueArr.findIndex(item => item.name === 'EL2' || item.deviceId === mac) :
-							uniqueArr.findIndex(item => item.deviceId === mac);
-						if (deviceIndex !== -1) uniqueArr.splice(deviceIndex, 1);
-						if (uniqueArr.length === 0) {
+						const raw = uni.getStorageSync('listdadsa');
+						if (!Array.isArray(raw)) {
 							uni.removeStorageSync('listdadsa');
-						} else {
-							uni.setStorageSync('listdadsa', uniqueArr);
+							return;
+						}
+						const aliases = this.getListdadsaNameAliases(deviceModelId).map((n) => String(n)
+							.toUpperCase());
+						const isWeightScale = deviceModelId === '20000' || deviceModelId === '20001';
+						const matchById = (item) => !!(item && mac && this.isSameBleDeviceId(item.deviceId,
+							mac));
+						const matchByName = (item) => {
+							if (!item || !item.name || !aliases.length) return false;
+							return aliases.includes(String(item.name).trim().toUpperCase());
+						};
+						// 体重秤保留原 EL2 名匹配；其它型号优先 deviceId（含格式归一）
+						let next = raw.filter((item) => {
+							if (matchById(item)) return false;
+							if (isWeightScale && matchByName(item)) return false;
+							return true;
+						});
+						// deviceId 对不上（常见 iOS UUID vs 服务端 mac）且该型号在历史里仅 1 条：按名清掉，避免解绑后仍显示
+						if (next.length === raw.length && aliases.length) {
+							const nameHits = next.filter(matchByName);
+							if (nameHits.length === 1) {
+								const hitId = nameHits[0] && nameHits[0].deviceId;
+								next = next.filter((item) => !(item && this.isSameBleDeviceId(item.deviceId,
+									hitId)));
+							}
+						}
+						if (next.length === 0) {
+							uni.removeStorageSync('listdadsa');
+						} else if (next.length !== raw.length) {
+							uni.setStorageSync('listdadsa', next);
 						}
 					}
 				});
+			},
+			/** 解绑 BPW6：清心跳回连用的本地 mac 列表，避免首页继续连已解绑设备 */
+			clearBpw6LocalReconnectCaches(mac) {
+				const target = this.normalizeBleDeviceId(mac);
+				const targetLoose = this.normalizeBleDeviceIdLoose(mac);
+				const stripList = (key) => {
+					const raw = uni.getStorageSync(key);
+					if (!Array.isArray(raw) || !raw.length) return;
+					const next = raw.filter((entry) => {
+						const id = (entry && typeof entry === 'object') ? entry.deviceId : entry;
+						const norm = this.normalizeBleDeviceId(id);
+						if (target && norm === target) return false;
+						const loose = this.normalizeBleDeviceIdLoose(id);
+						if (targetLoose && loose && loose === targetLoose) return false;
+						return true;
+					});
+					if (next.length) {
+						uni.setStorageSync(key, next);
+					} else {
+						uni.removeStorageSync(key);
+					}
+				};
+				stripList('deviceList');
+				stripList('devicdsdmac');
+				stripList('devicdsdmac1');
+				stripList('listdadsa');
+				// listdadsa 存的是对象：再按型号名兜底清一次（仅当唯一命中）
+				this.removeDeviceFromStorageSync('30001', mac);
 			},
 			closeBLEConnection(mac) {
 				uni.closeBLEConnection({
@@ -499,6 +896,79 @@
 					success: () => {}
 				});
 				uni.closeBluetoothAdapter();
+			},
+			closeZk872BleAfterUnbind(mac) {
+				const ids = [];
+				const push = (id) => {
+					const value = String(id || '').trim();
+					if (value && ids.indexOf(value) < 0) ids.push(value);
+				};
+				const loose = (id) => String(id || '').trim().toUpperCase().replace(/[:\-]/g, '');
+				const macLoose = loose(mac);
+				const isZkName = (name) => {
+					const n = String(name || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+					return n.indexOf('ZKB872') >= 0 || n.indexOf('ZK872') >= 0;
+				};
+				push(mac);
+				try {
+					const list = uni.getStorageSync('listdadsa') || [];
+					if (Array.isArray(list)) {
+						list.forEach((item) => {
+							if (!item || !item.deviceId) return;
+							if ((macLoose && loose(item.deviceId) === macLoose) || isZkName(item.name || item
+									.localName)) {
+								push(item.deviceId);
+							}
+						});
+					}
+				} catch (e) {}
+				const closeId = (deviceId) => {
+					uni.closeBLEConnection({
+						deviceId: deviceId,
+						complete: () => {}
+					});
+				};
+				const stripKey = (key) => {
+					const raw = uni.getStorageSync(key);
+					if (!Array.isArray(raw) || !raw.length) return;
+					const next = raw.filter((entry) => {
+						const id = (entry && typeof entry === 'object') ? entry.deviceId : entry;
+						return !(macLoose && loose(id) === macLoose);
+					});
+					if (next.length) uni.setStorageSync(key, next);
+					else uni.removeStorageSync(key);
+				};
+				stripKey('deviceList');
+				stripKey('devicdsdmac');
+				stripKey('devicdsdmac1');
+				const publish = () => {
+					uni.$emit('zk872-device-unbound', {
+						mac: mac,
+						bleIds: ids.slice()
+					});
+				};
+				publish();
+				ids.forEach(closeId);
+				const pullConnected = () => {
+					uni.openBluetoothAdapter({
+						complete: () => {
+							uni.getConnectedBluetoothDevices({
+								services: ['0000FFFF-0000-1000-8000-00805F9B34FB'],
+								success: (res) => {
+									const devices = (res && res.devices) || [];
+									devices.forEach((item) => {
+										if (!item || !item.deviceId) return;
+										push(item.deviceId);
+										closeId(item.deviceId);
+									});
+									publish();
+								}
+							});
+						}
+					});
+				};
+				pullConnected();
+				setTimeout(pullConnected, 600);
 			},
 			handleUnbindFail() {
 				uni.showToast({
@@ -575,15 +1045,28 @@
 		color: black;
 	}
 
-	.pagsin-empty {
+	.pagsin-empty,
+	.pagsin-filled {
 		padding-top: 0;
 		background: #f4f7fb;
 	}
 
-	.empty-page {
+	.empty-page,
+	.filled-page {
 		min-height: 100vh;
 		padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
 		box-sizing: border-box;
+	}
+
+	.filled-page {
+		padding-bottom: calc(120px + env(safe-area-inset-bottom));
+	}
+
+	.filled-card {
+		background: #ffffff;
+		border-radius: 20px;
+		padding: 20px 16px 16px;
+		box-shadow: 0 2px 12px rgba(26, 43, 74, 0.06);
 	}
 
 	.empty-header {
@@ -626,7 +1109,7 @@
 		background: #ffffff;
 		border-radius: 20px;
 		padding: 24px 20px 20px;
-		box-shadow: 0 2px 12px rgba(26, 43, 74, 0.06);
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.empty-illustration {
@@ -662,6 +1145,7 @@
 		background: #3298F7;
 		border-radius: 24px;
 		margin-bottom: 16px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.add-icon-circle {
@@ -696,6 +1180,7 @@
 		background: #edf6ff;
 		border-radius: 14px;
 		padding: 14px;
+		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
 	.tip-icon-wrap {
@@ -771,16 +1256,19 @@
 	.list-container {
 		display: grid;
 		grid-template-columns: repeat(2, 1fr);
-		padding: 0 10px 160px 10px;
+		padding: 16px 0 0;
 		justify-content: space-between;
+		gap: 20px;
 	}
 
 	.list-item {
-		background-color: white;
-		border-radius: 20px;
-		margin: 5px;
-		padding: 5px;
+		background-color: #f7f9fc;
+		border-radius: 16px;
+		margin: 0;
+		padding: 8px;
 		box-sizing: border-box;
+		box-shadow: none;
+		border: 1px solid #e8eef5;
 		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
 	}
 
@@ -794,12 +1282,30 @@
 		justify-content: center;
 		align-items: center;
 		height: 200px;
+		box-sizing: border-box;
+	}
+
+	.wifi-set-btn {
+		margin-top: 4px;
+		padding: 3px 10px;
+		font-size: 11px;
+		color: #3298F7;
+		border: 1px solid #3298F7;
+		border-radius: 12px;
+		background: #fff;
+		line-height: 1.2;
+		flex-shrink: 0;
 	}
 
 	.imagesd {
 		width: 100%;
 		object-fit: contain;
 		margin-top: 10px;
+	}
+
+	.imagesd-compact {
+		max-height: 88px;
+		margin-top: 6px;
 	}
 
 	.xinghao {
@@ -827,12 +1333,15 @@
 
 	.bottom-bar {
 		width: 100vw;
-		height: 100px;
+		height: auto;
 		position: fixed;
 		bottom: 0;
+		left: 0;
 		display: flex;
 		flex-direction: column;
-		padding: 40rpx 0 20px;
+		padding: 12px 0 calc(20px + env(safe-area-inset-bottom));
+		background: linear-gradient(180deg, rgba(244, 247, 251, 0) 0%, #f4f7fb 28%);
+		box-sizing: border-box;
 	}
 
 	.button_bg_color {
@@ -840,13 +1349,13 @@
 		justify-content: center;
 		align-items: center;
 		width: auto;
-		margin: 0 20px;
+		margin: 0 16px;
 		height: 48px;
 		font-size: 16px;
 		font-weight: 600;
 		color: white !important;
-		border-radius: 100px;
+		border-radius: 24px;
 		border: none !important;
-		box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4);
+		box-shadow: none;
 	}
 </style>

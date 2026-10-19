@@ -11,10 +11,11 @@
 			{{$t('体脂秤注意事项')}}
 		</view>
 		<view v-else-if="modelIdtype === ''"
-			style="color: black; margin: 10px 20px 0 20px;font-size: 14px; font-weight: 600;">
-			{{$t('血压计注意事项')}}
+			style="color: black; margin: 10px 20px 0 20px;font-size: 14px; font-weight: 600; text-align: center;">
+			{{$t('血压计WiFi配对成功')}}
+			<!-- {{$t('血压计注意事项')}}
 			<button style="margin-left: 20px; margin-right: 20px;margin-top: 40px;"
-				@click="gotosetting()">{{$t("去设置")}}</button>
+				@click="gotosetting()">{{$t("去设置")}}</button> -->
 		</view>
 		<!-- <view v-else-if="modelIdtype === '手表'"
 			style="color: black; margin: 10px 20px 0 20px;font-size: 14px; font-weight: 600;">
@@ -101,7 +102,7 @@
 						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
 					},
 					success: function(res) {
-						console.log("获取用户信息成功:", res)
+						// console.log("获取用户信息成功:", res)
 						if (res.data.code == 200) {
 							if (res.data.data.weight === '' || res.data.data.weight == null) {
 								that.register_unername(res.data.data.nickName)

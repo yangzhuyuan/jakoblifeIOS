@@ -21,8 +21,15 @@
 		</view>
 		<view v-else-if="modelname==='BPW6'"
 			style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
-			<image class="imgss_sc" mode="aspectFit" :src="(language === 'zh-Hans' || language == 'zh-Hant')?'/static/image/U19M_zh_1.jpg':'/static/image/U19M_en_1.png'" />
-			<image class="imgss_sc" mode="aspectFit" :src="(language === 'zh-Hans' || language == 'zh-Hant')?'/static/image/U19M_zh_2.jpg':'/static/image/U19M_en_2.jpg'" />
+			<image class="imgss_sc" mode="aspectFit"
+				:src="(language === 'zh-Hans' || language == 'zh-Hant')?'/static/image/U19M_zh_1.jpg':'/static/image/U19M_en_1.png'" />
+			<image class="imgss_sc" mode="aspectFit"
+				:src="(language === 'zh-Hans' || language == 'zh-Hant')?'/static/image/U19M_zh_2.jpg':'/static/image/U19M_en_2.jpg'" />
+			<view style="display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0 4px;">
+				<text style="font-size: 12px; color: #333; white-space: nowrap;">{{(language === 'zh-Hans' || language == 'zh-Hant')?'左滑':'Swipe left'}}</text>
+				<text style="font-size: 16px; color: #333;">-></text>
+			</view>
+			<image class="imgss_sc" mode="aspectFit" src="/static/image/U19M_en_3.jpg" />
 		</view>
 		<view v-else-if="modelname==='JL-S260'||modelname==='JL-S100'"
 			style="display: flex; flex-direction: row; justify-content: center; align-items: center;">
@@ -149,7 +156,6 @@
 		},
 
 		onHide() {
-			console.log("onHide")
 			uni.setStorageSync("openBluebloen", false)
 		},
 
@@ -451,6 +457,7 @@
 							serverModel === 'U19M' || this.modelname === 'BPW1' || this.modelname === 'BPW6'
 						if (modelMatched) {
 							if (isWatchModel && res.data.deviceSn) {
+								console.log("设备已绑定", res.data.deviceSn)
 								const scanSn = String(data.deviceSn || '').replace(/[^a-fA-F0-9]/g, '')
 									.toUpperCase()
 								const serverSn = String(res.data.deviceSn || '').replace(/[^a-fA-F0-9]/g, '')
@@ -462,7 +469,8 @@
 								if (resultmac && resultmac === serverMac) {
 									this.img_scan = false;
 									this.xinghao = this.$t("型号") + ((serverModel === "BPW6" || serverModel ===
-										"U19M" || this.modelname === "BPW6") ? "U19M" : res.data.model);
+											"U19M" || this.modelname === "BPW6") ? "U19M/U16H" : res.data
+										.model);
 									this.context_msg = "SN:" + res.data.deviceSn;
 									this.context_msg1 = res.data.deviceSn;
 									this.modelId = res.data.modelId;
@@ -484,11 +492,22 @@
 							} else {
 								this.img_scan = false;
 								this.xinghao = this.$t("型号") + ((serverModel === "BPW6" || serverModel ===
-									"U19M") ? "U19M" : res.data.model);
+									"U19M") ? "U19M/U16H" : res.data.model);
 								this.context_msg = "SN:" + res.data.deviceSn;
 								this.context_msg1 = res.data.deviceSn;
 								this.modelId = res.data.modelId;
 								this.updateScanImagePath(res.data.picturePath);
+								// //用于过证，设置的BP67/BP68设备单独处理，正常需要把以下两个判断注释掉
+								// if (this.modelname === 'JL-BP68W' && res.data.deviceSn && res.data.deviceSn ===
+								// 	'1000103200000010') {
+								// 	console.log('JL-BP68W设备单独处理，直接跳过绑定')
+								// 	this.modelConnectType = 1
+								// }
+								// if (this.modelname === 'JL-BP67W' && res.data.deviceSn && res.data.deviceSn ===
+								// 	'1000203200000019') {
+								// 	console.log('JL-BP6W设备单独处理，直接跳过绑定')
+								// 	this.modelConnectType = 1
+								// }
 							}
 						} else {
 							this.img_scan = true;
@@ -581,11 +600,76 @@
 						})
 					}
 				} else if (this.modelConnectType == 2) {
-					uni.navigateTo({
-						url: "../../Bind/Bing_xueya/Bing_xueya?SELECT_TYPE=" + this.SELECT_TYPE + "&sn=" + this
-							.context_msg1 + "&modelname=" + this.modelname + "&modelId=" + modelId
-					})
+					if (this.isZk872ScanModel(modelId)) {
+						this.precheckZk872OtherAccount(modelId)
+						return
+					}
+					this.openWifiBindPage(modelId)
 				}
+			},
+			isZk872ScanModel(modelId) {
+				const id = String(modelId || this.modelId || '').trim()
+				if (id === '10005' || id === '10006') return true
+				const name = String(this.modelname || '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '')
+				return name.indexOf('ZKB872') >= 0 || name.indexOf('ZK872') >= 0
+			},
+			openWifiBindPage(modelId) {
+				uni.navigateTo({
+					url: "../../Bind/Bing_xueya/Bing_xueya?SELECT_TYPE=" + this.SELECT_TYPE + "&sn=" + this
+						.context_msg1 + "&modelname=" + this.modelname + "&modelId=" + modelId
+				})
+			},
+			// 只拦截「已被其他账号绑定」。探测成功会立刻解绑，正式绑定仍在配网成功之后。
+			precheckZk872OtherAccount(modelId) {
+				if (this._zk872BindChecking) return
+				this._zk872BindChecking = true
+				const sn = this.context_msg1
+				uni.showLoading({
+					title: this.$t('加载中'),
+					mask: true
+				})
+				const done = (goOn) => {
+					this._zk872BindChecking = false
+					uni.hideLoading()
+					if (goOn) this.openWifiBindPage(modelId)
+				}
+				this.$post(this.$url_APP_IP + this.$url_bind_device, {
+					deviceSn: sn,
+					mac: ''
+				}, {
+					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/x-www-form-urlencoded'
+				}).then((res) => {
+					if (res && res.code == 401) {
+						done(false)
+						setTimeout(() => {
+							uni.showToast({
+								title: this.$t('此设备已被其他账号绑定'),
+								icon: 'none',
+								duration: 2000
+							})
+						}, 100)
+						return
+					}
+					if (res && res.code == 200) {
+						uni.request({
+							url: this.$url_APP_IP + this.$url_getunbind,
+							method: 'POST',
+							data: {
+								deviceSn: sn
+							},
+							header: {
+								'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+								'content-type': 'application/x-www-form-urlencoded'
+							},
+							complete: () => done(true)
+						})
+						return
+					}
+					done(true)
+				}).catch(() => {
+					done(true)
+				})
 			},
 			//确认按钮
 			turesss() {
@@ -885,7 +969,8 @@
 							if (!this.stoponble) return
 							const list = res.devices || []
 							for (const item of list) {
-								if (this.tryBindBPW6Candidate(item, targetMac, targetSuffix, seenIds)) break
+								if (this.tryBindBPW6Candidate(item, targetMac, targetSuffix, seenIds))
+									break
 							}
 						}
 					})

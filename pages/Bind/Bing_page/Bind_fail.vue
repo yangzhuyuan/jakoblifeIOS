@@ -3,10 +3,10 @@
 		<view>
 			<view style="display: flex;flex-direction: column; padding-top: 120px; align-items: center; ">
 				<image src="../../../static/icons/shibaitubiao.png" style="width: 68px; height: 68px;"></image>
-				<view style="margin-top: 20px;font-weight: 600;font-size: 17px;">{{$t('添加失败请重试')}}</view>
+				<view style="margin-top: 20px;font-weight: 600;font-size: 17px;">{{$t(fromManage ? '更换wifi账号密码失败请重试' : '添加失败请重试')}}</view>
 			</view>
 			<view style="position: fixed; bottom: 50px;width: 100vw;">
-				<button class="button_bg" @click="back()">{{$t('重新绑定')}}</button>
+				<button class="button_bg" @click="back()">{{$t(fromManage ? '再试一次' : '重新绑定')}}</button>
 				<view class="text" @click="bing_fail()">{{$t('绑定失败')}}</view>
 			</view>
 		</view>
@@ -27,18 +27,59 @@
 
 <script>
 	export default {
+		data() {
+			return {
+				fromManage: false
+			}
+		},
+		onLoad(opt) {
+			this.fromManage = opt && (opt.fromManage === '1' || opt.fromManage === 1)
+		},
 		onShow() {
 			let that = this
 			uni.setNavigationBarTitle({
 				title: that.$t('绑定设备')
 			})
 		},
+		onBackPress() {
+			if (!this.fromManage || this._goingDevice) return false
+			this.backToDevice()
+			return true
+		},
 
 		methods: {
 			back() {
+				if (this.fromManage) {
+					this.backToDevice()
+					return
+				}
 				uni.switchTab({
 					url: "../../tabBar/my/My"
 				})
+			},
+			backToDevice() {
+				if (this._goingDevice) return
+				this._goingDevice = true
+				const pages = getCurrentPages() || []
+				const goTab = () => {
+					uni.switchTab({
+						url: '/pages/tabBar/device/Equipment_management',
+						fail: () => {
+							this._goingDevice = false
+						}
+					})
+				}
+				if (pages.length > 3) {
+					uni.navigateBack({
+						delta: 3,
+						fail: () => {
+							this._goingDevice = false
+							goTab()
+						}
+					})
+					return
+				}
+				goTab()
 			},
 			bing_fail() {
 				this.$refs.popup.open("bottom")

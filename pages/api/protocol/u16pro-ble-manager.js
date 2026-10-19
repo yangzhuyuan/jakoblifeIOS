@@ -61,6 +61,12 @@ class U16ProBLEManager {
 			rriGroups: [], // RRI 组数据（长包，暂未启用业务）
 		}
 
+		// 心率历史快照（仅用于实时测量对比/单次重读，不影响连接同步上报）
+		this._hrSnapshotMap = new Map()
+		this._hrCompareSnapshot = null
+		this._hrDayStartTimestamp = 0
+		this._hrRetryUsed = false
+
 		// 读取状态
 		this.readingState = {
 			isReadingBPHistory: false,
@@ -73,7 +79,14 @@ class U16ProBLEManager {
 			hrReceivedPackets: 0,
 			hrInterval: 0, // 测量间隔（分钟）
 			hrBaseTimestamp: 0, // 当天0点UTC时间戳
+			hrDayStartTimestamp: 0, // 包1返回的当天0:00（5分钟网格起点）
 			hrLastTimestamp: 0, // 上一个数据点的结束时间戳
+			hrRealtimeMode: false, // DATA_CHANGED 后实时拉取
+			hrSeedOnly: false,
+			hrProgressiveEmittedTs: 0,
+			hrProgressiveEmittedValue: null,
+			pendingHRRead: null,
+			hrScheduleTimer: null,
 
 			isReadingSpO2History: false,
 			spO2Buffer: [],
@@ -121,8 +134,10 @@ class U16ProBLEManager {
 		this._forwardNotifyHandler = null
 		this._bcServiceReadyPromise = null
 		this._lastBcNotifyTime = 0
+		this._lastMainNotifyTime = 0
 		this._ppgOperationLock = false
 		this._ppgManagedRead = false
+		this._ppgWarmupActive = false
 
 		// 回调函数
 		this.callbacks = {
@@ -157,6 +172,15 @@ class U16ProBLEManager {
 		return hexArr.join(' ')
 	}
 
+	_pageAddlog(...args) {
+		try {
+			const that = typeof getApp === 'function' ? getApp()?.globalData?.mainPageVm : null
+			if (that && typeof that.addlog === 'function') {
+				that.addlog(...args)
+			}
+		} catch (e) {}
+	}
+
 	// ==================== 初始化与连接 ====================
 
 	/**
@@ -183,8 +207,38 @@ class U16ProBLEManager {
 		})
 	}
 
+	/** 手机蓝牙关闭：清通道与读锁，不关适配器，不影响 BPW1 */
+	resetAfterAdapterLost() {
+		this.isConnected = false
+		this.isNotifying = false
+		this._ppgOperationLock = false
+		this._ppgWarmupActive = false
+		this.readingState.isReadingBPHistory = false
+		this.readingState.isReadingHRHistory = false
+		this.readingState.isReadingSpO2History = false
+		this._resetPPGReadingState()
+		this.resetBcServiceState()
+	}
+
 	_sleep(ms) {
 		return new Promise(resolve => setTimeout(resolve, ms))
+	}
+
+	_withTimeout(promise, ms, label) {
+		let timer = null
+		return Promise.race([
+			Promise.resolve(promise).finally(() => {
+				if (timer) {
+					clearTimeout(timer)
+					timer = null
+				}
+			}),
+			new Promise((_, reject) => {
+				timer = setTimeout(() => {
+					reject(new Error((label || '操作') + '超时'))
+				}, ms)
+			})
+		])
 	}
 
 	/**
@@ -241,6 +295,20 @@ class U16ProBLEManager {
 					key
 				})
 				return false
+			}
+
+			// 0x49→0x4A 降级窗口：写入后极短时间内的拒答多为上一命令迟到包（两命令都等 0x4A）
+			const isPpgStartCmd = result.cmd === CMD.PPG_START || result.cmd === CMD.PPG_START_WITH_DURATION
+			if (isPpgStartCmd && result.parsed?.success === false && pending.armedAt) {
+				const age = Date.now() - pending.armedAt
+				if (age >= 0 && age < 80) {
+					console.warn('【PPG】丢弃过早拒答(疑似残留)', {
+						cmd: '0x' + result.cmd.toString(16),
+						age,
+						key
+					})
+					return false
+				}
 			}
 
 			if (pending.expectedOffset !== undefined && (
@@ -501,6 +569,7 @@ class U16ProBLEManager {
 	 * 处理接收到的数据
 	 */
 	_handleDataReceived(res, deviceId) {
+		this._lastMainNotifyTime = Date.now()
 		const bytes = new Uint8Array(res.value)
 
 		const hexStr = U16ProProtocol.bytesToHex([...bytes])
@@ -547,7 +616,20 @@ class U16ProBLEManager {
 				break
 			case CMD.BP_MEASUREMENT:
 				// console.log('【BPW6血压】:', result.data)
-				return result.data
+				return result.data || {
+					type: 'BP_MEASUREMENT',
+					success: 0x32
+				}
+				break
+			case CMD.HR_MEASUREMENT:
+				// 手机发起心率测量 ACK；先冻结快照，等 DATA_CHANGED 再拉历史上报
+				this._hrRetryUsed = false
+				this._freezeHrCompareSnapshot()
+				console.log('【BPW6】心率测量已发起，等待数据变更通知')
+				return result.data || {
+					type: 'HR_MEASUREMENT',
+					success: 0x38
+				}
 				break
 			case CMD.BP_DYNAMIC_PARAMS_CHANGED:
 				this.state.bpDynamicParams = result.data
@@ -564,12 +646,15 @@ class U16ProBLEManager {
 				}
 				break
 			case CMD.SpO2_MEASUREMENT:
-				// 0x39 可能是发起测量应答；真正有数据以 DATA_CHANGED(血氧) 为准再拉历史
-				return result.data
+				// 0x39 仅为发起测量 ACK；真正有数据以 DATA_CHANGED(血氧) 为准再拉历史
+				return result.data || {
+					type: 'SpO2_MEASUREMENT',
+					success: 0x39
+				}
 				break
 			case CMD.READ_BP_HISTORY:
 				// console.log('【BPW6血压】:', result.data)
-				return this._handleBPHistoryResponse(result.data)
+				return this._handleBPHistoryResponse(result.data, deviceId)
 				break
 			case CMD.READ_HR_HISTORY:
 				let hrHistoryResult = this._handleHRHistoryResponse(result.data)
@@ -760,7 +845,7 @@ class U16ProBLEManager {
 			case CMD.PPG_START_WITH_DURATION:
 			case CMD.PPG_START:
 			case CMD.PPG_STOP:
-				console.log('【PPG测量命令响应】', result.parsed)
+				// this._pageAddlog('【PPG测量命令响应】', result.parsed)
 				if (result.cmd === CMD.PPG_STOP && result.parsed?.success) {
 					this.state.ppgMeasuring = false
 				} else if ((result.cmd === CMD.PPG_START_WITH_DURATION ||
@@ -1060,26 +1145,41 @@ class U16ProBLEManager {
 				// 测量完成后拉取最新血压；已在读则忽略，避免并发读触发多次历史上报
 				if (!this.readingState.isReadingBPHistory) {
 					this.readLatestBPHistory(50, deviceId).catch(err => {
+						this.readingState.isReadingBPHistory = false
 						console.warn('【数据改变】读取血压历史失败:', err && err.message ? err.message : err)
 					})
 				}
 				break
 			case DATA_TYPE.HEART_RATE:
-				this.readLatestHRHistory(deviceId)
+				// 通知瞬间冻结基线；新一次测量允许再重读一次（仅实时路径）
+				this._hrRetryUsed = false
+				this._freezeHrCompareSnapshot()
+				this.scheduleReadLatestHRHistory(deviceId, {
+					realtime: true
+				})
 				break
 			case DATA_TYPE.BLOOD_OXYGEN:
 				// 设备写入当前整点槽位需要一点时间，立刻读常拿到上一小时旧值
 				this._scheduleSpO2HistoryRead(deviceId)
 				break
 			case DATA_TYPE.BATTERY:
-				this.readBattery(deviceId)
+				// 预热/启测/采集/拉数期间不要并发读电量：iOS 主通道 write 会卡住 BC 拉数导致不上报
+				if (this._ppgOperationLock || this._ppgWarmupActive || this.state.ppgMeasuring ||
+					this.isPpgTransferBusy()) {
+					break
+				}
+				this.readBattery(deviceId).catch(() => {})
 				break
 			case DATA_TYPE.TEMPERATURE: // 脉诊数据
 				this.readLatestPulseDiagnosis(1000, deviceId)
 				break
 			case DATA_TYPE.STEPS:
 			case DATA_TYPE.SLEEP:
-				this.readDailyInfo(0, deviceId)
+				// 拉数期间不要并发读运动/睡眠：主通道 write 会卡住 BC 拉数导致不上报
+				if (this.isPpgTransferBusy()) {
+					break
+				}
+				this.readDailyInfo(0, deviceId).catch(() => {})
 				break
 		}
 		// 触发回调
@@ -1112,6 +1212,7 @@ class U16ProBLEManager {
 			}
 			// 清空状态
 			this._resetHRReadingState()
+			this._flushPendingHRHistoryReadSoon()
 			return {
 				type: 'HR_history_empty',
 				empty: true
@@ -1140,9 +1241,11 @@ class U16ProBLEManager {
 		const intervalSeconds = this.readingState.hrInterval * 60
 		let packetStartTimestamp = 0
 		if (data.packetIndex === 1) {
-			// 包1：使用自带的时间戳
+			// 包1：使用自带的时间戳（当天 0:00，协议网格起点）
 			packetStartTimestamp = data.timestamp
 			this.readingState.hrLastTimestamp = packetStartTimestamp
+			this.readingState.hrDayStartTimestamp = packetStartTimestamp
+			this._hrDayStartTimestamp = packetStartTimestamp
 		} else {
 			// 包2及以后：基于上一个包的结束时间计算
 			if (this.readingState.hrLastTimestamp > 0) {
@@ -1191,9 +1294,264 @@ class U16ProBLEManager {
 			}
 		}
 		this.readingState.hrReceivedPackets++
+		// 实时模式：每包提前抛最新值，加快首页刷新（不必等整天读完）
+		const progressive = this._buildProgressiveHRResult()
 		// 检查是否接收完成（数据包数量 = 总包数 - 1，因为包0是索引包）
 		if (this.readingState.hrReceivedPackets >= this.readingState.hrTotalPackets - 1) {
 			return this._finalizeHRHistoryRead()
+		}
+		return progressive
+	}
+
+	/**
+	 * 实时读取过程中提前抛出当前缓冲内最新心率，加快卡片显示
+	 */
+	_buildProgressiveHRResult() {
+		if (!this.readingState.hrRealtimeMode) {
+			return
+		}
+		const buffer = this.readingState.hrBuffer
+		if (!buffer || buffer.length === 0) {
+			return
+		}
+		const nowSec = Math.floor(Date.now() / 1000)
+		let latestNear = null
+		let latestFresh = null
+		let latestAny = null
+		for (let i = 0; i < buffer.length; i++) {
+			const item = buffer[i]
+			if (!item || item.value == null || item.value === '') {
+				continue
+			}
+			if (!latestAny || item.timestamp > latestAny.timestamp ||
+				(item.timestamp === latestAny.timestamp &&
+					(item.updateTime || 0) >= (latestAny.updateTime || 0))) {
+				latestAny = item
+			}
+			// 近 30 分钟槽：优先上屏
+			if (item.timestamp >= nowSec - 30 * 60) {
+				if (!latestNear || item.timestamp > latestNear.timestamp ||
+					(item.timestamp === latestNear.timestamp &&
+						(item.updateTime || 0) >= (latestNear.updateTime || 0))) {
+					latestNear = item
+				}
+			}
+			// 本包刚写入(updateTime)且在 2 小时内
+			if (item.updateTime && (nowSec - item.timestamp) <= 2 * 3600) {
+				if (!latestFresh || item.timestamp > latestFresh.timestamp ||
+					(item.timestamp === latestFresh.timestamp &&
+						(item.updateTime || 0) >= (latestFresh.updateTime || 0))) {
+					latestFresh = item
+				}
+			}
+		}
+		const latest = latestNear || latestFresh
+		if (!latest) {
+			return
+		}
+		const prevTs = this.readingState.hrProgressiveEmittedTs || 0
+		const prevVal = this.readingState.hrProgressiveEmittedValue
+		if (latest.timestamp < prevTs) {
+			return
+		}
+		if (latest.timestamp === prevTs && String(latest.value) === String(prevVal)) {
+			return
+		}
+		this.readingState.hrProgressiveEmittedTs = latest.timestamp
+		this.readingState.hrProgressiveEmittedValue = latest.value
+		return {
+			type: 'heartRate',
+			allList: [latest],
+			latestRealtime: latest,
+			progressive: true
+		}
+	}
+
+	_cloneHrSnapshotMap(src) {
+		const out = new Map()
+		if (!(src instanceof Map)) {
+			return out
+		}
+		src.forEach((v, k) => {
+			out.set(k, {
+				timestamp: v.timestamp,
+				value: v.value
+			})
+		})
+		return out
+	}
+
+	_freezeHrCompareSnapshot() {
+		// 只冻第一次通知时的基线；合并多次 DATA_CHANGED 时保持测量前快照
+		if (this._hrCompareSnapshot instanceof Map && this._hrCompareSnapshot.size > 0) {
+			return
+		}
+		const base = this._hrSnapshotMap instanceof Map ? this._hrSnapshotMap : new Map()
+		this._hrCompareSnapshot = this._cloneHrSnapshotMap(base)
+		console.log('【心率历史】冻结对比基线', this._hrCompareSnapshot.size)
+	}
+
+	_pickMaxTsHr(list) {
+		if (!list || !list.length) {
+			return null
+		}
+		let best = list[0]
+		for (let i = 1; i < list.length; i++) {
+			if ((list[i].timestamp || 0) >= (best.timestamp || 0)) {
+				best = list[i]
+			}
+		}
+		return best
+	}
+
+	_getIdealHrSlotTs() {
+		const intervalMin = this.readingState.hrInterval > 0 ? this.readingState.hrInterval : 5
+		const intervalSec = intervalMin * 60
+		const dayStart = this.readingState.hrDayStartTimestamp ||
+			this._hrDayStartTimestamp ||
+			this.readingState.hrBaseTimestamp || 0
+		if (!dayStart) {
+			return null
+		}
+		const now = new Date()
+		const localMinutes = now.getHours() * 60 + now.getMinutes()
+		const slotIndex = Math.floor(localMinutes / intervalMin)
+		return {
+			dayStart,
+			slotIndex,
+			idealTs: dayStart + slotIndex * intervalSec,
+			intervalSec,
+			intervalMin
+		}
+	}
+
+	_pickBestChangedHr(changedAll, idealTs, intervalSec) {
+		if (!changedAll || !changedAll.length) {
+			return null
+		}
+		if (changedAll.length === 1) {
+			return changedAll[0]
+		}
+		const limit = (intervalSec || 300) * 6
+		let nearBest = null
+		let nearDist = Infinity
+		for (let i = 0; i < changedAll.length; i++) {
+			const c = changedAll[i]
+			const dist = Math.abs((c.timestamp || 0) - (idealTs || 0))
+			if (dist < nearDist) {
+				nearDist = dist
+				nearBest = c
+			}
+		}
+		if (nearBest && nearDist <= limit) {
+			return nearBest
+		}
+		return this._pickMaxTsHr(changedAll)
+	}
+
+	/**
+	 * 实时读完：相对冻结快照找真正变化的点；理想槽为空时标记 needRetry
+	 */
+	_findRealtimeChangedHr(uniqueList) {
+		if (!uniqueList || uniqueList.length === 0) {
+			return {
+				item: null,
+				skipUpload: true
+			}
+		}
+		const prevMap = (this._hrCompareSnapshot instanceof Map && this._hrCompareSnapshot.size > 0) ?
+			this._hrCompareSnapshot :
+			(this._hrSnapshotMap instanceof Map ? this._hrSnapshotMap : new Map())
+		const tail = uniqueList[uniqueList.length - 1]
+		const ideal = this._getIdealHrSlotTs()
+
+		const valueChanged = []
+		const newlyAppeared = []
+		for (let i = 0; i < uniqueList.length; i++) {
+			const item = uniqueList[i]
+			if (!item || item.value == null || item.value === '') {
+				continue
+			}
+			const prev = prevMap.get(item.timestamp)
+			if (!prev) {
+				newlyAppeared.push(item)
+			} else if (String(prev.value) !== String(item.value)) {
+				valueChanged.push(item)
+			}
+		}
+		const changedAll = valueChanged.concat(newlyAppeared)
+
+		if (ideal) {
+			const byTs = new Map()
+			for (let i = 0; i < uniqueList.length; i++) {
+				const it = uniqueList[i]
+				if (it && it.timestamp != null) {
+					byTs.set(it.timestamp, it)
+				}
+			}
+			const atIdeal = byTs.get(ideal.idealTs)
+			const prevIdeal = prevMap.get(ideal.idealTs)
+			const idealChanged = !!(atIdeal && (!prevIdeal ||
+				String(prevIdeal.value) !== String(atIdeal.value)))
+			console.log('【心率历史】当前5分钟槽', {
+				dayStart: ideal.dayStart,
+				slotIndex: ideal.slotIndex,
+				idealTs: ideal.idealTs,
+				atIdeal: atIdeal ? atIdeal.value : null,
+				prevIdeal: prevIdeal ? prevIdeal.value : null,
+				idealChanged,
+				changedCount: changedAll.length
+			})
+
+			if (idealChanged) {
+				console.log('【心率历史】选用理想槽上报', atIdeal.timestamp, atIdeal.value)
+				return {
+					item: atIdeal,
+					skipUpload: false
+				}
+			}
+
+			if (changedAll.length >= 1) {
+				const best = this._pickBestChangedHr(changedAll, ideal.idealTs, ideal.intervalSec)
+				if (best) {
+					console.log('【心率历史】理想槽未变，选用变化点', best.timestamp, best.value)
+					return {
+						item: best,
+						skipUpload: false
+					}
+				}
+			}
+
+			// 理想槽有值：仍交由 Main 做同值去重（保持原上报能力）
+			if (atIdeal) {
+				console.log('【心率历史】选用理想槽上报(无变化)', atIdeal.timestamp, atIdeal.value)
+				return {
+					item: atIdeal,
+					skipUpload: false
+				}
+			}
+
+			console.log('【心率历史】理想槽为空，请求重读', ideal.idealTs)
+			return {
+				item: tail,
+				skipUpload: true,
+				needRetry: true
+			}
+		}
+
+		if (changedAll.length >= 1 && changedAll.length <= 8) {
+			const best = this._pickMaxTsHr(changedAll)
+			console.log('【心率历史】无理想槽信息，选用变化点', best.timestamp, best.value)
+			return {
+				item: best,
+				skipUpload: false
+			}
+		}
+
+		// 无法对比时回退尾部点，不阻断原有上报
+		return {
+			item: tail,
+			skipUpload: false
 		}
 	}
 
@@ -1204,6 +1562,7 @@ class U16ProBLEManager {
 		let allList = []
 		const totalHrValues = this.readingState.hrBuffer.length
 		allList = this.readingState.hrBuffer
+		const wasRealtime = !!this.readingState.hrRealtimeMode
 		// 按时间排序
 		this.readingState.hrBuffer.sort((a, b) => a.timestamp - b.timestamp)
 		// 去重（基于时间戳，同5分钟槽位保留带 updateTime 的最新值）
@@ -1220,32 +1579,126 @@ class U16ProBLEManager {
 				uniqueMap.set(item.timestamp, item)
 			}
 		}
-		const uniqueList = Array.from(uniqueMap.values())
+		const uniqueList = Array.from(uniqueMap.values()).sort((a, b) => a.timestamp - b.timestamp)
 		if (uniqueList.length !== totalHrValues) {
 			console.log('【心率历史】去重:', totalHrValues, '->', uniqueList.length)
 		}
-		// 更新状态（新数据在前）
-		this.state.heartRateList = [...uniqueList, ...this.state.heartRateList]
+
+		// 非实时（连接同步等）：保持原逻辑，仅静默更新快照供下次实时对比
+		if (!wasRealtime) {
+			const snap = new Map()
+			for (let i = 0; i < uniqueList.length; i++) {
+				const item = uniqueList[i]
+				if (item && item.timestamp != null) {
+					snap.set(item.timestamp, {
+						timestamp: item.timestamp,
+						value: item.value
+					})
+				}
+			}
+			this._hrSnapshotMap = snap
+			this.state.heartRateList = [...uniqueList, ...this.state.heartRateList]
+			if (this.callbacks.onHRHistory) {
+				this.callbacks.onHRHistory({
+					list: uniqueList,
+					allList: this.state.heartRateList,
+					completed: true,
+					totalCount: uniqueList.length,
+					interval: this.readingState.hrInterval
+				})
+			}
+			this._resetHRReadingState()
+			this._flushPendingHRHistoryReadSoon()
+			if (allList) {
+				return {
+					type: "heartRate",
+					allList: allList
+				}
+			}
+			return
+		}
+
+		// 实时路径：对比冻结快照，必要时单次重读
+		const found = this._findRealtimeChangedHr(uniqueList)
+		const latestRealtime = found.item
+		if (latestRealtime) {
+			latestRealtime.updateTime = Date.now()
+		}
+		const needRetry = !!(found && found.needRetry && !this._hrRetryUsed)
+		const retryDeviceId = this._lastHRReadDeviceId || this.deviceId
+
+		const snap = new Map()
+		for (let i = 0; i < uniqueList.length; i++) {
+			const item = uniqueList[i]
+			if (item && item.timestamp != null) {
+				snap.set(item.timestamp, {
+					timestamp: item.timestamp,
+					value: item.value
+				})
+			}
+		}
+		if (needRetry) {
+			console.log('【心率历史】保留冻结基线并安排重读')
+		} else {
+			this._hrSnapshotMap = snap
+			this._hrCompareSnapshot = null
+			this._hrRetryUsed = false
+		}
+
+		// 实时路径覆盖当天列表，避免重读时重复累加；连接同步仍走上方 prepend
+		this.state.heartRateList = uniqueList
+		const skipUpload = !!(found && found.skipUpload) || needRetry
 		if (this.callbacks.onHRHistory) {
 			this.callbacks.onHRHistory({
 				list: uniqueList,
 				allList: this.state.heartRateList,
+				latestRealtime,
+				skipUpload,
 				completed: true,
 				totalCount: uniqueList.length,
 				interval: this.readingState.hrInterval
 			})
 		}
 		this._resetHRReadingState()
-		if (allList) {
-			let jsonData = {
-				type: "heartRate",
-				allList: allList
+		if (needRetry) {
+			const targetId = retryDeviceId || this.deviceId
+			if (!targetId) {
+				console.warn('【心率历史】需重读但无 deviceId，跳过')
+				return
 			}
-			return jsonData
+			this._hrRetryUsed = true
+			this.readingState.pendingHRRead = {
+				deviceId: targetId,
+				options: {
+					realtime: true,
+					isRetry: true
+				}
+			}
+			if (this.readingState.hrScheduleTimer) {
+				clearTimeout(this.readingState.hrScheduleTimer)
+			}
+			this.readingState.hrScheduleTimer = setTimeout(() => {
+				this.readingState.hrScheduleTimer = null
+				this.flushPendingHRHistoryRead()
+			}, 2500)
+			// 重读前不上报，避免旧槽脏数据
+			return
+		}
+		if (this.readingState.hrScheduleTimer) {
+			clearTimeout(this.readingState.hrScheduleTimer)
+			this.readingState.hrScheduleTimer = null
+		}
+		this.readingState.pendingHRRead = null
+		return {
+			type: 'heartRate',
+			allList: uniqueList,
+			latestRealtime,
+			skipUpload
 		}
 	}
+
 	/**
-	 * 重置心率读取状态
+	 * 重置心率读取状态（保留 pending / 定时器，便于测完后补拉）
 	 */
 	_resetHRReadingState() {
 		this.readingState.isReadingHRHistory = false
@@ -1254,12 +1707,61 @@ class U16ProBLEManager {
 		this.readingState.hrReceivedPackets = 0
 		this.readingState.hrInterval = 0
 		this.readingState.hrBaseTimestamp = 0
+		this.readingState.hrDayStartTimestamp = 0
 		this.readingState.hrLastTimestamp = 0
+		this.readingState.hrRealtimeMode = false
+		this.readingState.hrSeedOnly = false
+		this.readingState.hrProgressiveEmittedTs = 0
+		this.readingState.hrProgressiveEmittedValue = null
+	}
+
+	/**
+	 * 调度读取最新心率（合并短时间内的多次数据变更通知）
+	 */
+	scheduleReadLatestHRHistory(deviceId, options = {}) {
+		this.readingState.pendingHRRead = {
+			deviceId,
+			options: options || {}
+		}
+		if (options.realtime && this.readingState.isReadingHRHistory && !this.readingState.hrRealtimeMode) {
+			console.log('【心率历史】打断整日同步，优先拉取实时心率')
+			this._resetHRReadingState()
+		}
+		if (this.readingState.hrScheduleTimer) {
+			clearTimeout(this.readingState.hrScheduleTimer)
+		}
+		const delayMs = options.realtime ? (options.isRetry ? 0 : 100) : 0
+		this.readingState.hrScheduleTimer = setTimeout(() => {
+			this.readingState.hrScheduleTimer = null
+			this.flushPendingHRHistoryRead()
+		}, delayMs)
+	}
+
+	_flushPendingHRHistoryReadSoon() {
+		setTimeout(() => this.flushPendingHRHistoryRead(), 50)
+	}
+
+	flushPendingHRHistoryRead() {
+		const pending = this.readingState.pendingHRRead
+		if (!pending || !pending.deviceId) {
+			return
+		}
+		if (this.readingState.isReadingHRHistory) {
+			return
+		}
+		this.readingState.pendingHRRead = null
+		this.readLatestHRHistory(pending.deviceId, pending.options || {}).catch(err => {
+			const msg = err && err.message ? err.message : String(err)
+			console.warn('【心率历史】调度读取失败', msg)
+			if (msg.indexOf('正在读取') >= 0) {
+				this.readingState.pendingHRRead = pending
+			}
+		})
 	}
 	/**
 	 * 处理血压历史响应
 	 */
-	_handleBPHistoryResponse(data) {
+	_handleBPHistoryResponse(data, deviceId) {
 		if (data.empty) {
 			const completedCount = this.readingState.bpBuffer.length
 			console.log('【血压历史】读取完成，共', completedCount, '条')
@@ -1282,8 +1784,28 @@ class U16ProBLEManager {
 
 		this.readingState.bpBuffer.push(data)
 		if (this.readingState.bpBuffer.length >= this.readingState.expectedBPCount) {
-			console.log('【血压历史】已达到预期数量，停止接收')
+			const completedCount = this.readingState.bpBuffer.length
+			console.log('【血压历史】已达到预期数量，停止接收', completedCount)
 			this.readingState.isReadingBPHistory = false
+			this.state.bloodPressureList = [...this.readingState.bpBuffer, ...this.state.bloodPressureList]
+			this.readingState.bpBuffer = []
+			// 部分设备达到条数后不再发 empty 结束包；先交本条 BPdata，再补发结束标记
+			const endMark = {
+				type: 'BP_history_empty',
+				empty: true,
+				count: completedCount
+			}
+			const notifyDeviceId = deviceId || this.deviceId
+			setTimeout(() => {
+				try {
+					if (typeof this._forwardNotifyHandler === 'function') {
+						this._forwardNotifyHandler({
+							deviceId: notifyDeviceId,
+							serviceId: BLE_UUID.SERVICE
+						}, null, endMark)
+					}
+				} catch (e) {}
+			}, 0)
 		}
 		return data
 	}
@@ -1704,7 +2226,7 @@ class U16ProBLEManager {
 		// console.log('【发送serviceId】:' + this.serviceId)
 		// console.log('【发送writeCharId】:' + this.writeCharId)
 		// console.log('【发送数据】:' + hexStr)
-		return new Promise((resolve, reject) => {
+		const writePromise = new Promise((resolve, reject) => {
 			uni.writeBLECharacteristicValue({
 				deviceId: targetDeviceId,
 				serviceId: this.serviceId,
@@ -1720,6 +2242,7 @@ class U16ProBLEManager {
 				}
 			})
 		})
+		return this._withTimeout(writePromise, 3000, '主通道写入')
 	}
 
 	// ==================== 公共API ====================
@@ -1728,6 +2251,10 @@ class U16ProBLEManager {
 	 * 4.1 设置时间
 	 */
 	async setTime(date = new Date(), lang = 0, deviceId) {
+		// PPG 测拉中勿写主通道：会卡住 BC 上的 0x4C/0x4D
+		if (this.isPpgSessionBusy()) {
+			return false
+		}
 		const packet = U16ProProtocol.buildSetTime(date, lang)
 		return this.sendCommand(packet, deviceId)
 	}
@@ -1736,6 +2263,9 @@ class U16ProBLEManager {
 	 * 4.2 读取电量
 	 */
 	async readBattery(deviceId) {
+		if (this.isPpgTransferBusy()) {
+			return this.state.battery
+		}
 		const packet = U16ProProtocol.buildReadBattery()
 		return this.sendCommand(packet, deviceId)
 	}
@@ -1744,6 +2274,9 @@ class U16ProBLEManager {
 	 * 4.3 读取某天运动/睡眠信息
 	 */
 	async readDailyInfo(daysAgo = 0, deviceId) {
+		if (this.isPpgTransferBusy()) {
+			return this.state.dailyInfo
+		}
 		console.log(`【BPW6读取某天运动/睡眠信息】${daysAgo ? '10 天前' : '当天'}`)
 		this.state.dailyInfo = null
 		const packet = U16ProProtocol.buildReadDailyInfo(daysAgo)
@@ -1775,14 +2308,24 @@ class U16ProBLEManager {
 		this.readingState.bpBuffer = []
 		this.readingState.expectedBPCount = count
 		const packet = U16ProProtocol.buildReadBPHistory(timestamp, direction, count)
-		return this.sendCommand(packet, deviceId)
+		try {
+			return await this.sendCommand(packet, deviceId)
+		} catch (err) {
+			// 写失败必须清锁，否则后续 DATA_CHANGED 永远不再拉血压 → 血压后 PPG 排不上
+			this.readingState.isReadingBPHistory = false
+			this.readingState.bpBuffer = []
+			throw err
+		}
 	}
 
 	/**
 	 * 读取最新血压数据（便捷方法）
 	 */
 	async readLatestBPHistory(count = 100000, deviceId) {
-		console.log("【BPW6读取最新血压】count:", count, "deviceId:", deviceId)
+		if (this.isPpgSessionBusy()) {
+			return this.state.bpHistory || []
+		}
+		// this._pageAddlog("【BPW6读取最新血压】count:", count, "deviceId:", deviceId)
 		return this.readBPHistory(0, 0, count, deviceId)
 	}
 
@@ -1868,9 +2411,43 @@ class U16ProBLEManager {
 
 	/**
 	 * 读取最新心率历史（当天）
+	 * @param {string} deviceId
+	 * @param {Object} [options]
+	 * @param {boolean} [options.realtime] - DATA_CHANGED 后实时拉取，启用快照对比/单次重读
+	 * @param {boolean} [options.seedOnly] - 仅建快照不上报（预留，默认 false）
 	 */
-	async readLatestHRHistory(deviceId) {
+	async readLatestHRHistory(deviceId, options = {}) {
+		if (this.isPpgSessionBusy()) {
+			return this.state.heartRateList || []
+		}
 		const now = new Date()
+		const seedOnly = !!(options && options.seedOnly)
+		const realtime = !!(options && options.realtime) && !seedOnly
+		this.readingState.hrRealtimeMode = realtime
+		this.readingState.hrSeedOnly = seedOnly
+		this.readingState.hrProgressiveEmittedTs = 0
+		this.readingState.hrProgressiveEmittedValue = null
+		if (deviceId) {
+			this._lastHRReadDeviceId = deviceId
+		}
+		// 实时读前若无快照，用当前列表垫一层基线（不改变非实时行为）
+		if (realtime && (!(this._hrSnapshotMap instanceof Map) || this._hrSnapshotMap.size === 0)) {
+			const seed = new Map()
+			const list = this.state.heartRateList || []
+			for (let i = 0; i < list.length; i++) {
+				const item = list[i]
+				if (item && item.timestamp != null && item.value != null && item.value !== '') {
+					seed.set(item.timestamp, {
+						timestamp: item.timestamp,
+						value: item.value
+					})
+				}
+			}
+			if (seed.size > 0) {
+				this._hrSnapshotMap = seed
+				console.log('【心率历史】用现有列表垫快照', seed.size)
+			}
+		}
 		// 本地时间当天0点
 		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 		const timestamp = Math.floor(today.getTime() / 1000)
@@ -1890,6 +2467,9 @@ class U16ProBLEManager {
 	 * 设置自动心率
 	 */
 	async setHRAuto(enable, deviceId) {
+		if (this.isPpgSessionBusy()) {
+			return false
+		}
 		console.log(`【BPW6设置自动心率】${enable ? '开启' : '关闭'}`)
 		const packet = U16ProProtocol.buildToggleHRAuto(false, enable)
 		return this.sendCommand(packet, deviceId)
@@ -1948,6 +2528,9 @@ class U16ProBLEManager {
 	}
 
 	async setSpO2Auto(enable, deviceId) {
+		if (this.isPpgSessionBusy()) {
+			return false
+		}
 		console.log(`【BPW6设置自动血氧】${enable ? '开启' : '关闭'}`)
 		const packet = U16ProProtocol.buildToggleSpO2Auto(false, enable)
 		return this.sendCommand(packet, deviceId)
@@ -2062,7 +2645,8 @@ class U16ProBLEManager {
 	 */
 	async ensureBcServiceReady(deviceId, options = {}) {
 		const {
-			force = false
+			force = false,
+			timeoutMs = 8000
 		} = options
 		const targetDeviceId = deviceId || this.deviceId
 		if (!targetDeviceId) {
@@ -2071,23 +2655,36 @@ class U16ProBLEManager {
 
 		this._ensureBcNotifyListenerActive()
 
+		// 仅测中/拉数禁止 force 重开 notify（先关后开会打断 0x4D）
+		// 注意：勿用 isPpgSessionBusy()——启测锁/_ppgWarmupActive 必须仍能刷新，否则假就绪 + 残留 status:0
+		let useForce = !!force
+		if (useForce && this._shouldBlockBcNotifyForce()) {
+			if (this.bcDeviceId === targetDeviceId && this.isBcNotifying) {
+				return
+			}
+			useForce = false
+		}
+
 		if (this.bcDeviceId && this.bcDeviceId !== targetDeviceId) {
+			if (this.isPpgSessionBusy()) {
+				return
+			}
 			this.resetBcServiceState()
 		}
-		if (!force && this.bcDeviceId === targetDeviceId && this.isBcNotifying) {
+		if (!useForce && this.bcDeviceId === targetDeviceId && this.isBcNotifying) {
 			return
 		}
 
 		if (this._bcServiceReadyPromise) {
-			await this._bcServiceReadyPromise
-			if (!force && this.bcDeviceId === targetDeviceId && this.isBcNotifying) {
+			await this._withTimeout(this._bcServiceReadyPromise, timeoutMs, 'PPG通道等待')
+			if (!useForce && this.bcDeviceId === targetDeviceId && this.isBcNotifying) {
 				return
 			}
 		}
 
 		this._bcServiceReadyPromise = this._enableBcServiceNotify(targetDeviceId)
 		try {
-			await this._bcServiceReadyPromise
+			await this._withTimeout(this._bcServiceReadyPromise, timeoutMs, 'PPG通道启用')
 		} finally {
 			this._bcServiceReadyPromise = null
 		}
@@ -2110,10 +2707,10 @@ class U16ProBLEManager {
 				success: () => {
 					this.bcDeviceId = targetDeviceId
 					this.isBcNotifying = true
-					console.log('【PPG】BC notify 已刷新', {
-						serviceId: this.bcServiceId,
-						notifyCharId: this.bcNotifyCharId
-					})
+					// this._pageAddlog('【PPG】BC notify 已刷新', {
+					// 	serviceId: this.bcServiceId,
+					// 	notifyCharId: this.bcNotifyCharId
+					// })
 					setTimeout(resolve, 250)
 				},
 				fail: (err) => {
@@ -2128,6 +2725,10 @@ class U16ProBLEManager {
 	}
 
 	async _reSubscribeBcNotify(targetDeviceId) {
+		// 仅拉数/测量中禁止先关后开；启测锁期间仍需重订阅（否则 0x49→0x4A 降级吃残留拒答）
+		if (this._shouldBlockBcNotifyForce() && this.isBcNotifying && this.bcDeviceId === targetDeviceId) {
+			return
+		}
 		if (!this.bcServiceId || !this.bcNotifyCharId) {
 			await this.ensureBcServiceReady(targetDeviceId, {
 				force: true
@@ -2165,25 +2766,64 @@ class U16ProBLEManager {
 		const sinceLastNotifyMs = this._lastBcNotifyTime ?
 			Date.now() - this._lastBcNotifyTime :
 			-1
+		// 远距离回连/灭屏后常假就绪：长时间无 BC 流量时强制重开 notify
+		const staleNotify = sinceLastNotifyMs < 0 || sinceLastNotifyMs > (BC_PACKET.BC_NOTIFY_STALE_MS || 20000)
 
-		if (channelReady && notifyReady && !forceNotify && !neverReceivedBc) {
+		if (channelReady && notifyReady && !forceNotify && !neverReceivedBc && !staleNotify) {
 			// console.log('【PPG】BC通道已就绪，跳过notify刷新', {
 			// 	sinceLastNotifyMs
 			// })
 			return
 		}
-
-		console.log('【PPG】BC notify 需要启用', {
-			forceNotify,
-			notifyReady,
-			channelReady,
-			neverReceivedBc,
-			sinceLastNotifyMs
-		})
+		// this._pageAddlog('【PPG】BC notify 需要启用', {
+		// 	forceNotify,
+		// 	notifyReady,
+		// 	channelReady,
+		// 	neverReceivedBc,
+		// 	staleNotify,
+		// 	sinceLastNotifyMs
+		// })
 		await this.ensureBcServiceReady(targetDeviceId, {
 			force: true
 		})
 		await this._sleep(300)
+	}
+
+	/**
+	 * 血压后/灭屏场景：主通道保活 + 强制刷新 BC notify，避免假连接下 PPG 无应答
+	 */
+	async warmupPpgChannel(deviceId) {
+		const targetDeviceId = deviceId || this.deviceId
+		if (!targetDeviceId) {
+			throw new Error('deviceId 不能为空')
+		}
+		this._ppgWarmupActive = true
+		try {
+			const mainAliveMs = this._lastMainNotifyTime ? Date.now() - this._lastMainNotifyTime : -1
+			// 刚收到主通道 notify 时不要再读电量：并发 write 在 iOS 上可能永不回调，卡死血压后 PPG
+			if (mainAliveMs < 0 || mainAliveMs > 2000) {
+				try {
+					await this._withTimeout(this.readBattery(targetDeviceId), 1500, 'PPG主通道预热')
+				} catch (err) {
+					// this._pageAddlog('【PPG】主通道预热失败', err && err.message ? err.message : err)
+				}
+			} else {
+				// this._pageAddlog('【PPG】主通道刚有流量，跳过读电量')
+			}
+			this._lastBcNotifyTime = 0
+			this.isBcNotifying = false
+			try {
+				await this.ensureBcServiceReady(targetDeviceId, {
+					force: true,
+					timeoutMs: 5000
+				})
+				await this._withTimeout(this._reSubscribeBcNotify(targetDeviceId), 5000, 'PPG重订阅')
+			} catch (err) {
+				// this._pageAddlog('【PPG】通道预热未完成，继续启测', err && err.message ? err.message : err)
+			}
+		} finally {
+			this._ppgWarmupActive = false
+		}
 	}
 
 	isPpgOperationInProgress() {
@@ -2192,6 +2832,25 @@ class U16ProBLEManager {
 
 	isPpgManagedRead() {
 		return this._ppgManagedRead
+	}
+
+	/** PPG 正在 0x4C/0x4D 拉数（含取 size），此时主通道写电量/步数会打断传输 */
+	isPpgTransferBusy() {
+		return !!(this._ppgManagedRead || this.ppgReadingState.isReading)
+	}
+
+	/**
+	 * 禁止 force 开关 BC notify 的场景：仅真正测中/拉数
+	 * 启测锁与 warmup 不在此列（否则 startPPG 持锁后 force/重订阅被短路）
+	 */
+	_shouldBlockBcNotifyForce() {
+		return !!(this.state && this.state.ppgMeasuring) || this.isPpgTransferBusy()
+	}
+
+	/** 预热/启测/采集/拉数任一阶段：主通道握手写勿打断（仍含启测锁） */
+	isPpgSessionBusy() {
+		return !!(this._ppgOperationLock || this._ppgWarmupActive ||
+			(this.state && this.state.ppgMeasuring) || this.isPpgTransferBusy())
 	}
 
 	async _enableBcServiceNotify(targetDeviceId) {
@@ -2431,8 +3090,7 @@ class U16ProBLEManager {
 			if (!skipIdleCheck) {
 				await this._ensurePpgIdleBeforeStart(targetDeviceId)
 			}
-
-			console.log(`【PPG】等待${logLabel}应答 notify...`, U16ProProtocol.bytesToHex(packet))
+			// this._pageAddlog(`【PPG】等待${logLabel}应答 notify...`, U16ProProtocol.bytesToHex(packet))
 			let parsed
 			try {
 				parsed = await this._sendPpgStartAndWait(
@@ -2459,7 +3117,7 @@ class U16ProBLEManager {
 			}
 
 			if (!skipRetry && !parsed?.success) {
-				console.warn('【PPG】首次启动失败，1.5秒后重试', parsed)
+				// this._pageAddlog('【PPG】首次启动失败，1.5秒后重试', parsed)
 				await this._sleep(1500)
 				this._ensureBcNotifyListenerActive()
 				parsed = await this._sendPpgStartAndWait(
@@ -2516,25 +3174,32 @@ class U16ProBLEManager {
 			return this.sendBcCommand(packet49, targetDeviceId)
 		}
 
-		const firstBcSession = !this._lastBcNotifyTime
+		const sinceLastNotifyMs = this._lastBcNotifyTime ?
+			Date.now() - this._lastBcNotifyTime :
+			-1
+		const staleNotify = sinceLastNotifyMs < 0 || sinceLastNotifyMs > (BC_PACKET.BC_NOTIFY_STALE_MS || 20000)
+		const firstBcSession = !this._lastBcNotifyTime || staleNotify
+		// 先热身通道再持锁，避免「需要启用」日志后 force 被启测锁短路
+		this._clearStaleBcStartState()
+		await this._prepareBcChannel(targetDeviceId, {
+			forceNotify: true
+		})
+		// 从未收到过 BC notify / 长时间无流量：强制重订阅，覆盖回连灭屏后假就绪
+		if (firstBcSession) {
+			try {
+				await this._withTimeout(this._reSubscribeBcNotify(targetDeviceId), 8000, 'PPG首次重订阅')
+			} catch (warmErr) {
+				await this._prepareBcChannel(targetDeviceId, {
+					forceNotify: true
+				})
+			}
+			await this._sleep(500)
+			// 重订阅后 iOS 可能重放上一包，清掉再启测
+			this._clearStaleBcStartState()
+		}
+
 		this._ppgOperationLock = true
 		try {
-			this._clearStaleBcStartState()
-			await this._prepareBcChannel(targetDeviceId, {
-				forceNotify: true
-			})
-			// 从未收到过 BC notify：强制重订阅并多等一会，覆盖首次绑定后立刻点测量
-			if (firstBcSession) {
-				try {
-					await this._reSubscribeBcNotify(targetDeviceId)
-				} catch (warmErr) {
-					await this._prepareBcChannel(targetDeviceId, {
-						forceNotify: true
-					})
-				}
-				await this._sleep(500)
-			}
-
 			try {
 				const parsed = await this._executePpgStart(
 					packet49,
@@ -2542,7 +3207,7 @@ class U16ProBLEManager {
 					[CMD.PPG_START, CMD.PPG_START_WITH_DURATION],
 					targetDeviceId,
 					'0x49(等0x4A)', {
-						// 首次通道不稳时缩短空等，更快进入裸 0x4A
+						// 首次/陈旧通道不稳时缩短空等，更快进入裸 0x4A
 						timeout: firstBcSession ? 2500 : 5000,
 						skipRetry: true,
 						forceNotify: true,
@@ -2553,16 +3218,16 @@ class U16ProBLEManager {
 				if (parsed?.success) {
 					return parsed
 				}
-				console.warn('【PPG】0x49 设备拒绝', parsed)
+				// this._pageAddlog('【PPG】0x49 设备拒绝', parsed)
 			} catch (err) {
 				console.warn('【PPG】0x49 无应答', err.message || err)
 			}
 
-			// 吸收迟到拒答，再刷新通道后降级
+			// 吸收迟到拒答，再刷新通道后降级（持锁时仍允许重订阅）
 			this._clearStaleBcStartState()
 			await this._sleep(400)
 			try {
-				await this._reSubscribeBcNotify(targetDeviceId)
+				await this._withTimeout(this._reSubscribeBcNotify(targetDeviceId), 8000, 'PPG降级重订阅')
 			} catch (err) {
 				console.warn('【PPG】降级前刷新BC notify失败', err && err.message ? err.message : err)
 				await this._prepareBcChannel(targetDeviceId, {
@@ -2570,9 +3235,10 @@ class U16ProBLEManager {
 				})
 			}
 			await this._sleep(300)
+			this._clearStaleBcStartState()
 
 			const packet4a = U16ProProtocol.buildPPGStart()
-			console.log('【PPG】改用裸0x4A', U16ProProtocol.bytesToHex(packet4a))
+			// this._pageAddlog('【PPG】改用裸0x4A', U16ProProtocol.bytesToHex(packet4a))
 			try {
 				const parsed4a = await this._executePpgStart(
 					packet4a,
@@ -2580,6 +3246,7 @@ class U16ProBLEManager {
 					[CMD.PPG_START],
 					targetDeviceId,
 					'裸0x4A', {
+						timeout: firstBcSession ? 4000 : 8000,
 						forceNotify: true,
 						externalLock: true,
 						skipPrepare: true,
@@ -2589,7 +3256,7 @@ class U16ProBLEManager {
 				if (parsed4a?.success) {
 					return parsed4a
 				}
-				console.warn('【PPG】裸0x4A 设备拒绝', parsed4a)
+				// this._pageAddlog('【PPG】裸0x4A 设备拒绝', parsed4a)
 			} catch (err) {
 				console.warn('【PPG】裸0x4A 无应答', err.message || err)
 			}
@@ -2604,6 +3271,7 @@ class U16ProBLEManager {
 				[CMD.PPG_START],
 				targetDeviceId,
 				'0x4A+时长', {
+					timeout: firstBcSession ? 4000 : 8000,
 					forceNotify: true,
 					externalLock: true,
 					skipPrepare: true,
@@ -2685,30 +3353,30 @@ class U16ProBLEManager {
 			throw new Error('正在读取PPG数据，请稍候')
 		}
 
-		const sizeResult = await this.getPPGDataSize(deviceId)
-		if (sizeResult.error || !sizeResult.size) {
-			return {
-				size: 0,
-				ppgData: [],
-				empty: true
-			}
-		}
-
-		console.log('【PPG】开始分块拉数', {
-			size: sizeResult.size,
-			deviceId: deviceId || this.deviceId
-		})
-		this.ppgReadingState.isReading = true
-		this.ppgReadingState.totalSize = sizeResult.size
-		this.ppgReadingState.buffer = []
-		this.ppgReadingState.currentOffset = 0
 		this._ppgManagedRead = true
-
-		const allData = []
-		let offset = 0
-		let chunkIndex = 0
-
 		try {
+			const sizeResult = await this.getPPGDataSize(deviceId)
+			if (sizeResult.error || !sizeResult.size) {
+				return {
+					size: 0,
+					ppgData: [],
+					empty: true
+				}
+			}
+
+			console.log('【PPG】开始分块拉数', {
+				size: sizeResult.size,
+				deviceId: deviceId || this.deviceId
+			})
+			this.ppgReadingState.isReading = true
+			this.ppgReadingState.totalSize = sizeResult.size
+			this.ppgReadingState.buffer = []
+			this.ppgReadingState.currentOffset = 0
+
+			const allData = []
+			let offset = 0
+			let chunkIndex = 0
+
 			while (offset < sizeResult.size) {
 				const chunk = await this.getPPGDataAtOffset(offset, deviceId)
 				if (chunk.error || !chunk.ppgData) {
@@ -2736,11 +3404,9 @@ class U16ProBLEManager {
 					await this._sleep(BC_PACKET.PPG_READ_INTERVAL_MS)
 				}
 			}
-
 			this.state.ppgData = allData
 			this.state.ppgDataSize = sizeResult.size
 			this._resetPPGReadingState()
-
 			console.log('【PPG】分块拉数完成', {
 				bytes: allData.length,
 				chunks: chunkIndex
@@ -2750,7 +3416,6 @@ class U16ProBLEManager {
 				ppgData: allData,
 				completed: true
 			}
-
 			return finalResult
 		} catch (error) {
 			this._resetPPGReadingState()
@@ -2969,6 +3634,9 @@ class U16ProBLEManager {
 				break
 			case 'hr':
 				this.state.heartRateList = []
+				this._hrSnapshotMap = new Map()
+				this._hrCompareSnapshot = null
+				this._hrRetryUsed = false
 				break
 			case 'spo2':
 				this.state.spO2List = []
@@ -2993,6 +3661,9 @@ class U16ProBLEManager {
 			case 'all':
 				this.state.bloodPressureList = []
 				this.state.heartRateList = []
+				this._hrSnapshotMap = new Map()
+				this._hrCompareSnapshot = null
+				this._hrRetryUsed = false
 				this.state.spO2List = []
 				this.state.pulseDiagnosisList = [] //脉诊
 				this.state.ppgData = []

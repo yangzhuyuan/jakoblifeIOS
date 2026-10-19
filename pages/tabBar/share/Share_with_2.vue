@@ -239,7 +239,6 @@
 		},
 
 		onLoad(res) {
-			console.log(res)
 			this.avatar = res.AVATAR
 			this.name = res.NAME
 			this.phone = res.PHONE
@@ -568,14 +567,11 @@
 					})
 					return
 				}
-				console.log("xuanze", this.action.join().replace('0,', ''))
 				this.change(this.action.join().replace('0,', ''))
 			},
 			//修改用户分享数据
 			change(dataPointIds) {
 				let that = this
-				console.log("dasjkhadhjak", that.id)
-				console.log("dasjkhadhjak", [dataPointIds])
 				uni.request({
 					url: that.$url_APP_IP + "/prod-api/share/data/change",
 					method: "POST",
@@ -588,12 +584,10 @@
 						'content-type': 'application/x-www-form-urlencoded;' //自定义请求头信息
 					},
 					success(req) {
-						console.log("req", req)
 						uni.navigateTo({
 							url: "../share/Shared_success?NAME=" + that.name
 						})
 					}
-
 				})
 			}
 

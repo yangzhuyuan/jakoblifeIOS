@@ -10,7 +10,9 @@
 					<view class="list_item_bg" @click="check_click(index,item.modelConnectType,item.name)">
 						<image style="width: 100%;object-fit: contain;margin-top: 10px;" mode="aspectFit"
 							:src="item.modelPicturePath" />
-						<view style="text-align: center;margin-bottom: 10px;margin-top: 10px;">{{item.name === "BPW6" ? "U19M" : item.name}}</view>
+						<view style="text-align: center;margin-bottom: 10px;margin-top: 10px;">
+							{{item.name === "BPW6" ? "U19M/U16H" : item.name}}
+						</view>
 					</view>
 				</view>
 			</view>
@@ -26,6 +28,13 @@
 			<button class="button_bg" plain="true" :style="getbutton(active)" @tap="True()">{{$t('下一步')}}</button>
 			<view class="viewstylesss" @click="NOclick()">{{$t("不知道设备型号")}}</view>
 		</view>
+		<uni-popup ref="modelTypePopup" type="center" :mask-click="true">
+			<view class="model-type-popup">
+				<view class="model-type-title">{{ $t('选择型号') }}</view>
+				<view class="model-type-item" @click="selectModelType(1)">{{ $t('蓝牙款') }}</view>
+				<view class="model-type-item" @click="selectModelType(2)">{{ $t('WIFI款') }}</view>
+			</view>
+		</uni-popup>
 	</view>
 </template>
 
@@ -137,14 +146,24 @@
 					})
 					return
 				} else {
-					// console.log("0-扫码  1-蓝牙 2-WiFi设备类型：" + this.modelConnectType)
-					uni.navigateTo({
-						url: "../Bing_page/Bind_page_2?modelConnectType=" + this.modelConnectType +
-							"&SELECT_TYPE=" + this.SELECT_TYPE + "&name=" + this.name
-						// url: '../../Bind/Bing_page/Bing_page_1?SELECT_TYPE=' + this.SELECT_TYPE +
-						// 	"&modelConnectType=" + this.modelConnectType
-					})
+					// if (this.name === "ZK-B872") {
+					// 	this.$refs.modelTypePopup.open()
+					// 	return
+					// }
+					this.goBindPage()
 				}
+			},
+			selectModelType(type) {
+				console.log("选择的型号类型:", type)
+				this.modelConnectType = type
+				this.$refs.modelTypePopup.close()
+				this.goBindPage()
+			},
+			goBindPage() {
+				uni.navigateTo({
+					url: "../Bing_page/Bind_page_2?modelConnectType=" + this.modelConnectType +
+						"&SELECT_TYPE=" + this.SELECT_TYPE + "&name=" + this.name
+				})
 			},
 			Unbind() {
 				uni.switchTab({
@@ -152,18 +171,7 @@
 				})
 			},
 
-
 			NOclick() {
-				// const lan = uni.getLocale();
-				// if (lan == 'zh-Hans' || lan == 'zh-Hant') {
-				// 	uni.navigateTo({
-				// 		url: "../../Bind/Bing_page/helpcenterss?id=1153"
-				// 	})
-				// } else {
-				// 	uni.navigateTo({
-				// 		url: "../../Bind/Bing_page/helpcenterss?id=1154"
-				// 	})
-				// }
 				uni.navigateTo({
 					url: "/pages/tabBar/my/Help_center"
 				})
@@ -191,10 +199,9 @@
 					header: {
 						'Authorization': 'Bearer ' + (that.tokens === '0' ? uni.getStorageSync("token") : that
 							.tokens),
-						'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
+						'content-type': 'application/json;charset=UTF-8'
 					},
 					success(res) {
-						// console.log("获取设备型号列表", res)
 						uni.stopPullDownRefresh()
 						if (res.data.code == 200) {
 							if (that.per == 1) {
@@ -315,5 +322,32 @@
 		margin-top: 10px;
 		font-size: 12px;
 		font-weight: 400;
+	}
+
+	.model-type-popup {
+		width: 72vw;
+		background: #fff;
+		border-radius: 20px;
+		padding: 24px 20px 12px 20px;
+		box-sizing: border-box;
+	}
+
+	.model-type-title {
+		font-size: 17px;
+		font-weight: 600;
+		color: #000;
+		text-align: center;
+		margin-bottom: 16px;
+	}
+
+	.model-type-item {
+		height: 48px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 16px;
+		font-weight: 500;
+		color: #3298F7;
+		border-top: 1px solid #EFEFF4;
 	}
 </style>

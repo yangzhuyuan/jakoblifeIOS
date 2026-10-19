@@ -538,8 +538,12 @@
 	import jsPDF from 'jspdf';
 	// #endif
 	import {
-		getLocalTimeAllJSON,
-		getChinaTimeAllJSON
+		getChinaTimeAllJSON,
+		isChinaTimezoneAligned,
+		getReportProfChinaYmd,
+		addChinaYmdDays,
+		shouldOverseasMidnightFallback,
+		getOverseas24hDisplayEndYmd
 	} from '@/pages/api/unitls/timezone.js'
 	import {
 		imageToPdf,
@@ -630,6 +634,7 @@
 				currentDateTime: '',
 				canvasWidth: 750,
 				canvasHeight: 2000,
+				overseasProfYmd: '',
 			}
 		},
 		computed: {
@@ -717,8 +722,6 @@
 					return this.$t("女")
 				}
 			},
-
-
 			updateCurrentDateTime() {
 				const now = new Date();
 				this.currentDateTime = now.toLocaleString('zh-CN');
@@ -741,22 +744,33 @@
 				const timesssaa = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
 				return timesssaa
 			},
-			calculateTimeRange() {
+			calculateTimeRange(endYmdOverride) {
 				const pad = (n) => String(n).padStart(2, '0');
+				if (!isChinaTimezoneAligned()) {
+					this.overseasProfYmd = endYmdOverride || getReportProfChinaYmd()
+					const endYmd = getOverseas24hDisplayEndYmd()
+					const startYmd = addChinaYmdDays(endYmd, -1)
+					this.monitorInfo.startTime = `${startYmd} 06:00:00`
+					this.monitorInfo.endTime = `${endYmd} 06:00:00`
+					return
+				}
+				this.overseasProfYmd = ''
 				const now = new Date();
 				const y = now.getFullYear();
 				const m = pad(now.getMonth() + 1);
 				const d = pad(now.getDate());
-				// 24 小时动态血压：前一日 06:00 → 当日 06:00（含夜间 21:30–06:00）
-				const endTime = `${y}-${m}-${d} 07:00:00`;
-				const startDate = new Date(`${y}/${m}/${d} 07:00:00`);
+				// 国内监测时间：前一日 06:00 → 当日 06:00
+				const endTime = `${y}-${m}-${d} 06:00:00`;
+				const startDate = new Date(`${y}/${m}/${d} 06:00:00`);
 				startDate.setDate(startDate.getDate() - 1);
 				const sy = startDate.getFullYear();
 				const sm = pad(startDate.getMonth() + 1);
 				const sd = pad(startDate.getDate());
-				const startTime = `${sy}-${sm}-${sd} 07:00:00`;
-				this.monitorInfo.startTime = startTime;
+				this.monitorInfo.startTime = `${sy}-${sm}-${sd} 06:00:00`;
 				this.monitorInfo.endTime = endTime;
+			},
+			getQueryMonitorRange() {
+				return this.monitorInfo
 			},
 			getBmiClass(bmi) {
 				if (!bmi || bmi === 'NA') return '';
@@ -767,14 +781,17 @@
 				if (val < 28) return 'overweight';
 				return 'obese';
 			},
+			// 长度单位转换
 			getHeightUnit() {
 				return this.userInfo.heightunit || (uni.getStorageSync('danwei1') === 0 ? this.$t('英寸') : this.$t(
 					'厘米'));
 			},
+			// 体重单位转换
 			getWeightUnit() {
 				return this.userInfo.weightunit || (uni.getStorageSync('danwei2') === 1 ? this.$t('英镑') : this.$t(
 					'千克'));
 			},
+			// 血压单位转换
 			refreshBloodUnit() {
 				this.Blood = uni.getStorageSync('Blood') === 0 || uni.getStorageSync('Blood') === '' ? 'mmHg' : 'kPa';
 			},
@@ -834,8 +851,7 @@
 				}
 				const fromParts = (y, mo, d, hh, mm, ss) => {
 					const date = (y != null && mo != null && d != null) ?
-						`${y}-${pad(mo)}-${pad(d)}` :
-						''
+						`${y}-${pad(mo)}-${pad(d)}` : ''
 					const h = Number.isFinite(hh) ? hh : 0
 					const m = Number.isFinite(mm) ? mm : 0
 					const s = Number.isFinite(ss) ? ss : 0
@@ -888,17 +904,15 @@
 			sortMonitorByDateTime(list) {
 				return (list || []).slice().sort((a, b) => {
 					const pa = (a.dateKey && a.clockSec != null && a.clockSec >= 0) ? {
-							date: a.dateKey,
-							clockSec: a.clockSec,
-							sortKey: a.sortKey
-						} :
-						this.parseMeasureDateTime(a.fullTime || a.time || a.timestamp)
+						date: a.dateKey,
+						clockSec: a.clockSec,
+						sortKey: a.sortKey
+					} : this.parseMeasureDateTime(a.fullTime || a.time || a.timestamp)
 					const pb = (b.dateKey && b.clockSec != null && b.clockSec >= 0) ? {
-							date: b.dateKey,
-							clockSec: b.clockSec,
-							sortKey: b.sortKey
-						} :
-						this.parseMeasureDateTime(b.fullTime || b.time || b.timestamp)
+						date: b.dateKey,
+						clockSec: b.clockSec,
+						sortKey: b.sortKey
+					} : this.parseMeasureDateTime(b.fullTime || b.time || b.timestamp)
 					if (pa.date !== pb.date) return pa.date < pb.date ? -1 : 1
 					if (pa.clockSec !== pb.clockSec) return pa.clockSec - pb.clockSec
 					const ka = pa.sortKey || ''
@@ -998,8 +1012,9 @@
 			},
 			/** 只保留监测时间范围内的数据（按墙钟日期时间，避免 timestamp 异常漏掉凌晨数据） */
 			filterMonitorDataByTimeRange(data) {
-				const startP = this.parseMeasureDateTime(this.monitorInfo.startTime)
-				const endP = this.parseMeasureDateTime(this.monitorInfo.endTime)
+				const range = this.getQueryMonitorRange()
+				const startP = this.parseMeasureDateTime(range.startTime)
+				const endP = this.parseMeasureDateTime(range.endTime)
 				const startKey = startP.sortKey
 				const endKey = endP.sortKey
 				if (!startKey || !endKey) {
@@ -1188,12 +1203,7 @@
 			// ==================== API 请求 ====================
 			get_finalRetVarList() {
 				let that = this;
-				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
-				const chinaNow = getChinaTimeAllJSON()
-				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
-				const profYmd = chinaHour < 1
-					? getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD
-					: chinaNow.YMD
+				const profYmd = that.overseasProfYmd || getReportProfChinaYmd()
 				let data = {
 					userId: uni.getStorageSync("userid"),
 					profDate: profYmd + ' 00:00:00',
@@ -1233,31 +1243,32 @@
 				});
 			},
 
-			get_retVarList() {
+			get_retVarList(isFallback) {
 				let that = this
-				// 永远中国时间；当天凌晨 1 点前报告尚未就绪，用前一天
-				const chinaNow = getChinaTimeAllJSON()
-				const chinaHour = Number(chinaNow.YMDHMS.slice(11, 13))
-				const profYmd = chinaHour < 1
-					? getChinaTimeAllJSON(new Date(Date.now() - 24 * 60 * 60 * 1000)).YMD
-					: chinaNow.YMD
+				const profYmd = that.overseasProfYmd || getReportProfChinaYmd()
 				let data = {
 					userId: uni.getStorageSync("userid"),
 					profDate: profYmd + ' 00:00:00',
 					filterVarList: that.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				}
-				// console.log("get_retVarLisdata参数：", data)
 				that.$post(that.$url_APP_IP + "/prod-api/device_app/get_retVarList", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((get_retVarList) => {
-					// console.log("get_retVarLis：", get_retVarList)
-					if (get_retVarList.code === 200 && get_retVarList.data && get_retVarList.data.retVarList) {
-						const processedData = that.processRetVarList(get_retVarList.data.retVarList);
-						const filteredData = that.filterMonitorDataByTimeRange(processedData);
-						that.monitorData = filteredData;
-						that.updateStatistics(filteredData);
+					const raw = get_retVarList && get_retVarList.data && get_retVarList.data.retVarList
+					const processedData = (get_retVarList && get_retVarList.code === 200 && raw) ?
+						that.processRetVarList(raw) : []
+					const filteredData = that.filterMonitorDataByTimeRange(processedData)
+					if (!isFallback && shouldOverseasMidnightFallback() && filteredData.length === 0) {
+						that.calculateTimeRange(addChinaYmdDays(profYmd, -1))
+						that.get_retVarList(true)
+						that.get_finalRetVarList()
+						return
+					}
+					if (get_retVarList && get_retVarList.code === 200 && raw) {
+						that.monitorData = filteredData
+						that.updateStatistics(filteredData)
 					}
 				})
 			},

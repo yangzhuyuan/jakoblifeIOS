@@ -1,5 +1,5 @@
 <script>
-	const systemInfo = uni.getSystemInfoSync()
+	const systemInfo = uni.getSystemInfoSync();
 	import {
 		isInChinaByIP,
 		ISgetUserInfoUS,
@@ -16,17 +16,21 @@
 		onBackgroundTaskExpired,
 		offBackgroundTaskExpired
 	} from 'nativeplugins/KeepAlivesdkplugin/ios/keepAlive.js'; // 严格按 keepAlive.js 导出 API
-
 	import {
 		resumeQxBleScheduleIfEnabled,
+		fetchQxDataAndApplyStorage,
 		onQxBleAppBackground,
 		onQxBleAppForeground
-	} from '@/pages/api/qxBleAlignedSchedule.js'
-	import keepAliveManager from 'nativeplugins/KeepAlivesdkplugin/keepAliveManager.js'
-	import Vue from 'vue'
+	} from '@/pages/api/qxBleAlignedSchedule.js';
+	import keepAliveManager from 'nativeplugins/KeepAlivesdkplugin/keepAliveManager.js';
+	import Vue from 'vue';
 	import {
 		refreshActiveAppBaseUrl
 	} from '@/pages/api/appBaseHosts.js';
+	import {
+		ensureNetworkErrorToastBound,
+		flushPendingNetworkErrorToast
+	} from '@/pages/api/networkErrorToast.js';
 	export default {
 		data() {
 			return {
@@ -48,117 +52,138 @@
 				backgroundRefreshScheduled: false,
 				bgRefreshPromptShowing: false,
 				qxAppHidden: false,
-				_lastBgTaskRenewAt: 0,
-				_bgTaskExpiredBound: false,
+				lastBgTaskRenewAt: 0,
+				bgTaskExpiredBound: false,
 			}
 		},
 
-	
+
 		onLaunch: function() {
-			const that = this
+			const that = this;
+			ensureNetworkErrorToastBound();
 			// 情绪定时开关保存后立刻启/停
 			uni.$on('qx:keepalive:start', function() {
-				that.activateQxPpgKeepAlive('schedule-start')
-			})
+				that.activateQxPpgKeepAlive('schedule-start');
+			});
 			uni.$on('qx:keepalive:stop', function() {
-				that.deactivateQxPpgKeepAlive('schedule-stop')
-			})
+				that.deactivateQxPpgKeepAlive('schedule-stop');
+			});
 			uni.$on('qx:keepalive:renew', function() {
-				if (!that.isQxKeepAliveEnabled()) return
-				that.applyKeepAliveFromPlugin(true)
-			})
-			that.bindBackgroundTaskExpired()
+				if (!that.isQxKeepAliveEnabled()) return;
+				that.applyKeepAliveFromPlugin(true);
+			});
+			that.bindBackgroundTaskExpired();
 			if (typeof uni.onAppHide === 'function') {
 				uni.onAppHide(function() {
-					that.qxAppHidden = true
-					if (!that.isQxKeepAliveEnabled()) return
+					that.qxAppHidden = true;
+					if (!that.isQxKeepAliveEnabled()) return;
 					if (typeof onQxBleAppBackground === 'function') {
-						onQxBleAppBackground()
+						onQxBleAppBackground();
 					}
 					// 开关开启时：音频 + 连续定位（定位才是有效保活，勿在前后台反复开关）
-					that.applyKeepAliveFromPlugin(true)
+					that.applyKeepAliveFromPlugin(true);
 				})
 			}
 			if (typeof uni.onAppShow === 'function') {
 				uni.onAppShow(function() {
-					that.qxAppHidden = false
-					if (!that.isQxKeepAliveEnabled()) return
+					that.qxAppHidden = false;
+					if (!that.isQxKeepAliveEnabled()) return;
 					// 回前台仍保持定位保活，避免反复 enable/disable 被系统杀掉
-					that.applyKeepAliveFromPlugin(false)
+					that.applyKeepAliveFromPlugin(false);
 					if (typeof onQxBleAppForeground === 'function') {
-						onQxBleAppForeground()
+						onQxBleAppForeground();
 					} else {
 						resumeQxBleScheduleIfEnabled({
 							fromForeground: true
 						}).catch((e) => {
-							console.warn('resumeQxBleScheduleIfEnabled app-show', e)
+							console.warn('resumeQxBleScheduleIfEnabled app-show', e);
 						})
 					}
 				})
 			}
 			setTimeout(() => {
-				plus.navigator.closeSplashscreen()
-			}, 1000)
+				plus.navigator.closeSplashscreen();
+			}, 1000);
 			const lan = uni.getLocale();
 			if (lan == 'zh-Hans' || lan == 'zh-Hant') {
 				this._i18n.locale = "zh-CN";
 			} else {
 				this._i18n.locale = "en-US";
 			}
-			refreshActiveAppBaseUrl(Vue)
+			refreshActiveAppBaseUrl(Vue);
 		},
 
 		onHide() {
-			this.qxAppHidden = true
-			const qxOn = this.isQxKeepAliveEnabled()
+			this.qxAppHidden = true;
+			const qxOn = this.isQxKeepAliveEnabled();
 			this.stopInterval();
 			setTimeout(() => {
 				this.startInterval();
-			}, 1000)
+			}, 1000);
 			if (qxOn) {
-				this.handleInit()
-				this.applyKeepAliveFromPlugin(true)
+				this.handleInit();
+				this.applyKeepAliveFromPlugin(true);
 			}
 			if (typeof onQxBleAppBackground === 'function') {
-				onQxBleAppBackground()
+				onQxBleAppBackground();
 			}
 		},
 
 		mounted() {
-			this.notifyTriggered = false
+			this.notifyTriggered = false;
 		},
 
 		onShow() {
-			let that = this
-			that.qxAppHidden = false
+			let that = this;
+			that.qxAppHidden = false;
+			flushPendingNetworkErrorToast();
 			that.getBaseUrl();
-			plus.runtime.setBadgeNumber(0)
-			that.setTabBarItems()
+			plus.runtime.setBadgeNumber(0);
+			that.setTabBarItems();
 			that.stopInterval();
 			setTimeout(() => {
 				that.startInterval();
 			}, 1000)
 			if (uni.getStorageSync('token') && that.isQxKeepAliveEnabled()) {
-				that.handleInit()
+				that.handleInit();
 			}
 			let timesder = setInterval(res => {
 				if (uni.getStorageSync("token")) {
-					clearInterval(timesder)
-					if (that.isQxKeepAliveEnabled()) {
-						that.handleInit()
-						if (typeof onQxBleAppForeground === 'function') {
-							onQxBleAppForeground()
+					// 退出登录会清本地开关并关定位；再登录后本地开关为空时拉云端，开则恢复定位保活+调度
+					clearInterval(timesder);
+					(async () => {
+						if (!that.isQxKeepAliveEnabled()) {
+							try {
+								await fetchQxDataAndApplyStorage();
+							} catch (e) {
+								console.warn('fetchQxData login-restore', e);
+							}
+							if (that.isQxKeepAliveEnabled()) {
+								that.handleInit();
+								try {
+									await resumeQxBleScheduleIfEnabled();
+								} catch (e) {
+									console.warn('resumeQxBle login-restore', e);
+								}
+								return;
+							}
 						}
-					}
+						if (that.isQxKeepAliveEnabled()) {
+							that.handleInit();
+							if (typeof onQxBleAppForeground === 'function') {
+								onQxBleAppForeground();
+							}
+						}
+					})();
 				}
-			}, 2000)
+			}, 2000);
 		},
 
 		methods: {
 			/** 定时测量任一开关开启即保活/恢复（无感 switchHER + 情绪 switchEmotionHER，与 qxBleAlignedSchedule.isSwitchOn 一致） */
 			isQxKeepAliveEnabled() {
-				const isOn = (v) => v === true || v === 'true' || v === 1 || v === '1'
-				return isOn(uni.getStorageSync('switchHER')) || isOn(uni.getStorageSync('switchEmotionHER'))
+				const isOn = (v) => v === true || v === 'true' || v === 1 || v === '1';
+				return isOn(uni.getStorageSync('switchHER')) || isOn(uni.getStorageSync('switchEmotionHER'));
 			},
 			/**
 			 * 严格按 keepAlive.js：开关开启时始终
@@ -168,143 +193,135 @@
 			 */
 			applyKeepAliveFromPlugin(renewBgTask = false) {
 				try {
-					enableAudioKeepAlive(true)
-					this.audioEnabled = true
+					enableAudioKeepAlive(true);
+					this.audioEnabled = true;
 				} catch (e) {
-					console.warn('enableAudioKeepAlive', e)
+					console.warn('enableAudioKeepAlive', e);
 				}
 				try {
-					enableLocationKeepAlive(true)
-					this.locationEnabled = true
+					enableLocationKeepAlive(true);
+					this.locationEnabled = true;
 				} catch (e) {
-					console.warn('enableLocationKeepAlive', e)
+					console.warn('enableLocationKeepAlive', e);
 				}
 				if (renewBgTask) {
-					this.renewBackgroundTaskForQx('applyKeepAlive')
+					this.renewBackgroundTaskForQx('applyKeepAlive');
 				}
 				try {
-					keepAliveManager.ensureRunningForAppTimers()
+					keepAliveManager.ensureRunningForAppTimers();
 				} catch (e) {}
 			},
 			bindBackgroundTaskExpired() {
-				if (this._bgTaskExpiredBound) return
-				const that = this
+				if (this.bgTaskExpiredBound) return;
+				const that = this;
 				const doBind = () => {
-					if (that._bgTaskExpiredBound) return
-					that._bgTaskExpiredBound = true
+					if (that.bgTaskExpiredBound) return;
+					that.bgTaskExpiredBound = true;
 					try {
 						that._bgTaskExpiredHandler = function(data) {
-							console.log('后台任务即将过期', data)
-							if (!that.isQxKeepAliveEnabled()) return
-							that.taskRunning = false
-							that.applyKeepAliveFromPlugin(true)
+							if (!that.isQxKeepAliveEnabled()) return;
+							that.taskRunning = false;
+							that.applyKeepAliveFromPlugin(true);
 						}
-						onBackgroundTaskExpired(that._bgTaskExpiredHandler)
+						onBackgroundTaskExpired(that._bgTaskExpiredHandler);
 					} catch (e) {
-						that._bgTaskExpiredBound = false
-						console.warn('onBackgroundTaskExpired', e)
+						that.bgTaskExpiredBound = false;
+						console.warn('onBackgroundTaskExpired', e);
 					}
-				}
+				};
 				if (typeof plus !== 'undefined' && plus.globalEvent) {
-					doBind()
-					return
+					doBind();
+					return;
 				}
 				if (typeof document !== 'undefined' && document.addEventListener) {
 					document.addEventListener('plusready', doBind, {
 						once: true
-					})
+					});
 				} else {
-					setTimeout(doBind, 500)
+					setTimeout(doBind, 500);
 				}
 			},
 			async renewBackgroundTaskForQx(reason = '') {
-				if (!this.isQxKeepAliveEnabled()) return
-				const now = Date.now()
-				if (this._lastBgTaskRenewAt && now - this._lastBgTaskRenewAt < 3000) return
-				this._lastBgTaskRenewAt = now
+				if (!this.isQxKeepAliveEnabled()) return;
+				const now = Date.now();
+				if (this.lastBgTaskRenewAt && now - this.lastBgTaskRenewAt < 3000) return;
+				this.lastBgTaskRenewAt = now;
 				try {
-					await startBackgroundTask(600)
-					this.taskRunning = true
-					// console.log('[keepAlive] startBackgroundTask(600)', reason || '-')
+					await startBackgroundTask(600);
+					this.taskRunning = true;
 				} catch (e) {
-					console.warn('startBackgroundTask', reason, e)
+					console.warn('startBackgroundTask', reason, e);
 				}
 			},
 			compareVersion(v1, v2) {
-				const arr1 = v1.split('.').map(Number)
-				const arr2 = v2.split('.').map(Number)
-				const maxLen = Math.max(arr1.length, arr2.length)
-
+				const arr1 = v1.split('.').map(Number);
+				const arr2 = v2.split('.').map(Number);
+				const maxLen = Math.max(arr1.length, arr2.length);
 				for (let i = 0; i < maxLen; i++) {
-					const num1 = arr1[i] || 0
-					const num2 = arr2[i] || 0
-					if (num1 > num2) return 1
-					if (num1 < num2) return -1
+					const num1 = arr1[i] || 0;
+					const num2 = arr2[i] || 0;
+					if (num1 > num2) return 1;
+					if (num1 < num2) return -1;
 				}
-				return 0
+				return 0;
 			},
 			async checkVersionAndLogout() {
 				try {
-					const currentVersion = systemInfo.appVersion
-					const lastVersion = uni.getStorageSync('last_app_version') || '3.2.0'
+					const currentVersion = systemInfo.appVersion;
+					const lastVersion = uni.getStorageSync('last_app_version') || '3.2.0';
 					if (this.compareVersion(currentVersion, lastVersion) !== 0) {
-						uni.removeStorageSync("token")
-						uni.setStorageSync('last_app_version', currentVersion)
+						uni.removeStorageSync("token");
+						uni.setStorageSync('last_app_version', currentVersion);
 					}
 				} catch (e) {
-					console.error('版本检测失败', e)
+					console.error('版本检测失败', e);
 				}
 			},
-
 			getBaseUrl() {
-				this.checkVersionAndLogout()
-				refreshActiveAppBaseUrl(Vue)
-				this.check_new_version("io.dcloud.jakob", "1")
+				this.checkVersionAndLogout();
+				refreshActiveAppBaseUrl(Vue);
+				this.check_new_version("io.dcloud.jakob", "1");
 			},
 			/** initKeepAlive → startBackgroundTask → 音频+定位 */
 			async handleInit() {
 				if (this.keepAliveInited) {
 					if (this.isQxKeepAliveEnabled()) {
-						this.applyKeepAliveFromPlugin(!!this.qxAppHidden)
+						this.applyKeepAliveFromPlugin(!!this.qxAppHidden);
 					}
-					return
+					return;
 				}
 				try {
-					await initKeepAlive()
-					this.initStatus = true
-					this.keepAliveInited = true
-					this.bindBackgroundTaskExpired()
-					await this.handleStartTask()
+					await initKeepAlive();
+					this.initStatus = true;
+					this.keepAliveInited = true;
+					this.bindBackgroundTaskExpired();
+					await this.handleStartTask();
 				} catch (error) {
 					console.log(`初始化失败: ${error.msg || error.message}`, 'error');
 				} finally {
 					uni.hideLoading();
 				}
 			},
-
 			async handleStartTask() {
 				try {
 					if (this.taskRunning) {
-						await this.handleScheduleRefresh()
-						return
+						await this.handleScheduleRefresh();
+						return;
 					}
-					await this.renewBackgroundTaskForQx('handleStartTask')
-					this.taskRunning = true
-					await this.handleScheduleRefresh()
-				} catch (error) {
-				} finally {
+					await this.renewBackgroundTaskForQx('handleStartTask');
+					this.taskRunning = true;
+					await this.handleScheduleRefresh();
+				} catch (error) {} finally {
 					uni.hideLoading();
 				}
 			},
-
 			async handleEndTask() {
 				try {
 					try {
-						await endBackgroundTask()
+						await endBackgroundTask();
 					} catch (e) {}
 					this.taskRunning = false;
-				} catch (error) {
-				} finally {
+				} catch (error) {} finally {
 					uni.hideLoading();
 				}
 			},
@@ -312,78 +329,71 @@
 			async handleScheduleRefresh() {
 				try {
 					if (this.isQxKeepAliveEnabled()) {
-						await this.activateQxPpgKeepAlive('handleScheduleRefresh')
-						return
+						await this.activateQxPpgKeepAlive('handleScheduleRefresh');
+						return;
 					}
-					this.applyKeepAliveFromPlugin(false)
-				} catch (error) {
-				} finally {
+					this.applyKeepAliveFromPlugin(false);
+				} catch (error) {} finally {
 					uni.hideLoading();
 				}
 			},
 
 			async activateQxPpgKeepAlive(reason = '') {
-				if (!this.isQxKeepAliveEnabled()) return
+				if (!this.isQxKeepAliveEnabled()) return;
 				try {
 					if (!this.keepAliveInited) {
-						await initKeepAlive()
-						this.keepAliveInited = true
-						this.initStatus = true
-						this.bindBackgroundTaskExpired()
+						await initKeepAlive();
+						this.keepAliveInited = true;
+						this.initStatus = true;
+						this.bindBackgroundTaskExpired();
 					}
 				} catch (e) {
-					console.warn('activateQxPpgKeepAlive init', reason, e)
+					console.warn('activateQxPpgKeepAlive init', reason, e);
 				}
-				this.applyKeepAliveFromPlugin(true)
+				this.applyKeepAliveFromPlugin(true);
 				// 可选：后台刷新（keepAlive.js scheduleBackgroundRefresh）
 				try {
 					if (!this.backgroundRefreshScheduled) {
-						await scheduleBackgroundRefresh(900)
-						this.backgroundRefreshScheduled = true
+						await scheduleBackgroundRefresh(900);
+						this.backgroundRefreshScheduled = true;
 					}
 				} catch (e) {
-					console.warn('scheduleBackgroundRefresh', e)
+					console.warn('scheduleBackgroundRefresh', e);
 				}
-				this.taskRunning = true
-				// console.log('QX PPG保活已激活(连续定位+音频)', reason || '-')
+				this.taskRunning = true;
 			},
 			deactivateQxPpgKeepAlive(reason = '') {
 				try {
-					enableAudioKeepAlive(false)
+					enableAudioKeepAlive(false);
 				} catch (e) {}
 				try {
-					enableLocationKeepAlive(false)
+					enableLocationKeepAlive(false);
 				} catch (e) {}
 				try {
-					endBackgroundTask()
+					endBackgroundTask();
 				} catch (e) {}
 				try {
-					keepAliveManager.stopQxLocationAlarm()
+					keepAliveManager.stopQxLocationAlarm();
 				} catch (e) {}
-				this.audioEnabled = false
-				this.locationEnabled = false
-				this.taskRunning = false
-				console.log('QX PPG保活已关闭', reason || '-')
+				this.audioEnabled = false;
+				this.locationEnabled = false;
+				this.taskRunning = false;
 			},
-
 			ensureAudioKeepAlive() {
 				try {
-					enableAudioKeepAlive(true)
-					this.audioEnabled = true
+					enableAudioKeepAlive(true);
+					this.audioEnabled = true;
 				} catch (e) {}
 			},
-
 			ensureLocationKeepAlive() {
 				try {
-					enableLocationKeepAlive(true)
-					this.locationEnabled = true
+					enableLocationKeepAlive(true);
+					this.locationEnabled = true;
 				} catch (e) {}
 			},
-
 			forceQxBackgroundKeepAlive(forceLocation = true) {
-				this.applyKeepAliveFromPlugin(!!this.qxAppHidden)
+				this.applyKeepAliveFromPlugin(!!this.qxAppHidden);
 			},
-
 			handleToggleAudio() {
 				this.audioEnabled = !this.audioEnabled;
 				enableAudioKeepAlive(this.audioEnabled);
@@ -398,13 +408,12 @@
 
 			async handleCheckStatus() {
 				try {
-					const st = await checkBackgroundRefreshStatus()
-					this.refreshStatus = JSON.stringify(st)
+					const st = await checkBackgroundRefreshStatus();
+					this.refreshStatus = JSON.stringify(st);
 				} catch (e) {
-					this.refreshStatus = '未知'
+					this.refreshStatus = '未知';
 				}
 			},
-
 			// 发送推送消息
 			sendPushMessage(pushClientId) {
 				const now = new Date(); // 获取当前时间
@@ -416,33 +425,31 @@
 				const Seconds = now.getSeconds() < 10 ? "0" + now.getSeconds() : now.getSeconds()
 				const timestamp = year + "/" + month + "/" + day + " " + houres + ":" + Minutes + ":" + Seconds;
 				uniCloud.callFunction({
-						name: "testUniPush", // 云函数名称
-						data: {
-							cids: pushClientId, // 使用存储的设备 CID（接收者cid）
-							title: "jakobLife",
-							content: `${this.$t("测量通知")} ${timestamp}`, // 使用方括号而不是括号,
-							request_id: "",
-							timestamp: timestamp
-						}
-					})
-					.then((dataRes) => {
-						this.notifyTriggered = false; // 标记已触发通知
-						this.sendnotifyTriggered = false
-						console.log("云函数返回的参数", dataRes)
-					})
-					.catch((err) => {
-						console.log("云函数报错", err)
-						this.notifyTriggered = false; // 标记已触发通知
-						this.sendnotifyTriggered = false
-						uni.showToast({
-							title: err.errMsg,
-							icon: "none"
-						})
-					})
+					name: "testUniPush", // 云函数名称
+					data: {
+						cids: pushClientId, // 使用存储的设备 CID（接收者cid）
+						title: "jakobLife",
+						content: `${this.$t("测量通知")} ${timestamp}`, // 使用方括号而不是括号,
+						request_id: "",
+						timestamp: timestamp
+					}
+				}).then((dataRes) => {
+					this.notifyTriggered = false; // 标记已触发通知
+					this.sendnotifyTriggered = false;
+					console.log("云函数返回的参数", dataRes);
+				}).catch((err) => {
+					console.log("云函数报错", err);
+					this.notifyTriggered = false; // 标记已触发通知
+					this.sendnotifyTriggered = false;
+					uni.showToast({
+						title: err.errMsg,
+						icon: "none"
+					});
+				})
 			},
 			//获取app最新版本
 			check_new_version(pkgName, type) {
-				let that = this
+				let that = this;
 				uni.request({
 					url: that.$url_APP_IP + "/prod-api/system/version/check_new_version",
 					method: 'POST',
@@ -456,7 +463,7 @@
 					},
 					success(version) {
 						if (version.data.code === 4003) {
-							return
+							return;
 						} else {
 							that.isMandatory = version.data.data.updateForce === 0 ? false : true;
 							let remarkParts = version.data.data.remark === null ? "" : version.data
@@ -472,14 +479,11 @@
 								chinesePart = remarkParts[1];
 							}
 							let lan = uni.getLocale();
-							// let today = new Date().toISOString().slice(0, 10);
 							let today = version.data.data.versionName;
 							if (version.data.data.updateForce === 0) {
 								if (uni.getStorageSync("aboutupdate") === today) {
-									// console.log("不需要强制更新，按钮取消")
-									return
+									return;
 								}
-								// console.log("不需要强制更新")
 								uni.showModal({
 									content: `${that.$t('版本更新1')}${version.data.data.versionName}${that.$t('版本更新2')}\n${lan == 'zh-Hans' || lan == 'zh-Hant' ? chinesePart : englishPart}`,
 									confirmText: that.$t('安装'),
@@ -492,12 +496,11 @@
 												action: `itms-apps://itunes.apple.com/app/id${appleId}?mt=8`
 											});
 										} else if (modal.cancel) {
-											uni.setStorageSync("aboutupdate", today)
+											uni.setStorageSync("aboutupdate", today);
 										}
 									}
 								});
 							} else {
-								// console.log("需要强制更新")
 								uni.showModal({
 									content: `${that.$t('版本更新1')}${version.data.data.versionName}${that.$t('版本更新2')}\n${(lan == 'zh-Hans' || lan == 'zh-Hant') ? chinesePart : englishPart}`,
 									confirmText: that.$t('安装'),
@@ -509,8 +512,6 @@
 											plus.runtime.launchApplication({
 												action: `itms-apps://itunes.apple.com/app/id${appleId}?mt=8`
 											});
-										} else if (modal.cancel) {
-
 										}
 									}
 								});
@@ -653,7 +654,7 @@
 			startInterval() {
 				// 启动定时器（仅分享列表轮询，PPG 后台到点靠定位保活脉冲，不写在这里）
 				this.intervalId = setInterval(() => {
-					this.receiver_list()
+					this.receiver_list();
 				}, 2000);
 			},
 			stopInterval() {
@@ -663,32 +664,29 @@
 					this.intervalId = null; // 清空定时器 ID
 				}
 			},
-
 			//查看别人分享给我的数据点列表
 			receiver_list() {
-				let that = this
+				let that = this;
 				const data = {
 					receiverId: uni.getStorageSync("userid")
-				}
+				};
 				that.$post(that.$url_APP_IP + that.$url_receiver_list, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded;'
 				}).then(pending => {
-					// console.log("receiver_list", pending)
 					if (pending.code === 200 && pending.data && pending.data.length > 0) {
 						let pendingDevices = pending.data;
-						that.notifyTriggered = false
+						that.notifyTriggered = false;
 						if (uni.getStorageSync("switchList")) {
-							if (uni.getStorageSync("switchList").length === pending.data
-								.length) {
-								const shuzhangya1 = uni.getStorageSync("shuzhangyaId1")
-								const shuzhangya2 = uni.getStorageSync("shuzhangyaId2")
-								const shousuoya1 = uni.getStorageSync("shousuoyaId1")
-								const shousuoya2 = uni.getStorageSync("shousuoyaId2")
-								const maibo1 = uni.getStorageSync("maiboId1")
-								const maibo2 = uni.getStorageSync("maiboId2")
-								const xeuyang1 = uni.getStorageSync("xeuyang1")
-								const xeuyang2 = uni.getStorageSync("xeuyang2")
+							if (uni.getStorageSync("switchList").length === pending.data.length) {
+								const shuzhangya1 = uni.getStorageSync("shuzhangyaId1");
+								const shuzhangya2 = uni.getStorageSync("shuzhangyaId2");
+								const shousuoya1 = uni.getStorageSync("shousuoyaId1");
+								const shousuoya2 = uni.getStorageSync("shousuoyaId2");
+								const maibo1 = uni.getStorageSync("maiboId1");
+								const maibo2 = uni.getStorageSync("maiboId2");
+								const xeuyang1 = uni.getStorageSync("xeuyang1");
+								const xeuyang2 = uni.getStorageSync("xeuyang2");
 								// 判断设备数量是否一致
 								const storedDevices = uni.getStorageSync("switchList") || [];
 								if (storedDevices.length === pendingDevices.length) {
@@ -942,25 +940,24 @@
 			// 封装检查和通知的逻辑
 			checkAndNotify() {
 				let that = this
-				console.log("hahhahah", that.notifyTriggered)
 				if (that.notifyTriggered === true && !that.sendnotifyTriggered) {
 					uni.getPushClientId({
 						success(res) {
 							console.log('获取到的推送客户端标识:', res.cid);
 							that.sendPushMessage(res.cid);
-							that.notifyTriggered = false
-							that.sendnotifyTriggered = true
+							that.notifyTriggered = false;
+							that.sendnotifyTriggered = true;
 							setTimeout(() => {
-								that.sendnotifyTriggered = false
-							}, 5000)
+								that.sendnotifyTriggered = false;
+							}, 5000);
 						},
 						fail(err) {
-							console.log("获取到的推送客户端标识失败", err)
+							console.log("获取到的推送客户端标识失败", err);
 							that.notifyTriggered = false;
-							that.sendnotifyTriggered = true
+							that.sendnotifyTriggered = true;
 							setTimeout(() => {
-								that.sendnotifyTriggered = false
-							}, 5000)
+								that.sendnotifyTriggered = false;
+							}, 5000);
 						}
 					});
 				}
@@ -1051,7 +1048,6 @@
 				const seconds = data.getSeconds();
 				return `${hours}:${minutes}:${seconds}`;
 			},
-
 			// 修改底部导航
 			setTabBarItems() {
 				// 修改底部导航
@@ -1075,7 +1071,6 @@
 					index: 4,
 					text: this.$t('我的')
 				});
-
 			}
 		}
 	}
