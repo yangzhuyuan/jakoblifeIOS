@@ -120,7 +120,10 @@
 
 <script>
 	import {
+		getChinaTimeAllJSON,
 		getLocalTimeAllJSON,
+		isChinaTimezoneAligned,
+		addChinaYmdDays,
 		localSelectedYmdToChinaYmd
 	} from '@/pages/api/unitls/timezone.js'
 	export default {
@@ -169,6 +172,22 @@
 			/** 界面展示：手机本地日期 */
 			getCurrentTime() {
 				return getLocalTimeAllJSON().YMD
+			},
+			/**
+			 * 国内：过凌晨 7 点按所选日的次日 7 点换算；选的就是当天且未过 7 点，先按昨天。
+			 * 国外：仍按次日凌晨 1 点。
+			 */
+			resolveReportProfDate(selectedYmd) {
+				if (!isChinaTimezoneAligned()) {
+					return localSelectedYmdToChinaYmd(selectedYmd)
+				}
+				const chinaNow = getChinaTimeAllJSON()
+				const chinaHour = Number(String(chinaNow.YMDHMS || '').slice(11, 13))
+				let selected = String(selectedYmd || '').slice(0, 10)
+				if (selected === chinaNow.YMD && chinaHour < 7) {
+					selected = addChinaYmdDays(selected, -1)
+				}
+				return localSelectedYmdToChinaYmd(selected, '07:00:00')
 			},
 			getStatusColor(status) {
 				// 根据状态值返回不同的样式对象
@@ -303,8 +322,8 @@
 					})
 					return
 				} else {
-					// 选 D：中国已过 (D+1) 01:00 → 传 D+1，否则传 D（只换算一次）
-					const chinaProfDate = localSelectedYmdToChinaYmd(this.profDate)
+					// 国内：凌晨 7 点；国外：仍是次日凌晨 1 点。只换算一次。
+					const chinaProfDate = this.resolveReportProfDate(this.profDate)
 					uni.navigateTo({
 						url: '../../tabBar/tendency/Report?profDate=' + chinaProfDate + "&time=" + this.time +
 							"&time1=" +

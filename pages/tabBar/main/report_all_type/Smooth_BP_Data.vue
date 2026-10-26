@@ -49,7 +49,6 @@
 		getLocalTimeAllJSON,
 		isChinaTimezoneAligned,
 		addChinaYmdDays,
-		getReportProfChinaYmd,
 		localSelectedYmdToChinaYmd
 	} from '@/pages/api/unitls/timezone.js'
 	export default {
@@ -59,8 +58,6 @@
 				dataList: [],
 				currentTab: 'all',
 				bloodUnit: uni.getStorageSync('Blood') === 0 || uni.getStorageSync('Blood') === '' ? 'mmHg' : 'kPa',
-				// 与 7 天监测报告同一套查询，保证同一天（如 16 号）无感明细一致
-				pacitime: getChinaTimeAllJSON().YMD + ' 07:00:00',
 				filterVarList: "JLvFLGvJL01v1W",
 				period: "1W",
 				tipRefreshKey: 0,
@@ -107,13 +104,14 @@
 				]
 				return isEn ? `${monthNames[month - 1]} ${day}` : `${month}月${day}日`
 			},
-			/** 无感结束日：国内与 24h 一致（过凌晨 1 点传当天，未过传昨天）；国外对照手机次日中国 01:00 */
+			/** 无感接口日：国内过凌晨 7 点传当天，未过传昨天；国外仍对照手机次日中国 01:00 */
 			getSmoothBpEndYmd() {
-				const localYmd = getLocalTimeAllJSON().YMD
 				if (isChinaTimezoneAligned()) {
-					return getReportProfChinaYmd()
+					const chinaNow = getChinaTimeAllJSON()
+					const chinaHour = Number(String(chinaNow.YMDHMS || '').slice(11, 13))
+					return chinaHour >= 7 ? chinaNow.YMD : addChinaYmdDays(chinaNow.YMD, -1)
 				}
-				return localSelectedYmdToChinaYmd(localYmd)
+				return localSelectedYmdToChinaYmd(getLocalTimeAllJSON().YMD)
 			},
 			switchTab(tab) {
 				this.currentTab = tab

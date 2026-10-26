@@ -444,7 +444,8 @@
 						value: this.hrValue,
 						unit: this.isValidMetric(this.pulse) ? 'BPM' : 'BPM',
 						date: this.hrDate,
-						status: this.hrStatus.text,
+						// status: this.hrStatus.text,
+						status: '',
 						tone: this.hrStatus.tone,
 						statusColor: this.hrStatus.color
 					},

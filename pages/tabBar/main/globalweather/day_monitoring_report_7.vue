@@ -856,13 +856,13 @@
 					return
 				}
 				this.overseasProfYmd = ''
-				const now = new Date();
-				this.monitorInfo.endTime =
-					`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} 21:05:00`;
-				const startDate = new Date(now);
-				startDate.setDate(startDate.getDate() - 6);
-				this.monitorInfo.startTime =
-					`${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-${String(startDate.getDate()).padStart(2, '0')} 08:00:00`;
+				// 国内：与 24 小时同一天界（凌晨 7 点）。结束日再往前 6 天，时刻仍是 08:00–21:05。
+				const chinaNow = getChinaTimeAllJSON()
+				const chinaHour = Number(String(chinaNow.YMDHMS || '').slice(11, 13))
+				const endYmd = addChinaYmdDays(chinaNow.YMD, chinaHour >= 7 ? -1 : -2)
+				const startYmd = addChinaYmdDays(endYmd, -6)
+				this.monitorInfo.startTime = `${startYmd} 08:00:00`
+				this.monitorInfo.endTime = `${endYmd} 21:05:00`
 			},
 			getQueryMonitorRange() {
 				if (this.overseasProfYmd) {
@@ -874,6 +874,20 @@
 					}
 				}
 				return this.monitorInfo
+			},
+			/** 国内明细与监测时间对齐；国外不裁剪 */
+			filterChinaMonitorData(data) {
+				if (!isChinaTimezoneAligned()) return data || []
+				const range = this.getQueryMonitorRange()
+				const startKey = this.parseMeasureDateTime(range.startTime).sortKey
+				const endKey = this.parseMeasureDateTime(range.endTime).sortKey
+				if (!startKey || !endKey) return data || []
+				return (data || []).filter(item => {
+					const parsed = this.parseMeasureDateTime(item.fullTime || item.time || item.timestamp)
+					const key = item.sortKey || parsed.sortKey
+					if (!key || !parsed.date) return true
+					return key >= startKey && key <= endKey
+				})
 			},
 
 
@@ -1347,10 +1361,12 @@
 					filterVarList: this.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				};
+				console.log('get_retVarList res阿森松岛:', data);
 				this.$post(this.$url_APP_IP + '/prod-api/device_app/get_retVarList', data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((res) => {
+					console.log('get_retVarList res:', res);
 					const raw = res && res.data && res.data.retVarList
 					const empty = !(res && res.code === 200 && raw && String(raw).trim())
 					if (!isFallback && shouldOverseasMidnightFallback() && empty) {
@@ -1360,7 +1376,7 @@
 						return
 					}
 					if (res.code === 200 && res.data && res.data.retVarList) {
-						this.monitorData = this.processRetVarList(res.data.retVarList);
+						this.monitorData = this.filterChinaMonitorData(this.processRetVarList(res.data.retVarList));
 						this.updateStatistics(this.monitorData);
 						this.calculateDailyStats(this.monitorData);
 					} else {

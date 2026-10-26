@@ -218,6 +218,10 @@
 				return false
 			},
 			startZk872AutoConnect() {
+				this._zk872StaleBle = {}
+				this._zk872LastId = ''
+				this._zk872AttachBusy = false
+				this._zk872ForceFresh = false
 				this.stopZk872Ble()
 				this.zkConnecting = true
 				this.bleAttempt = 0
@@ -244,6 +248,7 @@
 				if (session !== that.bleSession) return
 				that.bleAttempt += 1
 				that.blePhase = 'scan'
+				that._zk872AttachBusy = false
 				that.zkConnecting = true
 				uni.showLoading({
 					title: that.$t(that.bleAttempt === 1 ? '连接中' : 'ZK872正在重试连接'),
@@ -252,7 +257,7 @@
 				uni.openBluetoothAdapter({
 					success: () => {
 						if (session !== that.bleSession) return
-						// 手机已经连着时设备不再广播。每次尝试都先复用系统连接，再搜索。
+						// 第一遍：系统能查到且服务可读就直接用；查到但读不到，或系统接口为空但缓存里有设备，都先按 UUID 连接。连不上再强制断开重试一遍。
 						that.useConnectedZk872(session, (used) => {
 							if (session !== that.bleSession || used) return
 							that.scanZk872(session)
@@ -303,6 +308,8 @@
 						})
 					}
 				} catch (e) {}
+				const knownZk = ids.slice()
+				let cacheDeviceId = ''
 				const markSystemConnected = (id) => {
 					const key = String(id || '').toUpperCase()
 					if (key) systemConnected[key] = true
@@ -338,32 +345,44 @@
 					}
 					const deviceId = ids[index]
 					const phoneAlreadyConnected = !!systemConnected[String(deviceId).toUpperCase()]
+					const connectKnown = () => {
+						that.addlog(phoneAlreadyConnected ? '系统已连接但读不到服务，按UUID连接' : '系统接口为空，按缓存UUID连接', deviceId, names[deviceId] || '')
+						that.connectZk872({
+							deviceId: deviceId,
+							name: names[deviceId] || 'ZK-B872'
+						}, session)
+						done(true)
+					}
 					uni.getBLEDeviceServices({
 						deviceId: deviceId,
 						success: (res) => {
 							if (session !== that.bleSession) return
 							if (res && res.services && res.services.length) {
+								if (that._zk872ForceFresh) {
+									that.dropStaleZk872ThenScan(deviceId, session, done)
+									return
+								}
 								useExistingLink(deviceId)
 								return
 							}
-							if (phoneAlreadyConnected) {
-								that.connectZk872({
-									deviceId: deviceId,
-									name: names[deviceId] || 'ZK-B872'
-								}, session)
-								done(true)
+							if (that._zk872ForceFresh && phoneAlreadyConnected) {
+								that.dropStaleZk872ThenScan(deviceId, session, done)
+								return
+							}
+							if (!that._zk872ForceFresh) {
+								connectKnown()
 								return
 							}
 							probe(index + 1)
 						},
 						fail: () => {
 							if (session !== that.bleSession) return
-							if (phoneAlreadyConnected) {
-								that.connectZk872({
-									deviceId: deviceId,
-									name: names[deviceId] || 'ZK-B872'
-								}, session)
-								done(true)
+							if (that._zk872ForceFresh && phoneAlreadyConnected) {
+								that.dropStaleZk872ThenScan(deviceId, session, done)
+								return
+							}
+							if (!that._zk872ForceFresh) {
+								connectKnown()
 								return
 							}
 							probe(index + 1)
@@ -373,7 +392,25 @@
 				let pending = 3
 				const stepDone = () => {
 					pending -= 1
-					if (pending <= 0) probe(0)
+					if (pending > 0) return
+					if (!that._zk872ForceFresh) {
+						const systemIds = []
+						const rest = []
+						ids.forEach((id) => {
+							const fromSystem = !!systemConnected[String(id).toUpperCase()]
+							const known = knownZk.indexOf(id) >= 0 || that.isZk872BleName(names[id] || '')
+							if (fromSystem && known) systemIds.push(id)
+							else rest.push(id)
+						})
+						const ordered = systemIds.slice()
+						if (cacheDeviceId && ordered.indexOf(cacheDeviceId) < 0) ordered.push(cacheDeviceId)
+						rest.forEach((id) => {
+							if (ordered.indexOf(id) < 0) ordered.push(id)
+						})
+						ids.splice(0, ids.length)
+						ordered.forEach((id) => ids.push(id))
+					}
+					probe(0)
 				}
 				uni.getConnectedBluetoothDevices({
 					services: ['0000FFFF-0000-1000-8000-00805F9B34FB'],
@@ -404,7 +441,7 @@
 						if (hit) {
 							that.addlog('缓存中有目标设备', hit.deviceId, hit.name || hit.localName || '')
 							push(hit.deviceId, hit.name || hit.localName || '')
-							markSystemConnected(hit.deviceId)
+							if (ids.indexOf(hit.deviceId) >= 0) cacheDeviceId = hit.deviceId
 						}
 					},
 					complete: stepDone
@@ -445,7 +482,6 @@
 					if (hit) that.connectZk872(hit, session)
 				}
 				uni.onBluetoothDeviceFound((res) => {
-					that.addlog("发现蓝牙设备", res)
 					const list = (res && res.devices) || []
 					for (let i = 0; i < list.length; i++) {
 						const item = list[i]
@@ -514,6 +550,34 @@
 			attachConnectedZk872(item, session) {
 				const that = this
 				if (session !== that.bleSession || that.blePhase !== 'scan' || !item || !item.deviceId) return
+				if (that._zk872AttachBusy) return
+				if (that._zk872StaleBle && that._zk872StaleBle[item.deviceId]) return
+				that._zk872AttachBusy = true
+				uni.getBLEDeviceServices({
+					deviceId: item.deviceId,
+					success: (res) => {
+						that._zk872AttachBusy = false
+						if (session !== that.bleSession || that.blePhase !== 'scan') return
+						if (that._zk872ForceFresh || !(res && res.services && res.services.length)) {
+							that.markZk872Stale(item.deviceId)
+							that.addlog('系统连接不可用，断开后继续扫描', item.deviceId)
+							that.closeZk872Link(item.deviceId)
+							return
+						}
+						that.useReadyZk872Link(item, session)
+					},
+					fail: () => {
+						that._zk872AttachBusy = false
+						if (session !== that.bleSession || that.blePhase !== 'scan') return
+						that.markZk872Stale(item.deviceId)
+						that.addlog('扫描中系统已连接但读不到服务，断开后继续扫描', item.deviceId)
+						that.closeZk872Link(item.deviceId)
+					}
+				})
+			},
+			useReadyZk872Link(item, session) {
+				const that = this
+				if (session !== that.bleSession || that.blePhase !== 'scan' || !item || !item.deviceId) return
 				that.blePhase = 'connect'
 				if (that.bleScanTimer) {
 					clearTimeout(that.bleScanTimer)
@@ -531,6 +595,60 @@
 					name: item.name || item.localName || 'ZK-B872'
 				}, session)
 			},
+			dropStaleZk872ThenScan(deviceId, session, done) {
+				const that = this
+				that.markZk872Stale(deviceId)
+				that.addlog('强制断开系统连接后重新扫描', deviceId)
+				that.closeZk872Link(deviceId, () => {
+					if (session !== that.bleSession) return
+					done(false)
+				})
+			},
+			markZk872Stale(deviceId) {
+				if (!this._zk872StaleBle) this._zk872StaleBle = {}
+				if (deviceId) this._zk872StaleBle[deviceId] = true
+			},
+			closeZk872Link(deviceId, done) {
+				let called = false
+				let closing = false
+				const finish = () => {
+					if (called) return
+					called = true
+					if (done) done()
+				}
+				if (!deviceId) {
+					finish()
+					return
+				}
+				// 系统还显示已连接时，应用侧往往已经没有这条链路，直接 close 会 no device。
+				// 先按 UUID 接管，再断开，系统连接才会真正释放。
+				const timer = setTimeout(finish, 6000)
+				const close = () => {
+					if (closing) return
+					closing = true
+					try {
+						uni.closeBLEConnection({
+							deviceId: deviceId,
+							complete: () => {
+								clearTimeout(timer)
+								finish()
+							}
+						})
+					} catch (e) {
+						clearTimeout(timer)
+						finish()
+					}
+				}
+				try {
+					uni.createBLEConnection({
+						deviceId: deviceId,
+						timeout: 4000,
+						complete: close
+					})
+				} catch (e) {
+					close()
+				}
+			},
 			connectZk872(item, session) {
 				const that = this
 				if (session !== that.bleSession || that.blePhase !== 'scan') return
@@ -546,6 +664,7 @@
 					uni.offBluetoothDeviceFound()
 				} catch (e) {}
 				const deviceId = item.deviceId
+				that._zk872LastId = deviceId
 				uni.showLoading({
 					title: that.$t('连接中'),
 					mask: true
@@ -702,35 +821,59 @@
 				const that = this
 				let finished = false
 				let closed = false
+				that._zk872RetryStarted = false
 				const finish = () => {
 					if (finished) return
 					finished = true
 					if (done) done()
 				}
 				const ids = that.zk872LinkIds()
+				const push = (id) => {
+					const value = String(id || '').trim()
+					if (!value || ids.indexOf(value) >= 0) return false
+					if (!/^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$/i.test(value)) return false
+					ids.push(value)
+					return true
+				}
+				const closeNow = (id) => {
+					if (that._zk872RetryStarted || !push(id)) return
+					that.closeZk872Link(id)
+				}
+				push(that._zk872LastId)
+				if (that._zk872StaleBle) {
+					Object.keys(that._zk872StaleBle).forEach((id) => push(id))
+				}
+				const take = (devices, allowEmptyName) => {
+					;(devices || []).forEach((item) => {
+						if (!item || !item.deviceId) return
+						const name = item.name || item.localName || ''
+						if (!(that.isZk872BleName(name) || (allowEmptyName && !name))) return
+						if (closed) closeNow(item.deviceId)
+						else push(item.deviceId)
+					})
+				}
 				const closeAll = () => {
 					if (closed) return
 					closed = true
-					that.addlog('重试前断开蓝牙', ids)
-					if (!ids.length) {
+					const snapshot = ids.slice()
+					that.addlog('重试前断开蓝牙', snapshot)
+					if (!snapshot.length) {
 						finish()
 						return
 					}
-					let left = ids.length
+					let left = snapshot.length
 					const one = () => {
 						left -= 1
 						if (left <= 0) finish()
 					}
-					ids.forEach((deviceId) => {
-						try {
-							uni.closeBLEConnection({
-								deviceId: deviceId,
-								complete: one
-							})
-						} catch (e) {
-							one()
-						}
+					snapshot.forEach((deviceId) => {
+						that.closeZk872Link(deviceId, one)
 					})
+				}
+				let pending = 3
+				const step = () => {
+					pending -= 1
+					if (pending <= 0) closeAll()
 				}
 				setTimeout(closeAll, 1500)
 				uni.getConnectedBluetoothDevices({
@@ -741,15 +884,29 @@
 							deviceId: item && item.deviceId,
 							name: (item && (item.name || item.localName)) || ''
 						})))
-						devices.forEach((item) => {
-							if (!item || !item.deviceId) return
-							const name = item.name || item.localName || ''
-							if (name && !that.isZk872BleName(name)) return
-							const value = String(item.deviceId).trim()
-							if (value && ids.indexOf(value) < 0) ids.push(value)
-						})
+						take(devices, true)
 					},
-					complete: closeAll
+					complete: step
+				})
+				uni.getConnectedBluetoothDevices({
+					success: (res) => {
+						const devices = (res && res.devices) || []
+						that.addlog('重试前系统已连接(不限服务)', devices.map((item) => ({
+							deviceId: item && item.deviceId,
+							name: (item && (item.name || item.localName)) || ''
+						})))
+						take(devices, false)
+					},
+					complete: step
+				})
+				uni.getBluetoothDevices({
+					success: (res) => {
+						const hit = that.pickZk872Device((res && res.devices) || [])
+						if (!hit) return
+						if (closed) closeNow(hit.deviceId)
+						else push(hit.deviceId)
+					},
+					complete: step
 				})
 			},
 			failZk872Attempt(session) {
@@ -768,9 +925,11 @@
 					uni.offBluetoothDeviceFound()
 				} catch (e) {}
 				if (that.bleAttempt < 2) {
+					that._zk872ForceFresh = true
 					that.disconnectZk872Links(() => {
 						setTimeout(() => {
 							if (session !== that.bleSession) return
+							that._zk872RetryStarted = true
 							that.runZk872Attempt(session)
 						}, 600)
 					})

@@ -745,7 +745,6 @@
 				return timesssaa
 			},
 			calculateTimeRange(endYmdOverride) {
-				const pad = (n) => String(n).padStart(2, '0');
 				if (!isChinaTimezoneAligned()) {
 					this.overseasProfYmd = endYmdOverride || getReportProfChinaYmd()
 					const endYmd = getOverseas24hDisplayEndYmd()
@@ -755,19 +754,13 @@
 					return
 				}
 				this.overseasProfYmd = ''
-				const now = new Date();
-				const y = now.getFullYear();
-				const m = pad(now.getMonth() + 1);
-				const d = pad(now.getDate());
-				// 国内监测时间：前一日 06:00 → 当日 06:00
-				const endTime = `${y}-${m}-${d} 06:00:00`;
-				const startDate = new Date(`${y}/${m}/${d} 06:00:00`);
-				startDate.setDate(startDate.getDate() - 1);
-				const sy = startDate.getFullYear();
-				const sm = pad(startDate.getMonth() + 1);
-				const sd = pad(startDate.getDate());
-				this.monitorInfo.startTime = `${sy}-${sm}-${sd} 06:00:00`;
-				this.monitorInfo.endTime = endTime;
+				// 国内：过凌晨 7 点为前天 06:00→昨天 06:00；未过则再往前一天。接口日期不变。
+				const chinaNow = getChinaTimeAllJSON()
+				const chinaHour = Number(String(chinaNow.YMDHMS || '').slice(11, 13))
+				const endYmd = addChinaYmdDays(chinaNow.YMD, chinaHour >= 7 ? -1 : -2)
+				const startYmd = addChinaYmdDays(endYmd, -1)
+				this.monitorInfo.startTime = `${startYmd} 06:00:00`
+				this.monitorInfo.endTime = `${endYmd} 06:00:00`
 			},
 			getQueryMonitorRange() {
 				return this.monitorInfo
@@ -1210,12 +1203,12 @@
 					period: that.period,
 					retVarList: that.finlretVarList1.toLowerCase()
 				};
-				// console.log("get_finalRetVarList", data)
+				console.log("跑批之后的数据参数", data)
 				that.$post(that.$url_APP_IP + "/prod-api/device_app/get_finalRetVarList", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((get_finalRetVarList) => {
-					// console.log("get_finalRetVarList", get_finalRetVarList)
+					console.log("跑批之后的数据", get_finalRetVarList)
 					if (get_finalRetVarList.code === 200) {
 						if (get_finalRetVarList.data.retVarList !== "") {
 							let resultArray = get_finalRetVarList.data.retVarList.split(";");
@@ -1252,10 +1245,12 @@
 					filterVarList: that.filterVarList,
 					retVarList: 'TIME_MEASURE,JLvOPRvJL01vSBP,JLvOPRvJL01vDBP,JLvOPRvJL01vHR'
 				}
+				console.log("中间表参数", data)
 				that.$post(that.$url_APP_IP + "/prod-api/device_app/get_retVarList", data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then((get_retVarList) => {
+					console.log("中间表参数数据", get_retVarList)
 					const raw = get_retVarList && get_retVarList.data && get_retVarList.data.retVarList
 					const processedData = (get_retVarList && get_retVarList.code === 200 && raw) ?
 						that.processRetVarList(raw) : []

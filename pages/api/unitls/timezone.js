@@ -354,13 +354,14 @@ export function shouldOverseasMidnightFallback(date = new Date()) {
 
 /**
  * 手机本地所选报告日 → 中国报告日（供接口 / 下页传参）
- * 选 D，对照中国时间是否已过 (D+1) 日 01:00：
+ * 选 D，对照中国时间是否已过 (D+1) 日 gateClock（默认 01:00:00）：
  * - 已过 → 传 D+1（例：选 22，中国已过 23 号 01:00 → 传 23）
  * - 未过 → 仍传 D（例：选 25，中国未过 26 号 01:00 → 传 25）
+ * 国内连续报告传入 07:00:00；国外及其他调用保持默认 01:00:00。
  *
  * 注意：只应在「本地所选日」上调用一次，不要对已换算结果再次调用。
  */
-export function localSelectedYmdToChinaYmd(selectedYmd) {
+export function localSelectedYmdToChinaYmd(selectedYmd, gateClock = '01:00:00') {
 	const pad = pad2
 	const toUtcDay = (ymd) => {
 		const m = String(ymd || '').match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
@@ -383,9 +384,10 @@ export function localSelectedYmdToChinaYmd(selectedYmd) {
 	const chinaToday = getChinaTimeAllJSON().YMD
 	if (!selected) return chinaToday
 
-	// 选 D → 对照中国 (D+1) 01:00（中国 / 海外同一规则）
+	// 选 D → 对照中国 (D+1) gateClock。默认 01:00，国内连续报告传 07:00
 	const chinaNextDay = addDays(selected, 1)
-	const gateMs = chinaWallClockToMs(`${chinaNextDay} 01:00:00`)
+	const clock = gateClock || '01:00:00'
+	const gateMs = chinaWallClockToMs(`${chinaNextDay} ${clock}`)
 	if (!Number.isFinite(gateMs)) return selected
 	return Date.now() >= gateMs ? chinaNextDay : selected
 }

@@ -41,6 +41,9 @@
 	import {
 		getLocalTimeAllJSON
 	} from '@/pages/api/unitls/timezone.js'
+	import {
+		u16proBLE
+	} from '@/pages/api/protocol/u16pro-ble-manager.js'
 	export default {
 
 		computed: {
@@ -108,11 +111,9 @@
 			this.fetchDeviceConnectedWifi()
 		},
 		onUnload() {
-			try {
-				if (this.bleValueHandler && typeof uni.offBLECharacteristicValueChange === 'function') {
-					uni.offBLECharacteristicValueChange(this.bleValueHandler)
-				}
-			} catch (e) {}
+			if (this.bleValueHandler) {
+				u16proBLE.removeSideNotifyHandler(this.bleValueHandler)
+			}
 			this.bleValueListening = false
 			this.bleNotifySubscribed = false
 			this.clearBleNotifyTimer()
@@ -720,11 +721,9 @@
 			},
 			dropFirstBindBleLink() {
 				const deviceId = this.deviceId
-				try {
-					if (this.bleValueHandler && typeof uni.offBLECharacteristicValueChange === 'function') {
-						uni.offBLECharacteristicValueChange(this.bleValueHandler)
-					}
-				} catch (e) {}
+				if (this.bleValueHandler) {
+					u16proBLE.removeSideNotifyHandler(this.bleValueHandler)
+				}
 				this.bleValueListening = false
 				this.bleNotifySubscribed = false
 				const closeLink = () => {
@@ -893,7 +892,7 @@
 					if (that.normalizeBleId(res.deviceId) !== that.normalizeBleId(deviceId) ||
 						that.normalizeBleId(res.characteristicId) !== that.normalizeBleId(notifyuuid) ||
 						(res.serviceId && that.normalizeBleId(res.serviceId) !== that.normalizeBleId(serviceId)))
-						return
+						return false
 					let hexData = that.ab2hex(res.value)
 					let asciiString = that.hexToAscii(hexData)
 					that.addlog('接收到蓝牙数据:', asciiString)
@@ -902,12 +901,13 @@
 							that.blePendingWifiText = asciiString
 							that.addlog('写入完成前先缓存回包', asciiString)
 						}
-						return
+						return true
 					}
-					if (!that.isWaitingForWifi(attemptId)) return
+					if (!that.isWaitingForWifi(attemptId)) return true
 					that.applyWifiNotifyText(asciiString, deviceId, serviceId, uuid, attemptId)
+					return true
 				}
-				uni.onBLECharacteristicValueChange(that.bleValueHandler)
+				u16proBLE.addSideNotifyHandler(that.bleValueHandler)
 				that.addlog('蓝牙回包监听已注册')
 			},
 			applyWifiNotifyText(asciiString, deviceId, serviceId, uuid, attemptId) {

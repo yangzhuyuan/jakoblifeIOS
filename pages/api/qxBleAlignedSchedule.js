@@ -235,7 +235,7 @@ function logQx(tag, ...details) {
 	if (details.length === 0) {
 		// console.log(`[qxBle][${ts}] ${tag}`)
 	} else {
-		// console.log(`[qxBle][${ts}] ${tag}`, ...details)
+		console.log(`[qxBle][${ts}] ${tag}`, ...details)
 	}
 	try {
 		const detailStr = details.map(formatQxLogDetail).filter(Boolean).join(' ')

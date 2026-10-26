@@ -132,6 +132,7 @@ class U16ProBLEManager {
 		this.bcWriteType = 'write'
 		this._bleListenerInitialized = false
 		this._forwardNotifyHandler = null
+		this._sideNotifyHandlers = []
 		this._bcServiceReadyPromise = null
 		this._lastBcNotifyTime = 0
 		this._lastMainNotifyTime = 0
@@ -359,14 +360,47 @@ class U16ProBLEManager {
 	}
 
 	/**
+	 * 页面侧监听。Vue2 再次调用 uni.onBLECharacteristicValueChange 会替换原生回调，
+	 * 所以只能挂在这一次全局监听上，由调用方在离开页面时移除。
+	 */
+	addSideNotifyHandler(handler) {
+		if (typeof handler !== 'function') return
+		if (!this._sideNotifyHandlers) this._sideNotifyHandlers = []
+		if (this._sideNotifyHandlers.indexOf(handler) === -1) {
+			this._sideNotifyHandlers.push(handler)
+		}
+		this._registerUnifiedBleListener()
+	}
+
+	removeSideNotifyHandler(handler) {
+		const list = this._sideNotifyHandlers
+		if (!list || typeof handler !== 'function') return
+		const index = list.indexOf(handler)
+		if (index >= 0) list.splice(index, 1)
+	}
+
+	_emitSideNotify(res) {
+		const list = this._sideNotifyHandlers
+		if (!list || !list.length) return false
+		let consumed = false
+		for (let i = 0; i < list.length; i++) {
+			try {
+				if (list[i](res) === true) consumed = true
+			} catch (e) {}
+		}
+		return consumed
+	}
+
+	/**
 	 * 注册统一的 BLE notify 监听（BC 协议优先，再转发给页面层）
-	 * uni.onBLECharacteristicValueChange 会叠加，全局只注册一次
+	 * Vue2 下后注册会替换原生回调，全局只注册一次
 	 */
 	_registerUnifiedBleListener() {
 		if (this._bleListenerInitialized) {
 			return
 		}
 		uni.onBLECharacteristicValueChange((res) => {
+			const sideConsumed = this._emitSideNotify(res)
 			const bytes = [...new Uint8Array(res.value)]
 			const hexStr = U16ProProtocol.bytesToHex(bytes)
 			const serviceUpper = (res.serviceId || '').toUpperCase()
@@ -391,6 +425,7 @@ class U16ProBLEManager {
 				return
 			}
 
+			if (sideConsumed) return
 			if (this._forwardNotifyHandler) {
 				this._forwardNotifyHandler(res, bytes, null)
 			}

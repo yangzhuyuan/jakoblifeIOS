@@ -2389,7 +2389,7 @@ export default {
 		您的帐户有绑定: 'Your account is linked to one or more devices or is sharing data with others. Please unbind the devices and stop sharing before canceling your account.',
 		手表如何监测睡眠情况: 'How to monitor your sleep in the watch',
 		连接失败: 'Binding failed, please tap on your device’s model and try again.\nIf multiple attempts are unsuccessful, turn the device off and then on again. Follow the instructions on the previous page to re-enter pairing mode, and then select the device model.',
-		ZK872蓝牙连接失败提示: 'Connection failed. Please check:\n1. The device is powered on and in Bluetooth pairing mode\n2. The device is within connection range.\n.3 Please check if this device is already paired with another phone.',
+		ZK872蓝牙连接失败提示: 'Connection failed. Please check:\n1. The device is powered on and in Bluetooth pairing mode\n2. The device is within connection range.\n3 Please check if this device is already paired with another phone.',
 		ZK872正在重试连接: 'Retrying connection...',
 		没找到指定设备: 'The specified device was not found/The device has been connected.',
 		请点击重试: "Please click “Retry”. If you still can't connect, please clear the app from the background of your phone and then reopen it to bind.",

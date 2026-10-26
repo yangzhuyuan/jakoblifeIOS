@@ -911,6 +911,9 @@
 				};
 				push(mac);
 				try {
+					push(uni.getStorageSync('zk872LastBleDeviceId'));
+				} catch (e) {}
+				try {
 					const list = uni.getStorageSync('listdadsa') || [];
 					if (Array.isArray(list)) {
 						list.forEach((item) => {
@@ -922,9 +925,13 @@
 						});
 					}
 				} catch (e) {}
+				const tried = {};
 				const closeId = (deviceId) => {
+					const value = String(deviceId || '').trim();
+					if (!value || value === '0' || tried[value]) return;
+					tried[value] = true;
 					uni.closeBLEConnection({
-						deviceId: deviceId,
+						deviceId: value,
 						complete: () => {}
 					});
 				};
@@ -933,7 +940,8 @@
 					if (!Array.isArray(raw) || !raw.length) return;
 					const next = raw.filter((entry) => {
 						const id = (entry && typeof entry === 'object') ? entry.deviceId : entry;
-						return !(macLoose && loose(id) === macLoose);
+						if (macLoose && loose(id) === macLoose) return false;
+						return ids.indexOf(String(id || '').trim()) < 0;
 					});
 					if (next.length) uni.setStorageSync(key, next);
 					else uni.removeStorageSync(key);
@@ -958,6 +966,19 @@
 									const devices = (res && res.devices) || [];
 									devices.forEach((item) => {
 										if (!item || !item.deviceId) return;
+										const name = item.name || item.localName || '';
+										if (name && !isZkName(name)) return;
+										push(item.deviceId);
+										closeId(item.deviceId);
+									});
+									publish();
+								}
+							});
+							uni.getBluetoothDevices({
+								success: (res) => {
+									const devices = (res && res.devices) || [];
+									devices.forEach((item) => {
+										if (!item || !item.deviceId || !isZkName(item.name || item.localName)) return;
 										push(item.deviceId);
 										closeId(item.deviceId);
 									});
