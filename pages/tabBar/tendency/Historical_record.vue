@@ -167,7 +167,7 @@
 			currentItemDisplayName() {
 				const nameMap = {
 					[this.ITEM_TYPES.BLOOD_PRESSURE]: this.$t('血压'),
-					[this.ITEM_TYPES.BODY_FAT]: this.$t('体脂'),
+					[this.ITEM_TYPES.BODY_FAT]: this.$t('体重'),
 					[this.ITEM_TYPES.BLOOD_OXYGEN]: this.$t('血氧'),
 					[this.ITEM_TYPES.ECG]: this.$t('心电'),
 					[this.ITEM_TYPES.BLOOD_SUGAR]: this.$t('血糖')
@@ -193,20 +193,20 @@
 						type: this.ITEM_TYPES.BLOOD_PRESSURE
 					},
 					{
-						name: this.$t('血氧'),
-						type: this.ITEM_TYPES.BLOOD_OXYGEN
+						name: this.$t('体重'),
+						type: this.ITEM_TYPES.BODY_FAT
 					},
 					{
 						name: this.$t('心电'),
 						type: this.ITEM_TYPES.ECG
 					},
 					{
-						name: this.$t('体脂'),
-						type: this.ITEM_TYPES.BODY_FAT
-					},
-					{
 						name: this.$t('血糖'),
 						type: this.ITEM_TYPES.BLOOD_SUGAR
+					},
+					{
+						name: this.$t('血氧'),
+						type: this.ITEM_TYPES.BLOOD_OXYGEN
 					}
 				];
 			},

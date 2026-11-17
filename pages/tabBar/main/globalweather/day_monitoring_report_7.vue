@@ -856,10 +856,10 @@
 					return
 				}
 				this.overseasProfYmd = ''
-				// 国内：与 24 小时同一天界（凌晨 7 点）。结束日再往前 6 天，时刻仍是 08:00–21:05。
+				// 国内：与 24 小时同一天界（早上 7 点，结束日为当天；未过则为昨天）。再往前 6 天，时刻仍是 08:00–21:05。
 				const chinaNow = getChinaTimeAllJSON()
 				const chinaHour = Number(String(chinaNow.YMDHMS || '').slice(11, 13))
-				const endYmd = addChinaYmdDays(chinaNow.YMD, chinaHour >= 7 ? -1 : -2)
+				const endYmd = addChinaYmdDays(chinaNow.YMD, chinaHour >= 7 ? 0 : -1)
 				const startYmd = addChinaYmdDays(endYmd, -6)
 				this.monitorInfo.startTime = `${startYmd} 08:00:00`
 				this.monitorInfo.endTime = `${endYmd} 21:05:00`

@@ -1,0 +1,57 @@
+{
+  "name": "Jakob血压计本地识别",
+  "id": "Jakob-BPReader",
+  "version": "1.2.2",
+  "description": "离线图片与实时取景血压读数识别、单位识别及确认",
+  "_dp_type": "nativeplugin",
+  "_dp_nativeplugin": {
+    "android": {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "Jakob-BPReader",
+          "class": "com.jakob.bpreader.JakobBPModule"
+        }
+      ],
+      "integrateType": "aar",
+      "minSdkVersion": 26,
+      "abis": [
+        "arm64-v8a",
+        "armeabi-v7a",
+        "x86_64"
+      ]
+    },
+    "ios": {
+      "plugins": [
+        {
+          "type": "module",
+          "name": "Jakob-BPReader",
+          "class": "JakobBPModule"
+        }
+      ],
+      "integrateType": "framework",
+      "deploymentTarget": "15.0",
+      "validArchitectures": [
+        "arm64"
+      ],
+      "frameworks": [
+        "Foundation.framework",
+        "UIKit.framework",
+        "CoreGraphics.framework",
+        "CoreVideo.framework",
+        "ImageIO.framework",
+        "libc++.tbd",
+        "AVFoundation.framework",
+        "CoreMedia.framework",
+        "QuartzCore.framework"
+      ],
+      "embedSwift": false,
+      "privacies": [
+        "NSCameraUsageDescription"
+      ],
+      "plists": {
+        "NSCameraUsageDescription": "用于扫描血压计屏幕，识别收缩压、舒张压和脉率；失败时在本机保存一张诊断图。"
+      }
+    }
+  }
+}

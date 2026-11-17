@@ -1,0 +1,42 @@
+{
+  "version": "1",
+  "env": {
+    "vapor": false,
+    "compilerVersion": "5.34"
+  },
+  "files": {
+    "utssdk/app-ios/index.uts": {
+      "md5": "2c1fc141fc69048cce3b4cec660fe302"
+    },
+    "utssdk/interface.uts": {
+      "md5": "9bc5971ecc2165ecde11854f739fe901"
+    },
+    "README.md": {
+      "md5": "f00e613095e01bba194c7105b15f4c12"
+    },
+    "package.json": {
+      "md5": "f21b39c05694c6c69e1fc6d9d205ba7e"
+    },
+    "utssdk/app-ios/JakobHealthReminderActions.swift": {
+      "md5": "fb8d86b7bc2d6dfa2abafb3d0762c3de"
+    },
+    "utssdk/app-ios/JakobMedicationNotifications.swift": {
+      "md5": "51c456d2b66843090bc9e5203c8578f7"
+    },
+    "utssdk/app-ios/JakobReminderScheduleQueue.swift": {
+      "md5": "ef711dcf34c0c9a9e7bd3a705b8dbd2e"
+    },
+    "utssdk/app-ios/config.json": {
+      "md5": "f556c0c375d34a790eeac159370dd6e0"
+    },
+    "utssdk/app-ios/Resources/jakob_medication_alarm.wav": {
+      "md5": "519b722731319f851ae3330ff58a81bb"
+    },
+    "utssdk/app-ios/Resources/jakob_medication_alarm_12.wav": {
+      "md5": "b35fdfc9a7c2fbb2fef221aca6752f1f"
+    },
+    "utssdk/app-ios/Resources/jakob_medication_alarm_24.wav": {
+      "md5": "0a5eb85b8a683e732ea53d644989f2a2"
+    }
+  }
+}

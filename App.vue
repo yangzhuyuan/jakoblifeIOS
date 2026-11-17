@@ -23,6 +23,13 @@
 		onQxBleAppForeground
 	} from '@/pages/api/qxBleAlignedSchedule.js';
 	import keepAliveManager from 'nativeplugins/KeepAlivesdkplugin/keepAliveManager.js';
+	import {
+		startMedicationNotifications,
+		refreshMedicationNotifications
+	} from '@/pages/tabBar/main/Reminders/api/medicationNotifications.js';
+	import {
+		startHealthReminderRuntime
+	} from '@/pages/tabBar/main/Reminders/api/healthReminderRuntime.js';
 	import Vue from 'vue';
 	import {
 		refreshActiveAppBaseUrl
@@ -111,9 +118,12 @@
 				this._i18n.locale = "en-US";
 			}
 			refreshActiveAppBaseUrl(Vue);
+			startMedicationNotifications(this);
+			startHealthReminderRuntime(this);
 		},
 
 		onHide() {
+			uni.$emit('APP_SCREEN_AWAKE', false);
 			this.qxAppHidden = true;
 			const qxOn = this.isQxKeepAliveEnabled();
 			this.stopInterval();
@@ -135,9 +145,11 @@
 
 		onShow() {
 			let that = this;
+			uni.$emit('APP_SCREEN_AWAKE', true);
 			that.qxAppHidden = false;
 			flushPendingNetworkErrorToast();
 			that.getBaseUrl();
+			refreshMedicationNotifications(that);
 			plus.runtime.setBadgeNumber(0);
 			that.setTabBarItems();
 			that.stopInterval();
@@ -270,6 +282,7 @@
 					const currentVersion = systemInfo.appVersion;
 					const lastVersion = uni.getStorageSync('last_app_version') || '3.2.0';
 					if (this.compareVersion(currentVersion, lastVersion) !== 0) {
+						uni.$emit('MEDICATION_REMINDER_LOGOUT');
 						uni.removeStorageSync("token");
 						uni.setStorageSync('last_app_version', currentVersion);
 					}

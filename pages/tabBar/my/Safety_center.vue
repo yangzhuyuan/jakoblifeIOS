@@ -268,6 +268,7 @@
 				uni.removeStorageSync("listdadsa")
 				this.setacktypes("0")
 				this.setacktypes6("0")
+				uni.removeStorageSync('userHealthReport')
 				uni.clearStorageSync()
 				uni.clearStorage()
 				uni.setStorageSync("last_app_version", systemInfo.appVersion)

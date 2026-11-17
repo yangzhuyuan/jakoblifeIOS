@@ -17,12 +17,17 @@
 				<view style="background: black; height: 2px; width: auto;margin-top: 20px;"></view>
 				<view class="txtetitlestyle">
 					<view style="font-size: 14px;font-weight: 600;color: #3298F7;">{{$t("血压分析和建议")}}</view>
+					<view class="weight-bp-btn" :class="{ 'weight-bp-btn-disabled': tizhongBMI === '' }"
+						@click="toggleWeightBpCross">
+						{{ showWeightBpCross && tizhongBMI !== '' ? $t("收起") : $t("体重血压交叉分析") }}
+					</view>
 				</view>
 				<view style="border: 1px solid black;margin-top: 20px; padding: 10px;"
-					v-if="gaoya!==0&&fenxi===''&&fenxi1===''&&fenxi2===''&&fenxi3===''&&fenxi4===''&&fenxi5===''&&fenxi6===''&&fenxi7===''&&fenxi8===''&&fenxi9===''&&fenxi10===''&&fenxi11===''&&fenxi12===''&&fenxi13===''&&fenxi14===''&&fenxi15===''&&shebei===null">
+					v-if="gaoya!==0&&fenxi===''&&fenxi1===''&&fenxi2===''&&fenxi3===''&&fenxi4===''&&fenxi5===''&&fenxi6===''&&fenxi7===''&&fenxi8===''&&fenxi9===''&&fenxi10===''&&fenxi11===''&&fenxi12===''&&fenxi13===''&&fenxi14===''&&fenxi15===''&&shebei===null&&!(showWeightBpCross&&tizhongBMI!=='')">
 					{{$t("您的身体健康暂无分析数据")}}
 				</view>
 				<view v-else style="border: 1px solid black;margin-top: 20px;">
+					<view v-show="!(showWeightBpCross && tizhongBMI!=='')">
 					<view style="padding:10px;font-size: 14px;font-weight: 600;color: #3298F7;">{{$t("分析")}}</view>
 					<view style="padding-left: 10px;padding-right: 10px; font-size: 10px; color: #040000;">
 						<view class="analysis-container">
@@ -161,6 +166,7 @@
 								{{isExpanded1 ?  $t("用药建议1"): ""}}
 							</text>
 						</view>
+					</view>
 					</view>
 					<view v-show="tizhongBMI!==''"
 						style="padding:10px;font-size: 14px;font-weight: 600;color: #3298F7;margin-bottom: 20px;">
@@ -700,6 +706,7 @@
 				appicon: '/static/icons/loginssss.png',
 				maibo: '/static/image/mb.png',
 				isExpanded: false, // 控制是否展开
+				showWeightBpCross: false,
 				isExpanded1: false, // 控制是否展开
 				isExpanded2: false, // 控制是否展开
 				isExpanded3: false, // 控制是否展开
@@ -995,6 +1002,10 @@
 			...mapMutations(['setBloodPressureLevel']),
 			toggleExpand() {
 				this.isExpanded = !this.isExpanded;
+			},
+			toggleWeightBpCross() {
+				if (this.tizhongBMI === '') return
+				this.showWeightBpCross = !this.showWeightBpCross
 			},
 			toggleExpand1() {
 				this.isExpanded1 = !this.isExpanded1;
@@ -2377,6 +2388,22 @@
 	.text-content.expanded {
 		-webkit-line-clamp: unset;
 		/* 展开时显示全部内容 */
+	}
+
+	.weight-bp-btn {
+		margin-left: 12px;
+		padding: 4px 10px;
+		border-radius: 14px;
+		border: 1px solid #3298F7;
+		font-size: 12px;
+		font-weight: 600;
+		color: #3298F7;
+		flex-shrink: 0;
+	}
+
+	.weight-bp-btn-disabled {
+		border-color: #C5CDD8;
+		color: #C5CDD8;
 	}
 
 	.toggle-button {

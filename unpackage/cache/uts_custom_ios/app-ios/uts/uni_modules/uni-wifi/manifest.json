@@ -2,7 +2,7 @@
   "version": "1",
   "env": {
     "vapor": false,
-    "compilerVersion": "5.26"
+    "compilerVersion": "5.34"
   },
   "files": {
     "utssdk/app-ios/index.uts": {

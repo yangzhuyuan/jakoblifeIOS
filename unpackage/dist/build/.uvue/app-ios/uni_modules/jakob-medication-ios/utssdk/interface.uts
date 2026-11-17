@@ -1,0 +1,1 @@
+export type InvokeMedicationIOS = (method: string, payload: string, callback: (result: string) => void) => void;

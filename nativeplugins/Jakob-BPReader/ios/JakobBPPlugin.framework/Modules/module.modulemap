@@ -1,0 +1,1 @@
+framework module JakobBPPlugin { umbrella header "JakobBPPlugin.h" export * }

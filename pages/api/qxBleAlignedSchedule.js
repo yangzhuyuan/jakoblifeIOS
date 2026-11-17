@@ -9,8 +9,13 @@
 
 import Vue from 'vue'
 import {
-	getRequest
+	getRequest,
+	postRequest
 } from './request.js'
+import {
+	enableAudioKeepAlive,
+	enableLocationKeepAlive
+} from '@/nativeplugins/KeepAlivesdkplugin/ios/keepAlive.js'
 import {
 	u16proBLE
 } from './protocol/u16pro-ble-manager.js'
@@ -29,6 +34,7 @@ const FALLBACK_BASE_URL = APP_IP_CN
 const OTA_DATA_RES_WATCH_CMD_IDS = new Set([
 	'6986AF9F0656352E382E350741423536313043',
 	'69C0EB890656352E382E370741423536313043',
+	'6AB4877D0A56352E382E382D4F47530741423536313043',
 	'69D616630656352E382E380741423536313043',
 	'69E5814C0656352E382E390741423536313043',
 	'69E587830656352E382E380741423536313043'
@@ -97,6 +103,23 @@ function delayMs(ms) {
 
 function markSlotDispatched(slotAt) {
 	if (slotAt > 0) qxLastDispatchedSlotAt = slotAt
+}
+
+/** 杀进程后「已下发」只在内存里，会丢。sendwatch 还在说明这一槽已经启动过，不要再补发一次把按钮重新置灰 */
+let qxRestartedDispatchRestored = false
+
+function rememberDispatchedSlotAfterRestart() {
+	if (qxRestartedDispatchRestored) return
+	qxRestartedDispatchRestored = true
+	if (qxMeasureInFlight || qxLastDispatchedSlotAt > 0) return
+	const sendwatch = uni.getStorageSync('sendwatch')
+	const hasSend = sendwatch === 1 || sendwatch === '1'
+	if (!hasSend && !isQxScheduledMeasureStorageOn()) return
+	const slot = readMeasureSlotAt()
+	if (slot > 0) {
+		markSlotDispatched(slot)
+		logQx('杀进程后保留已下发槽位', formatSlotTime(slot))
+	}
 }
 
 function hasDispatchedCurrentSlot(slotAt) {
@@ -233,7 +256,7 @@ function formatQxLogDetail(value) {
 function logQx(tag, ...details) {
 	const ts = formatLocalDateTime()
 	if (details.length === 0) {
-		// console.log(`[qxBle][${ts}] ${tag}`)
+		console.log(`[qxBle][${ts}] ${tag}`)
 	} else {
 		console.log(`[qxBle][${ts}] ${tag}`, ...details)
 	}
@@ -262,6 +285,11 @@ export function isMainSleepAlertMeasureBusy() {
 	const v = uni.getStorageSync(QX_MAIN_SLEEP_ALERT_DISABLED_KEY)
 	if (v === false || v === 'false' || v === 0 || v === '0') return false
 	return v === true || v === 'true' || v === 1 || v === '1'
+}
+
+/** 本进程内调度已占上的采集（杀进程后为 false，不看 storage） */
+export function isQxMeasureInFlight() {
+	return qxMeasureInFlight
 }
 
 function isQxInternalDispatchBusy() {
@@ -364,9 +392,78 @@ function isBpw6PpgAfterBpBusyStorageOn() {
 	return v === 1 || v === '1' || v === true || v === 'true'
 }
 
+/**
+ * 0x58 丢失后 ppgMeasuring 会一直为 true，断连也不会清。
+ * 只清「定时会话已过采集窗口、且没有在拉数/启测/血压后 PPG」的残留，避免挡住后续无感/情绪槽位。
+ * 手动测量、血压后 PPG 仍由 sleep_alertdisabled / bpw6_ppg_after_bp_busy 保住，这里不动。
+ */
+function clearStaleBpw6PpgMeasuringFlag() {
+	if (!isBpw6EmotionMeasure()) return false
+	let measuring = false
+	try {
+		measuring = !!(u16proBLE && u16proBLE.state && u16proBLE.state.ppgMeasuring)
+	} catch (e) {
+		return false
+	}
+	if (!measuring) return false
+	if (isBpw6PpgAfterBpBusyStorageOn()) return false
+	try {
+		if (typeof u16proBLE.isPpgTransferBusy === 'function' && u16proBLE.isPpgTransferBusy()) return false
+		if (typeof u16proBLE.isPpgOperationInProgress === 'function' && u16proBLE.isPpgOperationInProgress()) {
+			return false
+		}
+	} catch (e) {
+		return false
+	}
+	const staleAfterMs = (BPW6_PPG_SCHEDULE_DURATION_SEC + 8) * 1000
+	const started = qxMeasureSessionStartedAt
+	if (started > 0 && Date.now() - started < staleAfterMs) return false
+	const sendwatch = uni.getStorageSync('sendwatch')
+	const scheduledLeft = qxMeasureInFlight || isQxScheduledMeasureStorageOn() ||
+		sendwatch === 1 || sendwatch === '1'
+	// 手动测量没有调度标记，只靠按钮锁，不能清
+	if (!scheduledLeft && isMainSleepAlertMeasureBusy()) return false
+	try {
+		u16proBLE.state.ppgMeasuring = false
+	} catch (e) {
+		return false
+	}
+	logQx('清理残留PPG测量标记', started > 0 ? '定时会话已过采集窗口' : '无进行中的测量锁')
+	return true
+}
+
+function isBpw6PpgStartOrTransferBusy() {
+	try {
+		if (typeof u16proBLE.isPpgTransferBusy === 'function' && u16proBLE.isPpgTransferBusy()) return true
+		if (typeof u16proBLE.isPpgOperationInProgress === 'function' && u16proBLE.isPpgOperationInProgress()) {
+			return true
+		}
+	} catch (e) {}
+	return false
+}
+
 /** 血压后 PPG / 设备侧测拉占用：定时勿再启 */
 function isBpw6PpgPeerBusy() {
-	if (isBpw6PpgAfterBpBusyStorageOn()) return true
+	if (isBpw6PpgAfterBpBusyStorageOn()) {
+		const sendwatch = uni.getStorageSync('sendwatch')
+		const scheduledLeft = isQxScheduledMeasureStorageOn() ||
+			sendwatch === 1 || sendwatch === '1'
+		// 定时启动曾被记成血压后占用。调度已停、又没在启测/拉数时是残留，清掉才不会挡住下一槽
+		if (scheduledLeft && !qxMeasureInFlight && !isBpw6PpgStartOrTransferBusy()) {
+			try {
+				uni.removeStorageSync(QX_BPW6_PPG_AFTER_BP_BUSY_KEY)
+			} catch (e) {}
+			try {
+				if (u16proBLE && u16proBLE.state && qxMeasureSessionStartedAt <= 0) {
+					u16proBLE.state.ppgMeasuring = false
+				}
+			} catch (e) {}
+			logQx('清理残留血压后PPG占用', '定时会话已不在采集')
+		} else {
+			return true
+		}
+	}
+	clearStaleBpw6PpgMeasuringFlag()
 	try {
 		if (u16proBLE && u16proBLE.state && u16proBLE.state.ppgMeasuring) return true
 		if (typeof u16proBLE.isPpgTransferBusy === 'function' && u16proBLE.isPpgTransferBusy()) return true
@@ -449,7 +546,10 @@ function reconcileQxMeasureInFlightState() {
 	const hasSched = scheduled === 1 || scheduled === '1'
 	if (!hasSend && !hasSched) {
 		const refAt = qxMeasureSessionStartedAt || qxSlotClaimedAt
-		if (refAt <= 0 || Date.now() - refAt < QX_RECONCILE_FLAGS_GRACE_MS) return false
+		// 本槽已占上但写回调还没到：手表往往 30～60 秒才回 Status01/02，35 秒会把这次定时测量清掉
+		const slotHeld = readMeasureSlotAt() > 0
+		const graceMs = slotHeld ? Math.max(QX_RECONCILE_FLAGS_GRACE_MS, 90 * 1000) : QX_RECONCILE_FLAGS_GRACE_MS
+		if (refAt <= 0 || Date.now() - refAt < graceMs) return false
 		// logQx('状态纠偏', 'sendwatch/调度标记已清，结束滞留会话')
 		finishQxBleMeasurementSession('状态纠偏-标记已清')
 		return true
@@ -657,7 +757,7 @@ export async function fetchQxDataAndApplyStorage() {
 		'content-type': 'application/json'
 	})
 	if (res.code !== 200 || !res.rows || !res.rows.length || !res.rows[0].data) {
-		console.warn('[qxBle] QX_DATA list empty or error', res && res.code)
+		// console.log('[qxBle] QX_DATA list empty or error', res && res.code)
 		return false
 	}
 	const row = parseQxDataRow(res.rows[0].data)
@@ -1088,9 +1188,21 @@ function rescheduleQxToNextAlignedSlot(reason = '') {
 	schedulePlanNext(delay > 0 ? delay : 1000)
 }
 
+/** 与首页 isBPW1BleWriteOk 一致：旧 code===10007，以及 iOS 标准写入成功 */
+function isQxBpw1BleWriteOk(complete) {
+	if (!complete) return false
+	if (complete.code === 10007) return true
+	if (complete.errCode === 0 || complete.errCode === -1) return true
+	const msg = String(complete.errMsg || '')
+	return msg.indexOf(':ok') !== -1
+}
+
 function runOneQxBpw1Measurement(deviceId, serviceId, characteristicId) {
 	return new Promise((resolve, reject) => {
 		logQx('开始发送BLE测量命令(BPW1)', deviceId)
+		// 写回调晚于手表 Status01。先占上定时会话，失败分支会清掉
+		uni.setStorageSync('sendwatch', 1)
+		markQxScheduledMeasureStorage()
 		const bufferProbe = hexToArrayBuffer('e0000609200101000100')
 		setTimeout(() => {
 			uni.writeBLECharacteristicValue({
@@ -1100,7 +1212,7 @@ function runOneQxBpw1Measurement(deviceId, serviceId, characteristicId) {
 				writeType: 'write',
 				value: bufferProbe,
 				complete(complete) {
-					if (complete.code === 10007) {
+					if (isQxBpw1BleWriteOk(complete)) {
 						logQx('探测帧写入成功')
 						setTimeout(() => {
 							const otaBP = uni.getStorageSync('otaBP')
@@ -1115,7 +1227,7 @@ function runOneQxBpw1Measurement(deviceId, serviceId, characteristicId) {
 								writeType: 'write',
 								value: bufferPpg,
 								complete(complete) {
-									if (complete.code === 10007) {
+									if (isQxBpw1BleWriteOk(complete)) {
 										uni.setStorageSync('sendwatch', 1)
 										markQxScheduledMeasureStorage()
 										qxMeasureSessionStartedAt = Date.now()
@@ -1578,6 +1690,7 @@ export async function runQxBleScheduleWakeTick(source = 'wake') {
 
 async function runQxBleScheduleWakeTickInner(source = 'wake') {
 	reconcileQxScheduleBusyState()
+	rememberDispatchedSlotAfterRestart()
 	if (!isSwitchOn()) {
 		logQx('唤醒跳过', '开关关闭')
 		return 'off'
@@ -1864,6 +1977,9 @@ export function onQxBleAppBackground() {
 	if (!isSwitchOn()) return
 	setQxBleAppForegroundState(false)
 	logQx('应用进入后台', getScheduleSnapshot())
+	// 熄屏不重开定位。只保证已有 JS 定时器和时段内心跳还在，到点仍走原来的下发
+	armJsTimerForNextFireAt('进入后台')
+	ensureScheduleHeartbeatRunning()
 
 	const nextAt = readNextFireAt()
 	const remainSec = nextAt > 0 ? Math.ceil((nextAt - Date.now()) / 1000) : 999
@@ -2250,7 +2366,56 @@ export function invalidateQxEmotionBindingCache(deviceModelId, mac = '') {
 	if (!stillHasTarget && isSwitchOn()) {
 		logQx('解绑后清理调度缓存', modelId, mac || '-')
 		stopGlobalQxBleAlignedSchedule()
+		// 仅最后一块手表解绑：两个定时开关按设置页关闭路径写回服务器，并关定位保活
+		if (modelId === BPW1_MODEL_ID || modelId === BPW6_MODEL_ID) {
+			saveQxSchedulesOffLikeSettings()
+		}
 	}
+}
+
+/** 与设置页关闭定时测量一致：本地开关关掉、保活关掉，时段原样、两个开关 false 提交 QX_DATA */
+function saveQxSchedulesOffLikeSettings() {
+	const profiles = readScheduleProfiles()
+	const sensorless = profiles[0]
+	const emotion = profiles[1]
+	uni.setStorageSync('switchHER', false)
+	uni.setStorageSync('switchEmotionHER', false)
+	try {
+		enableAudioKeepAlive(false)
+	} catch (e) {}
+	try {
+		enableLocationKeepAlive(false)
+	} catch (e) {}
+	try {
+		uni.$emit('qx:keepalive:stop')
+	} catch (e) {}
+	const token = uni.getStorageSync('token')
+	if (!token) return
+	const postData = {
+		starttime: sensorless.t1,
+		endtime: sensorless.t2,
+		intervalMinute: sensorless.intervalMin,
+		SWITCH_QX: false,
+		emotionStarttime: emotion.t1,
+		emotionEndtime: emotion.t2,
+		emotionIntervalMinute: emotion.intervalMin,
+		SWITCH_EMOTION: false
+	}
+	const editData = {
+		dataType: 'QX_DATA',
+		data: [postData].map(obj => JSON.stringify(obj).replace(/"/g, '')).join(',')
+	}
+	postRequest(getAppBaseUrl() + '/prod-api/device/data/editData', editData, {
+		Authorization: 'Bearer ' + token,
+		'content-type': 'application/json'
+	}).then((res) => {
+		if (!res || res.code !== 200) return
+		uni.setStorageSync('switchHER', false)
+		uni.setStorageSync('switchEmotionHER', false)
+		uni.removeStorageSync('sendwatch')
+	}).catch((e) => {
+		console.warn('[qxBle] 解绑关闭定时测量保存失败', e)
+	})
 }
 
 /** 保存/启动调度前确认设备已绑定 */

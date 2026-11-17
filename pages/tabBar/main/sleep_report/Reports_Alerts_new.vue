@@ -359,15 +359,10 @@
 			async afterQxSavedStartBleSchedule() {
 				stopGlobalQxBleAlignedSchedule()
 				if (!this.isAnyScheduleOn()) return
-				// 调度前确认两套已开启时段均合法（另一套用本地已存值）
-				if (this.switchHER) {
-					const w = this.validateScheduleWindow(this.time1, this.time2)
-					if (!w.ok) return
-				}
-				if (this.switchEmotion) {
-					const w = this.validateScheduleWindow(this.timeEmotion1, this.timeEmotion2)
-					if (!w.ok) return
-				}
+				// 只跳过时段不合法的那一套；另一套合法时仍要启动调度
+				const sensorlessOk = !this.switchHER || this.validateScheduleWindow(this.time1, this.time2).ok
+				const emotionOk = !this.switchEmotion || this.validateScheduleWindow(this.timeEmotion1, this.timeEmotion2).ok
+				if (!((this.switchHER && sensorlessOk) || (this.switchEmotion && emotionOk))) return
 				const deviceId = await ensureQxEmotionBindingReady(true)
 				if (!deviceId) {
 					uni.showToast({

@@ -968,11 +968,64 @@
 			}
 		},
 		{
+			"path": "pages/tabBar/main/Reminders/MedicationReminder",
+			"style": {
+				"navigationBarTitleText": "健康提醒",
+				"navigationBarBackgroundColor": "#008DFF",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#EFF8FF"
+			}
+		},
+		{
+			"path": "pages/tabBar/my/JakoblifeShop",
+			"style": {
+				"navigationBarTitleText": "Jakoblife 商城",
+				"navigationBarBackgroundColor": "#2298F7",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#F4F7FC"
+			}
+		},
+
+		{
 			"path": "pages/tabBar/main/report_all_type/Smooth_BP_Data",
 			"style": {
 				"navigationBarTitleText": "无感血压数据",
 				"navigationBarBackgroundColor": "#F5F5F5",
 				"navigationBarTextStyle": "black"
+			}
+		},
+		{
+			"path": "pages/tabBar/main/BPMeasure",
+			"style": {
+				"navigationBarTitleText": "测量血压",
+				"navigationBarBackgroundColor": "#3298F7",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#F5F7FA"
+			}
+		},
+		{
+			"path": "pages/tabBar/main/BPReader",
+			"style": {
+				"navigationBarTitleText": "扫描血压",
+				"navigationBarBackgroundColor": "#C0E3FF",
+				"navigationBarTextStyle": "black",
+				"backgroundColor": "#C0E3FF",
+				"app-plus": {
+					"background": "#C0E3FF"
+				}
+			}
+		},
+		{
+			"path": "pages/tabBar/main/bp-live-scan",
+			"style": {
+				"navigationBarTitleText": "血压实时扫描",
+				"navigationBarBackgroundColor": "#111111",
+				"navigationBarTextStyle": "white",
+				"backgroundColor": "#111111",
+				"app-plus": {
+					"background": "#111111",
+					"bounce": "none"
+				}
 			}
 		}
 

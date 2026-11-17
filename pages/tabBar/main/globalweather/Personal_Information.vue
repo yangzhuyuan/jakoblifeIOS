@@ -179,8 +179,11 @@
 					heightunit: '',
 					weightunit: '',
 				},
-				heightunit: uni.getStorageSync("danwei1") === 0 ? this.$t("英寸") : this.$t("厘米"),
-				weightunit: uni.getStorageSync("danwei2") === 1 ?this.$t("英镑") : this.$t("千克"),
+				heightunit: '',
+				weightunit: '',
+				_heightImperial: null,
+				_weightImperial: null,
+				_savedWaistUnit: '',
 				bmi: 0,
 				whtr: 0,
 				bmiStatus: '',
@@ -188,6 +191,13 @@
 				showMetrics: false,
 				showPreview: false,
 				storageKey: 'userHealthReport', // 本地存储的key
+				_birthTime: '',
+				_apiAge: null,
+				_apiHeightCm: null,
+				_apiWeightKg: null,
+				_heightDisplay: null,
+				_weightDisplay: null,
+				_saving: false,
 				type: "",
 				sleepData: {
 					sleep: '',
@@ -200,82 +210,17 @@
 		},
 		onLoad(option) {
 			this.type = option.type
-			this.refreshUnits()
-			// 页面加载时读取本地存储的数据
-			this.loadFromStorage()
+			this.loadLocalOnly()
 			this.loadSleepData()
 		},
 		onShow() {
 			let that = this
-			that.refreshUnits()
 			that.loadSleepData()
 			uni.setNavigationBarTitle({
 				title: that.$t("个人信息")
 			})
-			that.$get(that.$url_APP_IP + that.$url_getInfo, {}, {
-				'Authorization': 'Bearer ' + uni.getStorageSync("token"),
-				'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
-			}).then(getInfo => {
-					if (getInfo.code === 200) {
-						if (!that.form.gender) {
-							that.form.gender = getInfo.data.sex === '0' ? that.getsex(that.$t('男')) : that.getsex(that
-								.$t('女'))
-						}
-						if (!that.form.height) {
-							that.form.height = that.isImperialHeight() ?
-								WeightConverter.cmToInch(getInfo.data.height) : getInfo.data.height
-						} else if (that.form.heightunit) {
-							const wasImperial = that.isImperialHeightUnit(that.form.heightunit)
-							that.form.height = that.convertBodyValueIfNeeded(
-								that.form.height,
-								wasImperial,
-								that.isImperialHeight(),
-								(v) => WeightConverter.inchToCm(v),
-								(v) => WeightConverter.cmToInch(v)
-							)
-						}
-						if (!that.form.weight) {
-							that.form.weight = that.isImperialWeight() ?
-								WeightConverter.kgToLb(getInfo.data.weight) : getInfo.data.weight
-						} else if (that.form.weightunit) {
-							const wasImperial = that.isImperialWeightUnit(that.form.weightunit)
-							that.form.weight = that.convertBodyValueIfNeeded(
-								that.form.weight,
-								wasImperial,
-								that.isImperialWeight(),
-								(v) => WeightConverter.lbToKg(v),
-								(v) => WeightConverter.kgToLb(v)
-							)
-						}
-						if (that.form.waist && that.form.heightunit) {
-							const wasImperial = that.isImperialHeightUnit(that.form.heightunit)
-							that.form.waist = that.convertBodyValueIfNeeded(
-								that.form.waist,
-								wasImperial,
-								that.isImperialHeight(),
-								(v) => WeightConverter.inchToCm(v),
-								(v) => WeightConverter.cmToInch(v)
-							)
-						}
-					if (!that.form.age) {
-						const birth = new Date(getInfo.data.birthTime);
-						const today = new Date();
-						let age = today.getFullYear() - birth.getFullYear();
-						const monthDiff = today.getMonth() - birth.getMonth();
-						if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-							age--;
-						}
-						that.form.age = age;
-					}
-					that.calculateMetrics()
-				} else {
-					uni.showToast({
-						title: getInfo.msg,
-						icon: 'none'
-					})
-				}
-			})
-	},
+			that.fetchUnits().then(() => that.fetchProfile())
+		},
 	computed: {
 			hasSleepData() {
 				const sleep = this.sleepData.sleep
@@ -346,20 +291,20 @@
 			},
 
 			isImperialHeight() {
-				return uni.getStorageSync("danwei1") === 0
+				return this._heightImperial === true
 			},
 			isImperialWeight() {
-				return uni.getStorageSync("danwei2") === 1
+				return this._weightImperial === true
 			},
 			refreshUnits() {
-				this.heightunit = this.isImperialHeight() ? this.$t("英寸") : this.$t("厘米")
-				this.weightunit = this.isImperialWeight() ? this.$t("英镑") : this.$t("千克")
+				this.heightunit = this._heightImperial === null ? '' : (this._heightImperial ? this.$t("英寸") : this.$t("厘米"))
+				this.weightunit = this._weightImperial === null ? '' : (this._weightImperial ? this.$t("英镑") : this.$t("千克"))
 			},
 			isImperialHeightUnit(unit) {
 				return unit === this.$t("英寸") || unit === "inch" || unit === "英寸"
 			},
 			isImperialWeightUnit(unit) {
-				return unit === this.$t("英镑") || unit === "lb" || unit === "英镑"
+				return unit === this.$t("英镑") || unit === "lb" || unit === "lbs" || unit === "英镑"
 			},
 			toMetricHeight(value) {
 				const num = parseFloat(value)
@@ -375,20 +320,246 @@
 				if (!value || wasImperial === isImperial) return value
 				return wasImperial ? toMetric(value) : toDisplay(value)
 			},
-
-			// 从本地存储加载数据
-			loadFromStorage() {
-				try {
-					const savedData = uni.getStorageSync(this.storageKey)
-					if (savedData) {
-						// 合并保存的数据到form
-						this.form = Object.assign({}, this.form, savedData)
-
-						// 如果有身高体重数据，自动计算指标
-						if (this.form.height && this.form.weight) {
-							this.calculateMetrics()
+			hasMetric(value) {
+				if (value === null || value === undefined || value === '') return false
+				const num = Number(value)
+				return !Number.isNaN(num) && num > 0
+			},
+			calcAge(birthTime) {
+				const birth = this.parseBirth(birthTime)
+				if (!birth) return ''
+				const today = new Date()
+				let age = today.getFullYear() - birth.getFullYear()
+				const monthDiff = today.getMonth() - birth.getMonth()
+				if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+					age--
+				}
+				return age < 0 ? '' : age
+			},
+			parseBirth(value) {
+				if (value === null || value === undefined || value === '') return null
+				if (typeof value === 'number') {
+					const date = new Date(value)
+					return Number.isNaN(date.getTime()) ? null : date
+				}
+				const text = String(value).trim()
+				const matched = text.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+				if (matched) {
+					const date = new Date(Number(matched[1]), Number(matched[2]) - 1, Number(matched[3]))
+					return Number.isNaN(date.getTime()) ? null : date
+				}
+				const date = new Date(text.replace(/-/g, '/'))
+				return Number.isNaN(date.getTime()) ? null : date
+			},
+			normalizeBirth(value) {
+				const date = this.parseBirth(value)
+				if (!date) return value ? String(value) : ''
+				const month = String(date.getMonth() + 1).padStart(2, '0')
+				const day = String(date.getDate()).padStart(2, '0')
+				return `${date.getFullYear()}-${month}-${day}`
+			},
+			fetchUnits() {
+				return this.$get(this.$url_APP_IP + '/prod-api/device/data/list', {
+					dataType: 'Unitdata'
+				}, {
+					Authorization: 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/json'
+				}).then(res => {
+					this._heightImperial = null
+					this._weightImperial = null
+					if (res.code === 200 && res.rows && res.rows.length && res.rows[0].data) {
+						const unitData = this.parseUnitData(res.rows[0].data)
+						if (unitData && unitData.heightUnit) {
+							this._heightImperial = this.isImperialHeightUnit(unitData.heightUnit)
+						}
+						if (unitData && unitData.weightUnit) {
+							this._weightImperial = this.isImperialWeightUnit(unitData.weightUnit)
 						}
 					}
+					this.refreshUnits()
+				}).catch(() => {
+					this._heightImperial = null
+					this._weightImperial = null
+					this.refreshUnits()
+				})
+			},
+			parseUnitData(dataStr) {
+				try {
+					let objStr = String(dataStr).split('},{')[0]
+					if (!objStr.endsWith('}')) objStr += '}'
+					objStr = objStr.replace(/^{{/, '{').replace(/}}$/, '}')
+					const fixed = objStr.replace(/([a-zA-Z_][a-zA-Z0-9_]*):([^,}]+)/g, (m, k, v) => {
+						v = v.trim()
+						if (v === 'true' || v === 'false') return `"${k}":${v}`
+						if (!isNaN(v) && v !== '' && !v.includes('/')) return `"${k}":${v}`
+						return `"${k}":"${v}"`
+					})
+					return JSON.parse(fixed)
+				} catch (e) {
+					return null
+				}
+			},
+			fetchProfile() {
+				return this.$get(this.$url_APP_IP + this.$url_getInfo, {}, {
+					'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/json;charset=UTF-8'
+				}).then(getInfo => {
+					if (getInfo.code === 200) {
+						this.applyApiProfile(getInfo.data || {})
+						return
+					}
+					uni.showToast({
+						title: getInfo.msg,
+						icon: 'none'
+					})
+				})
+			},
+			// 姓名、性别、年龄、身高、体重、单位只使用接口。没有就留空。
+			applyApiProfile(data) {
+				const apiName = (data.nickName === null || data.nickName === undefined || data.nickName === '') ?
+					(data.userName || '') : data.nickName
+				this.form.name = apiName || ''
+				if (data.sex === '0' || data.sex === '1' || data.sex === 0 || data.sex === 1) {
+					this.form.gender = String(data.sex) === '0' ?
+						this.getsex(this.$t('男')) : this.getsex(this.$t('女'))
+				} else {
+					this.form.gender = ''
+				}
+				this._birthTime = data.birthTime || ''
+				this._apiHeightCm = this.hasMetric(data.height) ? data.height : null
+				this._apiWeightKg = this.hasMetric(data.weight) ? data.weight : null
+				if (this._apiHeightCm != null) {
+					this.form.height = this.isImperialHeight() ?
+						WeightConverter.cmToInch(data.height) : data.height
+					this._heightDisplay = this.form.height
+				} else {
+					this.form.height = ''
+					this._heightDisplay = null
+				}
+				if (this._apiWeightKg != null) {
+					this.form.weight = this.isImperialWeight() ?
+						WeightConverter.kgToLb(data.weight) : data.weight
+					this._weightDisplay = this.form.weight
+				} else {
+					this.form.weight = ''
+					this._weightDisplay = null
+				}
+				if (this.form.waist && this._savedWaistUnit && this.heightunit) {
+					this.form.waist = this.convertBodyValueIfNeeded(
+						this.form.waist,
+						this.isImperialHeightUnit(this._savedWaistUnit),
+						this.isImperialHeight(),
+						(v) => WeightConverter.inchToCm(v),
+						(v) => WeightConverter.cmToInch(v)
+					)
+				}
+				this.form.heightunit = this.heightunit
+				this.form.weightunit = this.weightunit
+				const age = data.birthTime ? this.calcAge(data.birthTime) : ''
+				if (age !== '' && age >= 0) {
+					this.form.age = String(age)
+					this._apiAge = Number(age)
+				} else {
+					this.form.age = ''
+					this._apiAge = null
+				}
+				this.calculateMetrics()
+			},
+			isMaleGender(gender) {
+				return gender === '男' || gender === 'Male' || gender === this.$t('男')
+			},
+			metricHeightForSave() {
+				const num = parseFloat(this.form.height)
+				if (!(num > 0)) return ''
+				if (this._heightDisplay != null && Number(this._heightDisplay) === num) return this._apiHeightCm
+				return this.isImperialHeight() ? WeightConverter.inchToCm(num) : num
+			},
+			metricWeightForSave() {
+				const num = parseFloat(this.form.weight)
+				if (!(num > 0)) return ''
+				if (this._weightDisplay != null && Number(this._weightDisplay) === num) return this._apiWeightKg
+				return this.isImperialWeight() ? WeightConverter.lbToKg(num) : num
+			},
+			birthTimeForSave() {
+				const age = parseInt(this.form.age, 10)
+				if (!age || Number.isNaN(age)) return ''
+				// 年龄没改：沿用原来的出生日期，只收成档案页现在的 YYYY-MM-DD
+				if (this._birthTime && this._apiAge === age) return this.normalizeBirth(this._birthTime)
+				const origin = this.parseBirth(this._birthTime)
+				const today = new Date()
+				// 没有原生日时，用今天的月和日，得到档案页同样的年月日
+				const month = origin ? origin.getMonth() : today.getMonth()
+				const day = origin ? origin.getDate() : today.getDate()
+				const birthdayNotYet = today.getMonth() < month || (today.getMonth() === month && today.getDate() < day)
+				const year = today.getFullYear() - age - (birthdayNotYet ? 1 : 0)
+				const mm = String(month + 1).padStart(2, '0')
+				const dd = String(day).padStart(2, '0')
+				return `${year}-${mm}-${dd}`
+			},
+			syncProfileToServer() {
+				const that = this
+				return new Promise((resolve) => {
+					uni.request({
+						url: that.$url_APP_IP + that.$url_update_info,
+						method: 'POST',
+						data: {
+							nickName: that.form.name,
+							sex: that.isMaleGender(that.form.gender) ? '0' : '1',
+							birthTime: that.birthTimeForSave(),
+							height: that.metricHeightForSave(),
+							weight: that.metricWeightForSave()
+						},
+						header: {
+							'Authorization': 'Bearer ' + uni.getStorageSync('token'),
+							'content-type': 'application/json;charset=UTF-8'
+						},
+						success(res) {
+							if (res.statusCode == 200 && res.data && res.data.code == 200) {
+								resolve(true)
+								return
+							}
+							uni.showToast({
+								title: (res.data && res.data.msg) || that.$t('保存失败'),
+								icon: 'none'
+							})
+							resolve(false)
+						},
+						fail() {
+							uni.showToast({
+								title: that.$t('保存失败'),
+								icon: 'none'
+							})
+							resolve(false)
+						}
+					})
+				})
+			},
+			openReport(request, formPayload) {
+				switch (this.type) {
+					case "7":
+						uni.navigateTo({
+							url: `../../main/globalweather/day_monitoring_report_7?request=${JSON.stringify(request)}&form=${JSON.stringify(formPayload)}`
+						})
+						break
+					case "24":
+						uni.navigateTo({
+							url: `../../main/globalweather/hour_monitoring_report_24?request=${JSON.stringify(request)}&form=${JSON.stringify(formPayload)}`
+						})
+						break
+				}
+			},
+
+			// 只读取接口没有的字段。姓名、年龄、身高、体重、单位不读本地。
+			loadLocalOnly() {
+				try {
+					const savedData = uni.getStorageSync(this.storageKey)
+					if (!savedData) return
+					this.form.waist = savedData.waist || ''
+					this.form.takingMedicine = !!savedData.takingMedicine
+					this.form.medicineType = savedData.medicineType || ''
+					this.form.medicineTime = savedData.medicineTime || ''
+					this.form.diagnosisDate = savedData.diagnosisDate || ''
+					this._savedWaistUnit = savedData.waistUnit || ''
 				} catch (e) {
 					console.error('读取本地数据失败：', e)
 				}
@@ -409,10 +580,18 @@
 				}
 			},
 
-			// 保存到本地存储
+			// 腰围、用药、确诊时间接口没有对应字段，只存这些
 			saveToStorage() {
 				try {
-					uni.setStorageSync(this.storageKey, this.form)
+					uni.setStorageSync(this.storageKey, {
+						waist: this.form.waist,
+						waistUnit: this.heightunit,
+						takingMedicine: this.form.takingMedicine,
+						medicineType: this.form.medicineType,
+						medicineTime: this.form.medicineTime,
+						diagnosisDate: this.form.diagnosisDate
+					})
+					this._savedWaistUnit = this.heightunit
 					return true
 				} catch (e) {
 					console.error('保存到本地失败：', e)
@@ -453,6 +632,15 @@
 				const weight = this.toMetricWeight(this.form.weight)
 				const waist = this.toMetricHeight(this.form.waist)
 
+				if (!(height > 0) || !(weight > 0)) {
+					this.bmi = 0
+					this.bmiStatus = ''
+					this.showMetrics = false
+				}
+				if (!(waist > 0) || !(height > 0)) {
+					this.whtr = 0
+					this.whtrStatus = ''
+				}
 				if (height > 0 && weight > 0) {
 					// BMI = 体重(kg) / 身高(m)²
 					const heightInM = height / 100
@@ -486,6 +674,7 @@
 			},
 
 			submitForm() {
+				if (this._saving) return
 				// 表单验证
 				if (!this.form.name) {
 					uni.showToast({
@@ -508,24 +697,15 @@
 					})
 					return
 				}
-				this.form.heightunit = this.isImperialHeight() ? this.$t("英寸") : this.$t("厘米")
-				this.form.weightunit = this.isImperialWeight() ? this.$t("英镑") : this.$t("千克")
-				// 保存到本地存储
-				const saveSuccess = this.saveToStorage()
-
-				if (saveSuccess) {
-					// this.showPreview = true
-					uni.showToast({
-						title: this.$t('保存成功'),
-						icon: 'none'
-					})
-				}
-				let request = {
+				this.form.heightunit = this.heightunit
+				this.form.weightunit = this.weightunit
+				// 腰围、用药、确诊时间等接口没有的字段仍只存本地
+				if (!this.saveToStorage()) return
+				const request = {
 					type: this.type,
 					bmi: this.bmi,
 					whtr: this.whtr
 				}
-				// 睡眠数据一并带到报告页（不写入本地表单缓存）
 				const formPayload = Object.assign({}, this.form, {
 					sleep: this.hasSleepData ? this.sleepData.sleep : '',
 					sleep_time: this.hasSleepData ? (this.sleepData.sleep_time || '') : '',
@@ -533,18 +713,21 @@
 					totalDeep: this.hasSleepData ? (this.sleepData.totalDeep || '') : '',
 					totalRem: this.hasSleepData ? (this.sleepData.totalRem || '') : '',
 				})
-				switch (this.type) {
-					case "7":
-						uni.navigateTo({
-							url: `../../main/globalweather/day_monitoring_report_7?request=${JSON.stringify(request)}&form=${JSON.stringify(formPayload)}`
-						})
-						break
-					case "24":
-						uni.navigateTo({
-							url: `../../main/globalweather/hour_monitoring_report_24?request=${JSON.stringify(request)}&form=${JSON.stringify(formPayload)}`
-						})
-						break
-				}
+				this._saving = true
+				uni.showLoading({
+					title: this.$t('健康提醒保存中'),
+					mask: true
+				})
+				this.syncProfileToServer().then((ok) => {
+					this._saving = false
+					uni.hideLoading()
+					if (!ok) return
+					uni.showToast({
+						title: this.$t('保存成功'),
+						icon: 'none'
+					})
+					this.openReport(request, formPayload)
+				})
 			},
 
 			resetForm() {

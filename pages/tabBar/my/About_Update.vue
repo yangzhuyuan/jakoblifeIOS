@@ -36,7 +36,7 @@
 				</view>
 			</view>
 			<view class="row-line"></view>
-			<view class="row" @click="watcahupdate()">
+			<!-- <view class="row" @click="watcahupdate()">
 				<view class="icon-box">
 					<uni-icons type="gear-filled" size="20" color="#3298F7"></uni-icons>
 				</view>
@@ -48,7 +48,7 @@
 					<uni-icons type="right" size="14" color="#C5CDD8"></uni-icons>
 				</view>
 			</view>
-			<view class="row-line"></view>
+			<view class="row-line"></view> -->
 			<view class="row" @click="Text_content4()">
 				<view class="icon-box">
 					<uni-icons type="list" size="20" color="#3298F7"></uni-icons>

@@ -275,8 +275,9 @@
 					<view style="padding: 20px;width: 75vw;">
 						<view class="popupsdind_1">
 							<input type="number" v-model="tizhong" :placeholder="$t('请输入体重')"
-								style="text-align: center;width: 80vw;" />
-							<text>{{$t("千克")}}</text>
+								style="flex: 1;min-width: 0;text-align: center;" />
+							<text
+								style="flex-shrink: 0;white-space: nowrap;margin-left: 8px;">{{weightUnitLabel}}</text>
 						</view>
 					</view>
 					<button @tap="jitizhong_tc()" class="butonsd">{{$t('确认')}}</button>
@@ -330,73 +331,79 @@
 								<view class="title_select_ruler">{{$t('胸围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{xw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;margin-top: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="xw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="xw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('腰围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{yw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="yw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="yw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('臀围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{tw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="tw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="tw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('上臂围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{stw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="stw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="stw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('大腿围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{dtw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="dtw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="dtw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('小腿围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{xtw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="xtw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="xtw_value = $event"></select-ruler>
 							</view>
 						</view>
 						<button @tap="select_ruler()"
@@ -423,37 +430,37 @@
 									style="display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="xiongwei" :placeholder="$t('请输入胸围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="yaowei" :placeholder="$t('请输入腰围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="tunwei" :placeholder="$t('请输入臀围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="shangtunwei" :placeholder="$t('请输入上臂围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="datuiwei" :placeholder="$t('请输入大腿围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="xiaotuiwei" :placeholder="$t('请输入小腿围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 
 							</view>
@@ -595,6 +602,9 @@
 		isInChinaByIP
 	} from '../../api/isInChinaByIP.js';
 	import WeightConverter from '../../api/unitls/weightConverter.js';
+	import {
+		getLocalTimeAllJSON
+	} from '../../api/unitls/timezone.js';
 	const getheader = {
 		'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 		'content-type': 'application/json;charset=UTF-8' //自定义请求头信息
@@ -604,9 +614,6 @@
 		'content-type': 'application/x-www-form-urlencoded' //自定义请求头信息
 	}
 	const platformres = uni.getSystemInfoSync();
-
-
-
 	// 获取本地日期时间
 	const now = new Date();
 	const year = now.getFullYear();
@@ -653,6 +660,11 @@
 				showTotal_date: `${month}/${day}`,
 				fillOut: false,
 				tizhong: "",
+				weightUnitLabel: uni.getStorageSync("danwei2") === 1 ? this.$t("英镑") : this.$t("千克"),
+				lengthUnitLabel: uni.getStorageSync("danwei1") === 0 ? this.$t("英寸") : "cm",
+				bodyLenKey: uni.getStorageSync("danwei1") === 0 ? "in" : "cm",
+				bodyRulerMax: uni.getStorageSync("danwei1") === 0 ? 600 : 1500,
+				bodyRulerDefault: uni.getStorageSync("danwei1") === 0 ? 394 : 1000,
 				xiongwei: "",
 				yaowei: "",
 				tunwei: "",
@@ -918,10 +930,31 @@
 				if (!Number.isFinite(num)) return val
 				return this.isKgWeightUnit(this.newweightKG) ? num : WeightConverter.kgToLb(num)
 			},
+			toStoredKg(val) {
+				if (uni.getStorageSync('danwei2') !== 1) return val
+				if (val === '' || val == null) return val
+				const n = Number(val)
+				if (!Number.isFinite(n)) return val
+				return WeightConverter.lbToKg(n)
+			},
+			toStoredCm(val) {
+				if (uni.getStorageSync('danwei1') !== 0) return val
+				if (val === '' || val == null) return val
+				const n = Number(val)
+				if (!Number.isFinite(n)) return val
+				return WeightConverter.inchToCm(n)
+			},
 			syncUnitSettings() {
 				this.Blood = uni.getStorageSync('Blood') === 0 || uni.getStorageSync('Blood') === '' ? 'mmHg' :
 					'kPa'
-				this.newweightKG = uni.getStorageSync('danwei2') === 1 ? this.$t('英镑') : this.$t('千克1')
+				const isLb = uni.getStorageSync('danwei2') === 1
+				const isInch = uni.getStorageSync('danwei1') === 0
+				this.newweightKG = isLb ? this.$t('英镑') : this.$t('千克1')
+				this.weightUnitLabel = isLb ? this.$t('英镑') : this.$t('千克')
+				this.lengthUnitLabel = isInch ? this.$t('英寸') : 'cm'
+				this.bodyLenKey = isInch ? 'in' : 'cm'
+				this.bodyRulerMax = isInch ? 600 : 1500
+				this.bodyRulerDefault = isInch ? 394 : 1000
 				this.applyMinmaxDisplay()
 				this.applyMonthAvgDisplay()
 				this.applyWeightDayDisplay()
@@ -1191,30 +1224,6 @@
 				this.$refs.tihzi_popup_hd.open("center")
 			},
 
-			xw_handleChange(e) {
-				this.xw_value = e;
-			},
-
-			yw_handleChange(e) {
-				this.yw_value = e;
-			},
-
-			tw_handleChange(e) {
-				this.tw_value = e;
-			},
-
-			stw_handleChange(e) {
-				this.stw_value = e;
-			},
-
-			dtw_handleChange(e) {
-				this.dtw_value = e;
-			},
-
-			xtw_handleChange(e) {
-				this.xtw_value = e;
-			},
-
 			ddclosess() {
 				this.fillOut = false
 			},
@@ -1271,7 +1280,7 @@
 						deviceSn: uni.getStorageSync("deviceSn"),
 						slaveSn: "0",
 						slaveData: {
-							weight: that.tizhong
+							weight: that.toStoredKg(that.tizhong)
 						},
 						time: timestamp
 					},
@@ -1300,6 +1309,21 @@
 					}
 				})
 			},
+			//时间工具类5，UTC时间戳
+			UTCdatatime() {
+				// 获取当前时间的 UTC 时间戳（毫秒级）
+				const timestampMs = Date.now();
+				// 如果需要秒级时间戳，除以1000并取整
+				const timestampSec = Math.floor(Date.now() / 1000);
+				return {
+					timestampMs: timestampMs,
+					timestampSec: timestampSec
+				};
+			},
+			//通用时间（跟随设备时区，改时区后实时生效）
+			getTimeAllJSON() {
+				return getLocalTimeAllJSON();
+			},
 			//用户在app手动上报六围数据
 			fat_scale() {
 				let that = this;
@@ -1318,19 +1342,21 @@
 							//目标体重 
 							goal_weight: '',
 							//胸围    
-							chest_circumference: that.xiongwei,
+							chest_circumference: that.toStoredCm(that.xiongwei),
 							//腰围   
-							waistline: that.yaowei,
+							waistline: that.toStoredCm(that.yaowei),
 							//臀围   
-							hipline: that.tunwei,
+							hipline: that.toStoredCm(that.tunwei),
 							//上臂围   
-							biceps_circumference: that.shangtunwei,
+							biceps_circumference: that.toStoredCm(that.shangtunwei),
 							//大腿围  
-							thigh_circumference: that.datuiwei,
+							thigh_circumference: that.toStoredCm(that.datuiwei),
 							//小腿围   
-							calf_circumference: that.xiaotuiwei,
+							calf_circumference: that.toStoredCm(that.xiaotuiwei),
 						},
-						time: timestamp
+						time: timestamp,
+						measurementTs: that.UTCdatatime().timestampSec,
+						measurementTimezone: that.getTimeAllJSON().YMDHMS,
 					},
 					header: {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
@@ -1350,15 +1376,14 @@
 							that.datuiwei = ''
 							//小腿围   
 							that.xiaotuiwei = ''
-
 							uni.showToast({
-								title: res.data.msg,
+								title: that.$t("成功"),
 								icon: 'none'
 							})
 							that.$refs.tihzi_popup_sd.close()
 						} else {
 							uni.showToast({
-								title: res.data.msg,
+								title: that.$t("失败"),
 								icon: 'none'
 							})
 						}
@@ -1384,17 +1409,17 @@
 							//目标体重 
 							goal_weight: '',
 							//胸围    
-							chest_circumference: that.xw_value,
+							chest_circumference: that.toStoredCm(that.xw_value),
 							//腰围   
-							waistline: that.yw_value,
+							waistline: that.toStoredCm(that.yw_value),
 							//臀围   
-							hipline: that.tw_value,
+							hipline: that.toStoredCm(that.tw_value),
 							//上臂围   
-							biceps_circumference: that.stw_value,
+							biceps_circumference: that.toStoredCm(that.stw_value),
 							//大腿围  
-							thigh_circumference: that.dtw_value,
+							thigh_circumference: that.toStoredCm(that.dtw_value),
 							//小腿围   
-							calf_circumference: that.xtw_value,
+							calf_circumference: that.toStoredCm(that.xtw_value),
 						},
 						time: timestamp
 					},
@@ -1421,44 +1446,39 @@
 			// 确认手动输入六围数据
 			popup_sd() {
 				const measurements = [{
-						value: this.xiongwei,
-						message: this.$t('请输入胸围')
+						key: 'xiongwei',
+						message: '请输入胸围'
 					},
 					{
-						value: this.yaowei,
-						message: this.$t('请输入腰围')
+						key: 'yaowei',
+						message: '请输入腰围'
 					},
 					{
-						value: this.tunwei,
-						message: this.$t('请输入臀围')
+						key: 'tunwei',
+						message: '请输入臀围'
 					},
 					{
-						value: this.shangtunwei,
-						message: this.$t('请输入上臂围')
+						key: 'shangtunwei',
+						message: '请输入上臂围'
 					},
 					{
-						value: this.datuiwei,
-						message: this.$t('请输入大腿围')
+						key: 'datuiwei',
+						message: '请输入大腿围'
 					},
 					{
-						value: this.xiaotuiwei,
-						message: this.$t('请输入小腿围')
+						key: 'xiaotuiwei',
+						message: '请输入小腿围'
 					}
-				];
-				for (const {
-						value,
-						message
-					}
-					of measurements) {
-					if (!value) {
-						uni.showToast({
-							title: message,
-							icon: 'none'
-						});
-						return;
-					}
+				]
+				const missing = measurements.find(item => !this[item.key])
+				if (missing) {
+					uni.showToast({
+						title: this.$t(missing.message),
+						icon: 'none'
+					})
+					return
 				}
-				this.fat_scale();
+				this.fat_scale()
 			},
 			//获取已绑定的设备
 			queryDevices() {
@@ -1730,108 +1750,110 @@
 			//获取设备基础信息
 			get_device_info(deviceSn) {
 				const data = {
-					deviceSn: deviceSn
+					deviceSn: uni.getStorageSync("userid")
 				}
 				this.$post(this.$url_APP_IP + this.$url_get_device_info, data, postheader).then(res => {
+					console.log("获取设备基础信息", res)
 					if (res.code == 200) {
 						switch (this.types_index) {
 							case 0:
-								if (res.data.deviceTypeId === "13") {
-									this.setTenddeviceSn(deviceSn)
-									this.get_trend_data(this.startTime, this.endTime)
-									this.query_month_avg(this.startTime, this.endTime)
-									this.query_minmax(this.startTime, this.endTime)
-								} else {
-									this.setTenddeviceSn("")
-									this.chartData.categories = []
-									this.chartData.series[0].data = []
-									this.chartData.series[1].data = []
-									this.chartData2.categories = []
-									this.chartData2.series[0].data = []
-									this.Systolic_blood_pressure = "--"
-									this.Diastolic_blood_pressure = "--"
-									//最近
-									this.lately_Blood_pressure = "--"
-									this.lately_Systolic_blood_pressure = "--"
-									this.lately_Diastolic_blood_pressure = "--"
-									this.lately_pulse = "--"
-									//平均
-									this.average_Blood_pressure = "--"
-									this.average_Systolic_blood_pressure = "--"
-									this.average_Diastolic_blood_pressure = "--"
-									this.average_pulse = "--"
-									//最高
-									this.Maximum_Blood_pressure = "--"
-									this.Maximum_Systolic_blood_pressure = "--"
-									this.Maximum_Diastolic_blood_pressure = "--"
-									this.Maximum_pulse = "--"
-									//最低
-									this.Minimum_Blood_pressure = "--"
-									this.Minimum_Systolic_blood_pressure = "--"
-									this.Minimum_Diastolic_blood_pressure = "--"
-									this.Minimum_pulse = "--"
-								}
+								// if (res.data.deviceTypeId === "13") {
+								this.setTenddeviceSn(deviceSn)
+								this.get_trend_data(this.startTime, this.endTime)
+								this.query_month_avg(this.startTime, this.endTime)
+								this.query_minmax(this.startTime, this.endTime)
+								// } else {
+								// 	this.setTenddeviceSn("")
+								// 	this.chartData.categories = []
+								// 	this.chartData.series[0].data = []
+								// 	this.chartData.series[1].data = []
+								// 	this.chartData2.categories = []
+								// 	this.chartData2.series[0].data = []
+								// 	this.Systolic_blood_pressure = "--"
+								// 	this.Diastolic_blood_pressure = "--"
+								// 	//最近
+								// 	this.lately_Blood_pressure = "--"
+								// 	this.lately_Systolic_blood_pressure = "--"
+								// 	this.lately_Diastolic_blood_pressure = "--"
+								// 	this.lately_pulse = "--"
+								// 	//平均
+								// 	this.average_Blood_pressure = "--"
+								// 	this.average_Systolic_blood_pressure = "--"
+								// 	this.average_Diastolic_blood_pressure = "--"
+								// 	this.average_pulse = "--"
+								// 	//最高
+								// 	this.Maximum_Blood_pressure = "--"
+								// 	this.Maximum_Systolic_blood_pressure = "--"
+								// 	this.Maximum_Diastolic_blood_pressure = "--"
+								// 	this.Maximum_pulse = "--"
+								// 	//最低
+								// 	this.Minimum_Blood_pressure = "--"
+								// 	this.Minimum_Systolic_blood_pressure = "--"
+								// 	this.Minimum_Diastolic_blood_pressure = "--"
+								// 	this.Minimum_pulse = "--"
+								// }
 								break
 							case 1:
-								if (res.data.deviceTypeId === "10") {
-									this.setTenddeviceSn(deviceSn)
-									this.get_trend_data(this.startTime, this.endTime)
-									this.query_month_avg(this.startTime, this.endTime)
-									this.query_minmax(this.startTime, this.endTime)
-								} else {
-									this.setTenddeviceSn("")
-									this.chartData.categories = []
-									this.chartData.series[0].data = []
-									this.chartData.series[1].data = []
-									this.chartData2.categories = []
-									this.chartData2.series[0].data = []
-									this.Systolic_blood_pressure = "--"
-									this.Diastolic_blood_pressure = "--"
-									//最近
-									this.lately_Blood_pressure = "--"
-									this.lately_Systolic_blood_pressure = "--"
-									this.lately_Diastolic_blood_pressure = "--"
-									this.lately_pulse = "--"
-									//平均
-									this.average_Blood_pressure = "--"
-									this.average_Systolic_blood_pressure = "--"
-									this.average_Diastolic_blood_pressure = "--"
-									this.average_pulse = "--"
-									//最高
-									this.Maximum_Blood_pressure = "--"
-									this.Maximum_Systolic_blood_pressure = "--"
-									this.Maximum_Diastolic_blood_pressure = "--"
-									this.Maximum_pulse = "--"
-									//最低
-									this.Minimum_Blood_pressure = "--"
-									this.Minimum_Systolic_blood_pressure = "--"
-									this.Minimum_Diastolic_blood_pressure = "--"
-									this.Minimum_pulse = "--"
-								}
+								// if (res.data.deviceTypeId === "10") {
+								this.setTenddeviceSn(deviceSn)
+								this.get_trend_data(this.startTime, this.endTime)
+								this.query_month_avg(this.startTime, this.endTime)
+								this.query_minmax(this.startTime, this.endTime)
+								// }
+								//  else {
+								// 	this.setTenddeviceSn("")
+								// 	this.chartData.categories = []
+								// 	this.chartData.series[0].data = []
+								// 	this.chartData.series[1].data = []
+								// 	this.chartData2.categories = []
+								// 	this.chartData2.series[0].data = []
+								// 	this.Systolic_blood_pressure = "--"
+								// 	this.Diastolic_blood_pressure = "--"
+								// 	//最近
+								// 	this.lately_Blood_pressure = "--"
+								// 	this.lately_Systolic_blood_pressure = "--"
+								// 	this.lately_Diastolic_blood_pressure = "--"
+								// 	this.lately_pulse = "--"
+								// 	//平均
+								// 	this.average_Blood_pressure = "--"
+								// 	this.average_Systolic_blood_pressure = "--"
+								// 	this.average_Diastolic_blood_pressure = "--"
+								// 	this.average_pulse = "--"
+								// 	//最高
+								// 	this.Maximum_Blood_pressure = "--"
+								// 	this.Maximum_Systolic_blood_pressure = "--"
+								// 	this.Maximum_Diastolic_blood_pressure = "--"
+								// 	this.Maximum_pulse = "--"
+								// 	//最低
+								// 	this.Minimum_Blood_pressure = "--"
+								// 	this.Minimum_Systolic_blood_pressure = "--"
+								// 	this.Minimum_Diastolic_blood_pressure = "--"
+								// 	this.Minimum_pulse = "--"
+								// }
 								break
 							case 2:
-								if (res.data.deviceTypeId === "11") {
-									this.setTenddeviceSn(deviceSn)
-									this.get_trend_data(this.startTime, this.endTime)
-									this.query_weight_avg(this.startTime, this.endTime)
-									let str = localDate + ' 00:00:00'
-									let end = localDate + " 23:59:59"
-									this.query_weight_day(str, end)
-								} else {
-									this.setTenddeviceSn("")
-									this.chartData.categories = []
-									this.chartData.series[0].data = []
-									this.chartData.series[1].data = []
-									this.chartData2.categories = []
-									this.chartData2.series[0].data = []
-									this.Mean_value = "--"
-									this.bmi = "--"
-									this.weight_value = "--"
-									this.level_weight = "--"
-									this.max_weight = "--"
-									this.min_weight = "--"
-									this.avg_weight = "--"
-								}
+								// if (res.data.deviceTypeId === "11") {
+								this.setTenddeviceSn(deviceSn)
+								this.get_trend_data(this.startTime, this.endTime)
+								this.query_weight_avg(this.startTime, this.endTime)
+								let str = localDate + ' 00:00:00'
+								let end = localDate + " 23:59:59"
+								this.query_weight_day(str, end)
+								// } else {
+								// 	this.setTenddeviceSn("")
+								// 	this.chartData.categories = []
+								// 	this.chartData.series[0].data = []
+								// 	this.chartData.series[1].data = []
+								// 	this.chartData2.categories = []
+								// 	this.chartData2.series[0].data = []
+								// 	this.Mean_value = "--"
+								// 	this.bmi = "--"
+								// 	this.weight_value = "--"
+								// 	this.level_weight = "--"
+								// 	this.max_weight = "--"
+								// 	this.min_weight = "--"
+								// 	this.avg_weight = "--"
+								// }
 								break
 						}
 					} else if (res.code == 500) {
@@ -1890,7 +1912,7 @@
 					endTime: endTime,
 					aggregateType: this.aggregateType
 				}
-				// console.log("get_trend_data", data)
+				console.log("get_trend_data", data)
 				this.$post(this.$url_APP_IP + this.$url_get_trend_data, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
@@ -2892,9 +2914,11 @@
 	.popupsdind_1 {
 		display: flex;
 		flex-direction: row;
+		align-items: center;
 		background: #F7F7F7;
 		padding: 15px;
 		border-radius: 10px;
+		box-sizing: border-box;
 	}
 
 	.butonsd {

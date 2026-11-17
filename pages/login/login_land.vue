@@ -196,6 +196,7 @@
 
 		onShow() {
 			let that = this;
+			uni.$emit('MEDICATION_REMINDER_LOGOUT')
 			uni.removeStorageSync("token")
 			refreshActiveAppBaseUrl(Vue)
 			isInChinaByIP().then(isInChina => {

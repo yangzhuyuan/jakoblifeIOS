@@ -2,8 +2,8 @@
     "name" : "JakobLife",
     "appid" : "__UNI__F833FCF",
     "description" : "JakobLife 是针对消费者开发的自我健康管理的APP，您可以使用JakobLife记录或查询自己和家人的健康和数据，通过可视化图表直观地了解每天、每周、每月的数据变化趋势。",
-    "versionName" : "4.5.0",
-    "versionCode" : 556,
+    "versionName" : "5.0.012",
+    "versionCode" : 592,
     "transformPx" : false,
     "app-plus" : {
         "ios" : {
@@ -217,8 +217,8 @@
             }
         },
         "compatible" : {
-            "runtimeVersion" : "5.26", //根据实际情况填写  
-            "compilerVersion" : "5.26", //根据实际情况填写  
+            "runtimeVersion" : "5.34", //根据实际情况填写  
+            "compilerVersion" : "5.34", //根据实际情况填写  
             "ignoreVersion" : true
         },
         "usingComponents" : true,
@@ -243,7 +243,8 @@
             "Camera" : {},
             "Messaging" : {},
             "Bluetooth" : {},
-            "Geolocation" : {}
+            "Geolocation" : {},
+            "LivePusher" : {}
         },
         "distribute" : {
             "android" : {
@@ -430,7 +431,8 @@
                             "appKey" : "5922042033913"
                         }
                     }
-                }
+                },
+                "payment" : {}
             },
             "orientation" : [ "portrait-primary" ],
             "splashscreen" : {
@@ -516,6 +518,20 @@
                     "name" : "KeepAlivesdkplugin",
                     "description" : "iOS 后台保活插件 - 支持音频、定位、后台任务和后台刷新",
                     "platforms" : "iOS",
+                    "url" : "",
+                    "android_package_name" : "",
+                    "ios_bundle_id" : "",
+                    "isCloud" : false,
+                    "bought" : -1,
+                    "pid" : "",
+                    "parameters" : {}
+                }
+            },
+            "Jakob-BPReader" : {
+                "__plugin_info__" : {
+                    "name" : "Jakob血压计本地识别",
+                    "description" : "离线图片与实时取景血压读数识别、单位识别及确认",
+                    "platforms" : "Android,iOS",
                     "url" : "",
                     "android_package_name" : "",
                     "ios_bundle_id" : "",

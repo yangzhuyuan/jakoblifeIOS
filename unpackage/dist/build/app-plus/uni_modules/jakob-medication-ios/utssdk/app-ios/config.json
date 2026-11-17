@@ -1,0 +1,10 @@
+{
+  "deploymentTarget": "10.0",
+  "frameworks": [
+    "Foundation.framework",
+    "UIKit.framework",
+    "UserNotifications.framework",
+    "AVFoundation.framework"
+  ],
+  "hooksClass": "UTSSDKModulesJakobMedicationIosJakobReminderHook"
+}

@@ -63,19 +63,19 @@
 						<view class="list-item" v-for="(item, index) in list" :key="getDeviceUniqueKey(item) || index"
 							:class="{ active: act === index }" @click="checkClick(index, item)">
 							<view class="item-content">
-								<image lazy-load class="imagesd" :class="{ 'imagesd-compact': isWifiSettableDevice(item) }"
-									mode="aspectFit" :src="getDeviceImage(item.deviceModelId)">
+								<image lazy-load class="imagesd" :class="{ 'imagesd-compact': isWifiSettableDevice(item) && !isThirdPartyReaderDevice(item) }"
+									mode="aspectFit" :src="deviceImage(item)">
 								</image>
-								<view class="xinghao">{{$t('型号') + (item.name==="BPW6"?"U19M/U16H":item.name)}}</view>
+								<view class="xinghao">{{ deviceModelLabel(item) }}</view>
 								<view style="font-size: 10px; padding-bottom: 5px; text-align: center;">
 									SN:{{item.deviceSn}}
 								</view>
-								<view v-if="item.name==='JL-S260'||item.name==='JL-S100'||item.name==='ZK-B872B'"></view>
+								<view v-if="hideDeviceLinkStatus(item)"></view>
 								<view v-else class="device-ble-status-badge"
 									:class="isDeviceBleConnected(item.mac, item) ? 'is-on' : 'is-off'">
 									{{ isDeviceBleConnected(item.mac, item) ? $t('设备已连接') : $t('设备未连接') }}
 								</view>
-								<view v-if="isWifiSettableDevice(item)" class="wifi-set-btn"
+								<view v-if="isWifiSettableDevice(item) && !isThirdPartyReaderDevice(item)" class="wifi-set-btn"
 									@tap.stop="onSetWifiClick(item)">
 									{{ $t('设置wifi') }}
 								</view>
@@ -103,6 +103,15 @@
 		invalidateQxEmotionBindingCache,
 		QX_BPW6_EMOTION_MEASURE_KEY
 	} from '../../api/qxBleAlignedSchedule.js';
+	import {
+		getDeviceBindingContext,
+		recordBoundDevices,
+		recordDeviceUnbound
+	} from '../../api/deviceBindingState.js';
+	import {
+		clearReaderDeviceBound,
+		isThirdPartyReaderSn
+	} from '../../api/bpReaderDevice.js';
 	export default {
 		data() {
 			return {
@@ -349,6 +358,10 @@
 				this.clearHeartbeatInterval();
 			},
 			checkClick(index, item) {
+				if (this.isThirdPartyReaderDevice(item)) {
+					this.promptPhotoReaderDevice()
+					return
+				}
 				this.act = index;
 				this.deviceModelConnectType = item.deviceModelConnectType;
 				this.deviceSn = item.deviceSn;
@@ -356,8 +369,27 @@
 				this.deviceModelId = item.deviceModelId;
 				this.refreshBleConnectionState();
 			},
+			isThirdPartyReaderDevice(item) {
+				return isThirdPartyReaderSn(item && item.deviceSn)
+			},
+			hideDeviceLinkStatus(item) {
+				if (!item) return false
+				return this.isThirdPartyReaderDevice(item) || item.name === 'JL-S260' || item.name === 'JL-S100' ||
+					item.name === 'ZK-B872B'
+			},
+			deviceModelLabel(item) {
+				if (this.isThirdPartyReaderDevice(item)) return this.$t('型号') + this.$t('虚拟设备')
+				return this.$t('型号') + (item.name === 'BPW6' ? 'U19M/U16H' : item.name)
+			},
+			promptPhotoReaderDevice() {
+				uni.showModal({
+					title: this.$t('提示'),
+					content: this.$t('此设备为虚拟设备，无需解绑'),
+					showCancel: false
+				})
+			},
 			isWifiSettableDevice(item) {
-				if (!item) return false;
+				if (!item || this.isThirdPartyReaderDevice(item)) return false;
 				const name = item.name || '';
 				const modelId = item.deviceModelId != null ? String(item.deviceModelId) : '';
 				return name === 'JL-BP68W' || name === 'JL-BP67W' || name === 'ZK-B872' || name === 'ZK-B872B' ||
@@ -541,6 +573,10 @@
 					}
 				});
 			},
+			deviceImage(item) {
+				if (this.isThirdPartyReaderDevice(item)) return '/static/image/virtual_device.jpg'
+				return this.getDeviceImage(item && item.deviceModelId)
+			},
 			getDeviceImage(deviceModelId) {
 				const devicePictures = {
 					'30000': this.getLocaleImage('BPW1', '/static/image/BPW1.png', '/static/image/shoubiao1.png'),
@@ -561,6 +597,10 @@
 				return lan === 'zh-Hans' || lan == 'zh-Hant' ? zhImage : enImage;
 			},
 			deleteDevice() {
+				if (isThirdPartyReaderSn(this.deviceSn)) {
+					this.promptPhotoReaderDevice()
+					return
+				}
 				if (this.act === -1) {
 					uni.showToast({
 						title: this.$t('请选择一个设备'),
@@ -674,6 +714,7 @@
 				return buffer;
 			},
 			queryDevices() {
+				const bindingContext = getDeviceBindingContext()
 				uni.request({
 					url: this.$url_APP_IP + this.$url_queryDevices,
 					method: 'POST',
@@ -681,7 +722,12 @@
 						'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 						'content-type': 'application/json;charset=UTF-8'
 					},
-					success: this.handleQueryDevicesSuccess,
+					success: (res) => {
+						if (res.data && res.data.code === 200 && Array.isArray(res.data.rows)) {
+							recordBoundDevices(res.data.rows, bindingContext)
+						}
+						this.handleQueryDevicesSuccess(res)
+					},
 					fail: this.handleQueryDevicesFail
 				});
 			},
@@ -775,6 +821,7 @@
 				}
 			},
 			getunbind(deviceSn, mac, deviceModelId) {
+				const rows = (this.list || []).slice()
 				uni.request({
 					url: this.$url_APP_IP + this.$url_getunbind,
 					method: 'POST',
@@ -785,13 +832,17 @@
 						'Authorization': 'Bearer ' + uni.getStorageSync('token'),
 						'content-type': 'application/x-www-form-urlencoded'
 					},
-					success: this.handleUnbindSuccess(deviceModelId, mac),
+					success: this.handleUnbindSuccess(deviceModelId, mac, deviceSn, rows),
 					fail: this.handleUnbindFail
 				});
 			},
-			handleUnbindSuccess(deviceModelId, mac) {
+			handleUnbindSuccess(deviceModelId, mac, deviceSn, rows) {
 				return (res) => {
 					if (res.data.code === 200) {
+						recordDeviceUnbound(deviceSn, rows || [])
+						if (isThirdPartyReaderSn(deviceSn)) {
+							clearReaderDeviceBound(uni, this.$url_APP_IP, uni.getStorageSync('userid'))
+						}
 						this.queryDevices();
 						this.clearHeartbeatInterval();
 						invalidateQxEmotionBindingCache(deviceModelId, mac);

@@ -5,7 +5,26 @@ export function formatGMTOffset(offsetMinutes) {
 	const minutesStr = String(absMinutes % 60).padStart(2, '0');
 	return `GMT${sign}${hoursStr}:${minutesStr}`;
 }
-
+/** 获取设备当前时区偏移（分钟，东为正），优先读原生 API，时区变更后可即时生效 */
+export function getDeviceTimezoneOffsetMinutes(date = new Date()) {
+	// #ifdef APP-PLUS
+	try {
+		if (plus.os.name === 'Android') {
+			const TimeZone = plus.android.importClass('java.util.TimeZone')
+			const tz = TimeZone.getDefault()
+			return Math.round(tz.getOffset(date.getTime()) / 60000)
+		}
+		if (plus.os.name === 'iOS') {
+			const NSTimeZone = plus.ios.importClass('NSTimeZone')
+			const localTz = NSTimeZone.localTimeZone()
+			const secondsFromGMT = plus.ios.invoke(localTz, 'secondsFromGMT') || 0
+			plus.ios.deleteObject(localTz)
+			return Math.round(secondsFromGMT / 60)
+		}
+	} catch (e) {}
+	// #endif
+	return -date.getTimezoneOffset()
+}
 /** 获取手机 GMT 偏移，如 GMT+08:00、GMT+05:30 */
 export function getGMTTimezoneStrict() {
 	// #ifdef APP-PLUS
@@ -61,27 +80,6 @@ let timezoneWatchTimer = null
 
 function pad2(value) {
 	return String(value).padStart(2, '0')
-}
-
-/** 获取设备当前时区偏移（分钟，东为正），优先读原生 API，时区变更后可即时生效 */
-export function getDeviceTimezoneOffsetMinutes(date = new Date()) {
-	// #ifdef APP-PLUS
-	try {
-		if (plus.os.name === 'Android') {
-			const TimeZone = plus.android.importClass('java.util.TimeZone')
-			const tz = TimeZone.getDefault()
-			return Math.round(tz.getOffset(date.getTime()) / 60000)
-		}
-		if (plus.os.name === 'iOS') {
-			const NSTimeZone = plus.ios.importClass('NSTimeZone')
-			const localTz = NSTimeZone.localTimeZone()
-			const secondsFromGMT = plus.ios.invoke(localTz, 'secondsFromGMT') || 0
-			plus.ios.deleteObject(localTz)
-			return Math.round(secondsFromGMT / 60)
-		}
-	} catch (e) {}
-	// #endif
-	return -date.getTimezoneOffset()
 }
 
 /** 时区签名，用于检测系统时区是否变更 */

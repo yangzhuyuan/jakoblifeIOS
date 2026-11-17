@@ -1,5 +1,8 @@
 // request.js
+import { healthPressureRequestScope, observeHealthPressureSuccess } from '../tabBar/main/Reminders/api/healthMeasurement.js'
 function request(url, method, data = {}, header = {}) {
+	let healthScope = null
+	try { if (method === 'POST') healthScope = healthPressureRequestScope(url) } catch (e) {}
 	return new Promise((resolve, reject) => {
 		uni.request({
 			url: url,
@@ -10,6 +13,7 @@ function request(url, method, data = {}, header = {}) {
 				// 这里可以根据你的需要处理响应结果
 				if (res.statusCode === 200) {
 					resolve(res.data);
+					try { observeHealthPressureSuccess(healthScope, data, res.data) } catch (e) {}
 				} else {
 					reject(res.data);
 				}

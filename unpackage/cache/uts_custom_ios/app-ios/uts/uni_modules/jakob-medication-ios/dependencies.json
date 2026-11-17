@@ -1,0 +1,11 @@
+{
+  "version": "1",
+  "dependencies": {
+    "frameworks": [
+      "Foundation.framework",
+      "UIKit.framework",
+      "UserNotifications.framework",
+      "AVFoundation.framework"
+    ]
+  }
+}

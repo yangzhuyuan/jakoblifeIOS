@@ -122,7 +122,7 @@
 					}
 					that.username = getInfo.data.nickName === null ? getInfo.data.userName : getInfo.data.nickName
 					that.select = getInfo.data.sex === '0' ? that.$t('男') : that.$t('女')
-					that.date = getInfo.data.birthTime
+					that.date = that.formatBirthDate(getInfo.data.birthTime)
 					that.height = that.Height_index === 0 ? WeightConverter.cmToInch(getInfo.data
 						.height) : getInfo.data.height
 					that.width = that.Width_index === 0 ? getInfo.data.weight : WeightConverter
@@ -162,7 +162,7 @@
 									res.data
 									.data.nickName
 								that.select = res.data.data.sex === '0' ? that.$t('男') : that.$t('女')
-								that.date = res.data.data.birthTime
+								that.date = that.formatBirthDate(res.data.data.birthTime)
 								that.height = that.Height_index === 0 ? WeightConverter.cmToInch(res.data
 									.data.height) : res.data.data.height
 								that.width = that.Width_index === 0 ? res.data.data.weight :
@@ -206,7 +206,7 @@
 									res.data
 									.data.nickName
 								that.select = res.data.data.sex === '0' ? that.$t('男') : that.$t('女')
-								that.date = res.data.data.birthTime
+								that.date = that.formatBirthDate(res.data.data.birthTime)
 								that.height = that.Height_index === 0 ? WeightConverter.cmToInch(res.data
 									.data.height) : res.data.data.height
 								that.width = that.Width_index === 0 ? res.data.data.weight :
@@ -310,6 +310,12 @@
 			},
 			bindDateChange(e) {
 				this.date = e.detail.value
+			},
+			formatBirthDate(value) {
+				if (value === null || value === undefined || value === '') return value
+				const matched = String(value).trim().match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+				if (!matched) return value
+				return `${matched[1]}-${matched[2].padStart(2, '0')}-${matched[3].padStart(2, '0')}`
 			},
 
 			//更换头像

@@ -269,6 +269,7 @@
 			},
 
 			getCode(barNumber) {
+				console.log('扫码结果', barNumber);
 				switch (this.modelname) {
 					case "BPW1":
 						const regex = /para=([^&]+)/;

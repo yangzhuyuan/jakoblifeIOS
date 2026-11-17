@@ -79,9 +79,12 @@
 
 	/** 血压计 OTA 校验通过时 otaBP 存储的合法值 */
 	const OTA_BP_DEVICE_VERIFY_IDS = [
+		'6986AF9F0656352E382E350741423536313043',
 		'69D616630656352E382E380741423536313043',
 		'69E5814C0656352E382E390741423536313043',
 		'69E587830656352E382E380741423536313043',
+		'69C0EB890656352E382E370741423536313043',
+		'6AB4877D0A56352E382E382D4F47530741423536313043',
 	];
 
 	export default {
@@ -305,10 +308,10 @@
 						complete(complete) {
 							if (complete.code === 10007) {
 								console.log("OTA：e0000609200101000100");
-								setTimeout(() => {
-									console.log("uni.getStorageSync otaBP:", uni.getStorageSync(
-										"otaBP"));
-									const otaBP = uni.getStorageSync("otaBP");
+								const verifyStarted = Date.now();
+								const waitVerify = () => {
+									const otaBP = String(uni.getStorageSync("otaBP") || '').toUpperCase();
+									console.log("uni.getStorageSync otaBP:", otaBP);
 									if (OTA_BP_DEVICE_VERIFY_IDS.includes(otaBP)) {
 										try {
 											const timers = items.map((item, idx) => ({
@@ -339,19 +342,24 @@
 											uni.removeStorageSync("otaBP");
 											reject(e);
 										}
-									} else {
-										that.sending = false;
-										that.restoreStateOnFailure();
-										uni.showToast({
-											title: that.$t("请检查手表设备"),
-											icon: 'none',
-											duration: 2000
-										});
-										uni.hideLoading();
-										uni.removeStorageSync("otaBP");
-										reject(new Error("设备验证失败"));
+										return;
 									}
-								}, 3000);
+									if (Date.now() - verifyStarted < 6000) {
+										setTimeout(waitVerify, 500);
+										return;
+									}
+									that.sending = false;
+									that.restoreStateOnFailure();
+									uni.showToast({
+										title: that.$t("请检查手表设备"),
+										icon: 'none',
+										duration: 2000
+									});
+									uni.hideLoading();
+									uni.removeStorageSync("otaBP");
+									reject(new Error("设备验证失败"));
+								};
+								setTimeout(waitVerify, 3000);
 							} else {
 								that.sending = false;
 								that.restoreStateOnFailure();

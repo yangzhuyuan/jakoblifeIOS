@@ -1,0 +1,14 @@
+import { InvokeMedicationIOS } from '../interface.uts';
+import { UIApplication } from 'UIKit';
+// Register before iOS delivers an action that cold-started the app in the background.
+export class JakobReminderHook implements UTSiOSHookProxy {
+    applicationDidFinishLaunchingWithOptions(application: UIApplication | null, launchOptions: Map<UIApplication.LaunchOptionsKey, any> | null = null): boolean {
+        JakobMedicationNotifications.bootstrap();
+        return false;
+    }
+}
+export const invokeMedicationIOS: InvokeMedicationIOS = function (method: string, payload: string, callback: (result: string) => void) {
+    JakobMedicationNotifications.invoke(method, payload, (result: string): void => {
+        callback(result);
+    });
+};

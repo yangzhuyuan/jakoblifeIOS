@@ -28,6 +28,7 @@
 </template>
 
 <script>
+	import { readReaderDevice } from '../../api/bpReaderDevice.js';
 	export default {
 		data() {
 			return {
@@ -124,11 +125,23 @@
 									clearInterval(Vue.prototype.$globalTimers.heartbeatInterval);
 									Vue.prototype.$globalTimers.heartbeatInterval = null;
 								}
-								that.delete_self()
+								that.unbindPhotoReaderDevice().finally(() => {
+									that.delete_self()
+								})
 							} else if (res.cancel) {}
 						}
 					});
 				}
+			},
+			unbindPhotoReaderDevice() {
+				const device = readReaderDevice(uni, this.$url_APP_IP, uni.getStorageSync('userid'))
+				if (!device || !device.deviceSn) return Promise.resolve()
+				return this.$post(this.$url_APP_IP + this.$url_getunbind, {
+					deviceSn: device.deviceSn
+				}, {
+					Authorization: 'Bearer ' + uni.getStorageSync('token'),
+					'content-type': 'application/x-www-form-urlencoded'
+				}).catch(() => {})
 			},
 			//注销用户
 			delete_self() {

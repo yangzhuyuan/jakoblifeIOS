@@ -25,12 +25,13 @@
 							:title_name="title_name" :Blood="Blood" :highPressure="highPressure"
 							:lowPressure="lowPressure" :pulse="pulse" :spo2="summarySpo2" :spo2Date="summarySpo2Date"
 							:bpDate="summaryBpDate" :hrDate="pulsetime" :heightVal="summaryHeight"
-							:heightDate="summaryHeightDate" :binaji="binaji" :list="list" @update:list="list = $event"
-							:disabledsaaa="disabledsaaa" :animation="animation" :delate_icon="delate_icon"
-							:button_show="button_show" @bp-measure-link="xueyaclicklink" @xueya-tap="xueya_tap"
-							@xueya-click="xueyaclick" @tiaozhen="tiaozhen" @update:disabled="handleUpdateDisabled1"
-							@list-click="listclisck" @bmi-tap="BMI_tap" @delete-card="delate_icon_cl"
-							@confirm-cards="ture_bt" @add-card="add_bt_xy" />
+							:tabActive="currentIndex === 0" :heightDate="summaryHeightDate" :binaji="binaji"
+							:list="list" @update:list="list = $event" :disabledsaaa="disabledsaaa"
+							:animation="animation" :delate_icon="delate_icon" :button_show="button_show"
+							@bp-measure-link="xueyaclicklink" @xueya-tap="xueya_tap" @xueya-click="xueyaclick"
+							@tiaozhen="tiaozhen" @update:disabled="handleUpdateDisabled1" @list-click="listclisck"
+							@bmi-tap="BMI_tap" @delete-card="delate_icon_cl" @confirm-cards="ture_bt"
+							@add-card="add_bt_xy" />
 					</view>
 				</scroll-view>
 			</swiper-item>
@@ -57,7 +58,11 @@
 			<!-- ECG end -->
 			<!-- 情绪 -->
 			<swiper-item>
-				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view"
+					refresher-enabled refresher-default-style="none" refresher-background="#f4f7fb"
+					:refresher-triggered="emotionRefreshing" @refresherrefresh="onEmotionRefresh"
+					@refresherabort="finishHomeRefresh('emotion')">
+					<view slot="refresher" style="height: 56px;"></view>
 					<view style="background:#f4f7fb;">
 						<view class="title_zs_yundong"></view>
 						<EmotionSwiperItem :sleep_alertdisabled="sleep_alertdisabled" :ppgnewpoint="ppgnewpoint"
@@ -76,10 +81,14 @@
 			</swiper-item>
 			<!-- 体脂秤 -->
 			<swiper-item>
-				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view">
+				<scroll-view scroll-y="true" :style="{height: screenHeight + 'px'}" class="scroll-view"
+					refresher-enabled refresher-default-style="none" refresher-background="#f4f7fb"
+					:refresher-triggered="weightRefreshing" @refresherrefresh="onWeightRefresh"
+					@refresherabort="finishHomeRefresh('weight')">
+					<view slot="refresher" style="height: 56px;"></view>
 					<view style="background:#f4f7fb;">
 						<view class="title_zs_yundong"></view>
-						<BodyFatSwiperItem :Latest_weight="Latest_weight" :newweightKG="newweightKG"
+						<BodyFatSwiperItem ref="bodyFatItem" :Latest_weight="Latest_weight" :newweightKG="newweightKG"
 							:Latest_date="Latest_date" :Initial_weight="Initial_weight" :chuhsikg="chuhsikg"
 							:Target_weight="Target_weight" :list2="list2" @update:list2="list2 = $event"
 							:binaji2="binaji2" :disabledsaaa2="disabledsaaa2" :animation2="animation2"
@@ -118,6 +127,10 @@
 				</scroll-view>
 			</swiper-item>
 		</swiper>
+		<view v-show="(currentIndex === 1 && emotionRefreshing) || (currentIndex === 2 && weightRefreshing)"
+			class="home-refresh-float">
+			<view class="home-refresher-dot"></view>
+		</view>
 		<!--标题 -->
 		<view class="title_all">
 			<view class="title_all_1">
@@ -345,73 +358,79 @@
 								<view class="title_select_ruler">{{$t('胸围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{xw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;margin-top: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="xw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="xw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('腰围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{yw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="yw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="yw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('臀围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{tw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="tw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="tw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('上臂围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{stw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="stw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="stw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('大腿围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{dtw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="dtw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="dtw_value = $event"></select-ruler>
 							</view>
 							<view style="display: flex;justify-content: space-between;margin-top: 20px;">
 								<view class="title_select_ruler">{{$t('小腿围')}}</view>
 								<view style="display: flex;justify-content: center; flex-direction: row;">
 									<view style="font-weight: bold;font-size: 18px;">{{xtw_value}}</view>
-									<text style="margin-left: 5px;">cm</text>
+									<text style="margin-left: 5px;">{{lengthUnitLabel}}</text>
 								</view>
 								<text></text>
 							</view>
 							<view style="width: 90vw;padding: 10px;">
-								<select-ruler :min="0" :max="1500" :disable="false" :multiple="10" :point="1"
-									:defaultValue="1000" @change="xtw_handleChange"></select-ruler>
+								<select-ruler :key="bodyLenKey" :min="0" :max="bodyRulerMax" :disable="false"
+									:multiple="10" :point="1" :defaultValue="bodyRulerDefault"
+									@change="xtw_value = $event"></select-ruler>
 							</view>
 						</view>
 						<button @tap="select_ruler()"
@@ -476,37 +495,37 @@
 									style="display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="xiongwei" :placeholder="$t('请输入胸围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="yaowei" :placeholder="$t('请输入腰围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="tunwei" :placeholder="$t('请输入臀围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="shangtunwei" :placeholder="$t('请输入上臂围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="datuiwei" :placeholder="$t('请输入大腿围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 								<view
 									style="display: flex;flex-direction: row;background: #F7F7F7;margin-top: 20px; padding: 15px;border-radius: 10px;">
 									<input type="number" v-model="xiaotuiwei" :placeholder="$t('请输入小腿围')"
 										style="text-align: center;width: 80vw;" />
-									<text>cm</text>
+									<text>{{lengthUnitLabel}}</text>
 								</view>
 							</view>
 							<button @tap="popup_sd()"
@@ -538,10 +557,10 @@
 					</view>
 					<view style="padding: 20px;width: 75vw;">
 						<view
-							style="display: flex;flex-direction: row;background: #F7F7F7;padding: 15px;border-radius: 10px;">
+							style="display: flex;flex-direction: row;align-items: center;background: #F7F7F7;padding: 15px;border-radius: 10px;box-sizing: border-box;">
 							<input type="number" v-model="tizhong" :placeholder="$t('请输入体重')"
-								style="text-align: center;width: 80vw;" />
-							<text>{{$t("千克")}}</text>
+								style="flex: 1;min-width: 0;text-align: center;" />
+							<text style="flex-shrink: 0;white-space: nowrap;margin-left: 8px;">{{chuhsikg}}</text>
 						</view>
 					</view>
 					<button @tap="jitizhong_tc()"
@@ -656,6 +675,9 @@
 	import EcgSwiperItem from './EcgSwiperItem.vue'; //ECG页面
 	import AccDataParser from '../../api/unitls/accDataParser.js';
 	import PPGParser from '../../api/unitls/PPGParser.js'
+	import {
+		isThirdPartyReaderSn
+	} from '../../api/bpReaderDevice.js'
 	import PpgDataService from "../../api/servicesppg/PpgDataService.js";
 	import PpgWaveform from "../../../components/ACC_PPG/PpgWaveform.vue";
 	// 导入天气所需要的函数
@@ -712,18 +734,28 @@
 		at: 0
 	};
 	let bleLinkActiveHandler = null;
+	// 进程级：杀掉 App 后脚本重载，此标记回到 false。切页、退后台再进不会重载。
+	let emotionButtonKillRecoverDone = false;
+	// 本次冷启动清掉过按钮锁：挡住已死会话的回包再次置灰，本进程真正开测后放开。
+	let emotionButtonStaleLockCleared = false;
 	const CMD_ECG_START = [0xA5, 0x12, 0x01, 0x13, 0x0A];
 	const CMD_ECG_STOP = [0xA6, 0x15, 0x01, 0x17, 0x0A];
 	// ECG end
 	import {
 		onQxBleWatchCollectionEnded,
+		isQxMeasureInFlight,
 		QX_BPW6_PPG_AFTER_BP_BUSY_KEY,
 		QX_BPW6_EMOTION_MEASURE_KEY
 	} from '@/pages/api/qxBleAlignedSchedule.js';
+	import {
+		getDeviceBindingContext,
+		recordBoundDevices
+	} from '@/pages/api/deviceBindingState.js';
 	/** BPW1手表 OTA 写入 otadatares 后，情绪测量需使用新命令的固件标识值 */
 	const OTA_DATA_RES_EMOTION_CMD_IDS = [
 		'6986AF9F0656352E382E350741423536313043',
 		'69C0EB890656352E382E370741423536313043',
+		'6AB4877D0A56352E382E382D4F47530741423536313043',
 		'69D616630656352E382E380741423536313043',
 		'69E5814C0656352E382E390741423536313043',
 		'69E587830656352E382E380741423536313043',
@@ -751,6 +783,7 @@
 		chinaWallClockToMs,
 		checkTimezoneChanged,
 		getGMTTimezoneStrict,
+		getDeviceTimezoneOffsetMinutes,
 		getDeviceTimeZone,
 	} from '../../api/unitls/timezone.js';
 	export default {
@@ -794,7 +827,7 @@
 			},
 			buttonPattern() {
 				const menuItems = [{
-						icon: '/static/page_icon/aipbg.jpg',
+						icon: '/static/page_icon/aipbg.png',
 						text: this.$t("报告"),
 						handler: () => {
 							uni.navigateTo({
@@ -826,7 +859,7 @@
 				];
 				return {
 					theme: 'primary',
-					icon: '/static/page_icon/aipbg.jpg',
+					icon: '/static/page_icon/aipbg.png',
 					menuItems
 				};
 			},
@@ -973,6 +1006,8 @@
 				screenHeight: windowHeight,
 				// swiper索引
 				currentIndex: 0,
+				emotionRefreshing: false,
+				weightRefreshing: false,
 				scrollLeft: 0,
 				disabletouch: false,
 				msg: true,
@@ -1097,6 +1132,10 @@
 				Initial_weight: "--",
 				Target_weight: "-",
 				chuhsikg: "kg",
+				lengthUnitLabel: uni.getStorageSync("danwei1") === 0 ? this.$t("英寸") : "cm",
+				bodyLenKey: uni.getStorageSync("danwei1") === 0 ? "in" : "cm",
+				bodyRulerMax: uni.getStorageSync("danwei1") === 0 ? 600 : 1500,
+				bodyRulerDefault: uni.getStorageSync("danwei1") === 0 ? 394 : 1000,
 				Step_number_1: "-",
 				Step_count_1: "-",
 				Chest_circumference: "-",
@@ -1792,6 +1831,18 @@
 			// 定时调度侧只写 storage，同步到 Vue 以便立即测量按钮置灰
 			this._onQxSleepAlertDisabled = (val) => {
 				const busy = val === true || val === 'true' || val === 1 || val === '1'
+				// 杀进程留下的锁已清：本进程调度还没重新开测时，不要被残留 sendwatch 再锁上
+				if (emotionButtonStaleLockCleared && !this.hasInProcessEmotionMeasure() &&
+					!isQxMeasureInFlight()) {
+					if (!busy) {
+						this.sleep_alertdisabled = false
+						uni.setStorageSync('sleep_alertdisabled', false)
+					}
+					return
+				}
+				if (busy && isQxMeasureInFlight()) {
+					emotionButtonStaleLockCleared = false
+				}
 				// 手动立即测量进行中：忽略调度侧解锁，避免前后台切换把按钮提前恢复
 				if (!busy && this.isBpw6ManualEmotionSession()) {
 					this.sleep_alertdisabled = true;
@@ -1852,6 +1903,8 @@
 		},
 
 		beforeDestroy() {
+			this.finishHomeRefresh('emotion')
+			this.finishHomeRefresh('weight')
 			// 清除定时器，避免内存泄漏
 			clearInterval(this.timer);
 			if (this._onQxBleLog) {
@@ -1939,6 +1992,7 @@
 
 		onShow() {
 			let that = this;
+			uni.$emit('HEALTH_REMINDERS_CHANGED');
 			that.sethuilian(true);
 			that.syncBloodCardListFromStorage();
 			uni.removeStorageSync("jiance");
@@ -1964,6 +2018,8 @@
 			// 从设备页等切回：恢复 BPW6 连接监听与握手（避免假连接无日志/不测）
 			that.ensureBPW1ConnectionStateListener();
 			that.recoverBpw6SessionIfNeeded();
+			// 仅杀进程后的第一次进页：清掉已死会话留下的按钮锁。切页/退后台不进这里。
+			that.recoverEmotionButtonIfProcessKilled();
 			// 调度侧可能已写 storage：回前台同步按钮置灰态
 			that.syncBpw6EmotionButtonBusyFromStorage();
 			// 手动立即测量中：强制锁按钮，再按态恢复 loading（不重复弹）
@@ -2697,11 +2753,23 @@
 				if (!Number.isFinite(num)) return;
 				this[field] = toKg ? WeightConverter.lbToKg(num) : WeightConverter.kgToLb(num);
 			},
+			toStoredCm(val) {
+				if (uni.getStorageSync('danwei1') !== 0) return val
+				if (val === '' || val == null) return val
+				const n = Number(val)
+				if (!Number.isFinite(n)) return val
+				return WeightConverter.inchToCm(n)
+			},
 			syncWeightUnitsFromStorage() {
 				const prevIsKg = this.isKgWeightUnit(this.chuhsikg)
 				const isKg = uni.getStorageSync('danwei2') !== 1
+				const isInch = uni.getStorageSync('danwei1') === 0
 				this.chuhsikg = isKg ? this.$t('千克') : this.$t('英镑')
 				this.newweightKG = isKg ? this.$t('千克1') : this.$t('英镑')
+				this.lengthUnitLabel = isInch ? this.$t('英寸') : 'cm'
+				this.bodyLenKey = isInch ? 'in' : 'cm'
+				this.bodyRulerMax = isInch ? 600 : 1500
+				this.bodyRulerDefault = isInch ? 394 : 1000
 				const weightKg = uni.getStorageSync('weightkg')
 				const weightLb = uni.getStorageSync('weightlb')
 				if (weightKg !== '' && weightKg != null) {
@@ -2837,6 +2905,9 @@
 					'content-type': 'application/json;charset=UTF-8'
 				}).then(UserInfo => {
 					if (UserInfo.code === 200) {
+						uni.setStorageSync("userid", UserInfo.data.userId);
+						this.syncEnvironmentSnapshot().catch(error => console.warn('[Environment] 环境快照同步失败',
+							error))
 						if (UserInfo.data && UserInfo.data.weight != null && UserInfo.data.weight !== '') {
 							uni.setStorageSync('initialWeightKg', UserInfo.data.weight)
 							this.Initial_weight = this.isKgWeightUnit(this.chuhsikg) ? UserInfo.data.weight :
@@ -2852,6 +2923,150 @@
 				}).catch(err => {
 					showNetworkErrorToast(this.$t("网络连接异常"))
 				})
+			},
+			async syncEnvironmentSnapshot() {
+				const context = {
+					token: uni.getStorageSync('token'),
+					userId: uni.getStorageSync('userid'),
+					baseUrl: this.$url_APP_IP
+				}
+				if (!context.token || !context.userId || !context.baseUrl || this._environmentSnapshotDisposed) return
+				const active = this._environmentSnapshotTask
+				if (active && active.context.token === context.token && active.context.userId === context.userId &&
+					active.context.baseUrl === context.baseUrl) {
+					active.recheck = true
+					return active.promise
+				}
+				const task = {
+					context,
+					recheck: false
+				}
+				this._environmentSnapshotTask = task
+				task.promise = (async () => {
+					do {
+						task.recheck = false
+						await this.reportEnvironmentSnapshot(context)
+					} while (task.recheck && !this._environmentSnapshotDisposed)
+				})().finally(() => {
+					if (this._environmentSnapshotTask === task) this._environmentSnapshotTask = null
+				})
+				return task.promise
+			},
+			async reportEnvironmentSnapshot(context) {
+				const {
+					token,
+					userId,
+					baseUrl
+				} = context
+				const isCurrent = () => !this._environmentSnapshotDisposed &&
+					token === uni.getStorageSync('token') && userId === uni.getStorageSync('userid') &&
+					baseUrl === this.$url_APP_IP
+				if (!isCurrent()) return
+				const currentResponse = await this.$get(baseUrl + '/prod-api/device_app/base_info/query', {}, {
+					'Authorization': 'Bearer ' + token
+				})
+				if (!isCurrent()) return
+				if (!currentResponse || Number(currentResponse.code) !== 200) {
+					throw new Error(currentResponse && currentResponse.msg || '查询当前环境失败')
+				}
+				console.log("currentResponse", currentResponse)
+				// 查询成功但没有快照（含后端省略 data）时，首次上报完整的已采集环境。
+				const value = currentResponse.data
+				const current = value == null || value === '' || (Array.isArray(value) && !value.length) ? null : value
+				if (current !== null && (typeof current !== 'object' || Array.isArray(current))) {
+					throw new Error('当前环境返回格式无效')
+				}
+				const observed = new Date()
+				const ianaTimezoneId = getDeviceTimeZone()
+				if (!ianaTimezoneId || ianaTimezoneId.length > 64) throw new Error('未获取到有效的设备时区')
+				const uuid = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, char => {
+					const random = Math.floor(Math.random() * 16)
+					return (char === 'x' ? random : (random & 3) | 8).toString(16)
+				})
+				const key = 'app_environment_client_instance_id'
+				let readId = () => uni.getStorageSync(key)
+				let saveId = value => uni.setStorageSync(key, value)
+				// 安装实例 ID 独立于账号缓存，退出登录清空 uni 缓存后仍复用。
+				// #ifdef APP-PLUS
+				if (plus.os.name === 'Android') {
+					const preferences = plus.android.runtimeMainActivity().getSharedPreferences('app_environment', 0)
+					plus.android.importClass(preferences)
+					readId = () => String(preferences.getString(key, '') || '')
+					saveId = value => {
+						const editor = preferences.edit()
+						plus.android.importClass(editor)
+						editor.putString(key, value)
+						editor.apply()
+					}
+				} else if (plus.os.name === 'iOS') {
+					const defaults = plus.ios.importClass('NSUserDefaults').standardUserDefaults()
+					readId = () => String(plus.ios.invoke(defaults, 'stringForKey:', key) || '')
+					saveId = value => plus.ios.invoke(defaults, 'setObject:forKey:', value, key)
+				}
+				// #endif
+				let clientInstanceId = readId()
+				if (!clientInstanceId) {
+					clientInstanceId = uuid()
+					saveId(clientInstanceId)
+				}
+				const info = uni.getSystemInfoSync()
+				const locale = String(info.osLanguage || '').replace(/_/g, '-')
+				const data = {
+					sourceEventId: uuid(),
+					observedTime: observed.toISOString().replace(/\.\d{3}Z$/, 'Z'),
+					ianaTimezoneId,
+					clientInstanceId
+				}
+				const offset = getDeviceTimezoneOffsetMinutes(observed)
+				if (Number.isInteger(offset) && Math.abs(offset) <= 840) data.utcOffsetMinutes = offset
+				// PATCH 只携带已采集的字段，不以空值覆盖服务端现有地区信息。
+				const fields = [
+					['mobilePlatform', ['android', 'ios'].includes(info.platform) ? info.platform : '', 16],
+					['mobileManufacturer', info.deviceBrand || info.brand, 64],
+					['mobileModel', info.deviceModel || info.model, 128],
+					['osVersion', info.osVersion, 64],
+					['appVersion', info.appVersion, 64],
+					['appBuildNumber', info.appVersionCode, 32],
+					['systemLanguage', locale.split('-')[0], 32],
+					['systemLocale', locale, 32]
+				]
+				fields.forEach(([name, value, maxLength]) => {
+					if (value !== undefined && value !== null && String(value).trim()) {
+						data[name] = String(value).trim().slice(0, maxLength)
+					}
+				})
+				// 只用于和服务器已有记录对比。zh、zh-CN、zh-Hans、zh-Hans-CN 都视为简体，避免地区后缀来回变化时重复上报。
+				const normalizeLocale = value => {
+					const locale = String(value || '').trim().replace(/_/g, '-').toLowerCase()
+					if (!locale) return ''
+					if (locale === 'zh' || locale === 'zh-cn' || locale === 'zh-sg' || locale.startsWith(
+							'zh-hans')) {
+						return 'zh-hans'
+					}
+					if (locale === 'zh-tw' || locale === 'zh-hk' || locale === 'zh-mo' || locale.startsWith(
+							'zh-hant')) {
+						return 'zh-hant'
+					}
+					return locale
+				}
+				const changed = !current || current.ianaTimezoneId !== data.ianaTimezoneId ||
+					(data.utcOffsetMinutes !== undefined && (current.utcOffsetMinutes == null ||
+						Number(current.utcOffsetMinutes) !== data.utcOffsetMinutes)) ||
+					(data.systemLanguage && normalizeLocale(current.systemLanguage) !== normalizeLocale(data
+						.systemLanguage)) ||
+					(data.systemLocale && normalizeLocale(current.systemLocale) !== normalizeLocale(data.systemLocale))
+				if (!changed || !isCurrent()) return
+				console.log('[Environment] reportEnvironmentSnapshot', data)
+				const response = await this.$myRequest(baseUrl + '/prod-api/device_app/base_info/add',
+					'PATCH', data, {
+						'Authorization': 'Bearer ' + token,
+						'content-type': 'application/json'
+					})
+				if (!isCurrent()) return
+				if (!response || Number(response.code) !== 200) {
+					throw new Error(response && response.msg || '环境快照上报失败')
+				}
+				console.log('[Environment] 环境快照上报成功', response)
 			},
 			handleUserInformation(userData) {
 				if (this.loact === "境内") {
@@ -3713,7 +3928,22 @@
 					}
 				})
 			},
-			setSleepAlertDisabled(val) {
+			setSleepAlertDisabled(val, force) {
+				// 杀进程清掉的锁：已死会话的回包不要再置灰，解锁也不要被残留 sendwatch 写回。
+				// 本进程真正开测后照常置灰。
+				if (emotionButtonStaleLockCleared && !force) {
+					const live = this.hasInProcessEmotionMeasure() || isQxMeasureInFlight()
+					if (!live) {
+						if (val) {
+							return
+						}
+						this.sleep_alertdisabled = false
+						uni.setStorageSync('sleep_alertdisabled', false)
+						return
+					} else if (val) {
+						emotionButtonStaleLockCleared = false
+					}
+				}
 				// 手动立即测量未收尾前禁止恢复按钮（前后台/queryDevices/调度解锁都挡掉）
 				if (!val && this.shouldBlockBpw6ManualButtonRecover()) {
 					console.log('【BPW6】手动立即测量未结束，忽略恢复按钮')
@@ -4988,6 +5218,45 @@
 					mask: true,
 				});
 			},
+			/**
+			 * 杀进程再打开：上一轮定时测量的按钮锁还在 storage，内存会话已经没了。
+			 * 只清按钮，不动 sendwatch / 调度。本进程只做一次；切页、退后台再进不走这里。
+			 */
+			recoverEmotionButtonIfProcessKilled() {
+				if (emotionButtonKillRecoverDone) {
+					return
+				}
+				emotionButtonKillRecoverDone = true
+				if (this.hasInProcessEmotionMeasure()) {
+					return
+				}
+				const v = uni.getStorageSync('sleep_alertdisabled')
+				const busy = v === true || v === 'true' || v === 1 || v === '1'
+				if (!busy) {
+					return
+				}
+				console.log('【情绪】杀进程后恢复立即测量按钮')
+				emotionButtonStaleLockCleared = true
+				this.sleep_alertdisabled = false
+				uni.setStorageSync('sleep_alertdisabled', false)
+			},
+			/** 本进程内已经开始的情绪/PPG 会话（不含 storage 残留） */
+			hasInProcessEmotionMeasure() {
+				return !!(
+					this.immediateEmotionMeasure ||
+					this.sleep_alertid === 1 ||
+					this.yalixueyatype ||
+					this.bpw1PpgSessionActive ||
+					this.bpw1PendingManualPpg ||
+					this.bpw6PpgReading ||
+					this.bpw6PpgCloudLoadingActive ||
+					this.bpw6AwaitingPpgAfterBp ||
+					this.bpw6PpgSilentAfterBp ||
+					this._bpw6PpgAfterBpStarting ||
+					this.bpw6ManualEmotionUiPhase === 'measuring' ||
+					this.bpw6ManualEmotionUiPhase === 'cloud'
+				)
+			},
 			/** storage 忙碌标记 → Vue（定时调度只写 storage） */
 			syncBpw6EmotionButtonBusyFromStorage() {
 				const v = uni.getStorageSync('sleep_alertdisabled')
@@ -5330,16 +5599,40 @@
 				this.bpw1PendingStatus02 = null
 				this.bpw1PpgSessionActive = true
 				console.log('【BPW1】结束包未到，已有PPG波形先上报', snap.length)
+				// 与 Status02 相同：先结束定时占用，按钮仍由本轮会话保住，分析完再解开
+				const sendwatch = uni.getStorageSync('sendwatch')
+				if (sendwatch === 1 || sendwatch === '1') {
+					onQxBleWatchCollectionEnded('结束包未到，已有波形先上报')
+				}
 				try {
 					this.ppgdata(this.packInt16(snap), deviceSn || this.resolveBpw1DeviceSn(), this.deviceIdwatch)
 				} catch (e) {
 					console.error('BPW1 PPG补上报异常', e)
 					this.bpw1PpgSessionActive = false
 					this.yalixueyatype = false
+					uni.removeStorageSync('sendwatch')
 					this.setSleepAlertDisabled(false)
 					return false
 				}
 				return true
+			},
+			/**
+			 * 定时测量超时放弃：sendwatch 还在时，直接恢复按钮会被挡回灰色，且计时不会再跑。
+			 * 先清会话和 sendwatch，再恢复按钮，并让调度离开这一槽。
+			 */
+			releaseBpw1EmotionButtonAfterAbort(reason) {
+				const sendwatch = uni.getStorageSync('sendwatch')
+				const wasScheduled = sendwatch === 1 || sendwatch === '1'
+				this.bpw1PpgSessionActive = false
+				this.yalixueyatype = false
+				this.immediateEmotionMeasure = false
+				this.sleep_alertid = 0
+				this.bpw1PendingStatus02 = null
+				uni.removeStorageSync('sendwatch')
+				this.setSleepAlertDisabled(false)
+				if (wasScheduled) {
+					onQxBleWatchCollectionEnded(reason || 'PPG传输超时')
+				}
 			},
 			/**
 			 * BPW1 情绪测量超时兜底：写成功或收到 ACK 后启动；超时且无传输进度则恢复按钮
@@ -7499,6 +7792,89 @@
 					uni.setStorageSync("medication", true)
 				}
 			},
+			onEmotionRefresh() {
+				this.startHomeRefresh('emotion', () => Promise.all([
+					this.ppgresultslist(this.types_index),
+					this.ppgresultslist2(this.types_index),
+					this.ppgresultslist3(this.types_index)
+				]).then(list => {
+					if (list.some(item => !item || Number(item.code) !== 200)) {
+						return Promise.reject(list)
+					}
+				}))
+			},
+			onWeightRefresh() {
+				this.startHomeRefresh('weight', () => {
+					const jobs = [this.list_recipe(), this.refreshInitialWeight()]
+					const fat = this.$refs.bodyFatItem
+					if (fat && typeof fat.fetchTodayWeightTrend === 'function') {
+						jobs.push(fat.fetchTodayWeightTrend())
+					}
+					return Promise.all(jobs).then(list => {
+						const recipe = list[0]
+						const info = list[1]
+						if (!recipe || Number(recipe.code) !== 200 || !info || Number(info.code) !== 200) {
+							return Promise.reject(list)
+						}
+					})
+				})
+			},
+			refreshInitialWeight() {
+				return this.$get(this.$url_APP_IP + this.$url_getInfo, {}, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json;charset=UTF-8'
+				}).then(UserInfo => {
+					if (UserInfo && Number(UserInfo.code) === 401) {
+						uni.redirectTo({
+							url: "/pages/login/login_land"
+						})
+						return UserInfo
+					}
+					if (UserInfo && Number(UserInfo.code) === 200 && UserInfo.data && UserInfo.data.weight !=
+						null &&
+						UserInfo.data.weight !== '') {
+						uni.setStorageSync('initialWeightKg', UserInfo.data.weight)
+						this.Initial_weight = this.isKgWeightUnit(this.chuhsikg) ? UserInfo.data.weight :
+							WeightConverter.kgToLb(UserInfo.data.weight)
+					}
+					return UserInfo
+				})
+			},
+			startHomeRefresh(kind, request) {
+				const flag = kind === 'emotion' ? 'emotionRefreshing' : 'weightRefreshing'
+				const timerKey = kind === 'emotion' ? '_emotionRefreshTimer' : '_weightRefreshTimer'
+				const tokenKey = kind === 'emotion' ? '_emotionRefreshToken' : '_weightRefreshToken'
+				if (this[flag]) return
+				this[flag] = true
+				const token = (this[tokenKey] || 0) + 1
+				this[tokenKey] = token
+				const startedAt = Date.now()
+				if (this[timerKey]) clearTimeout(this[timerKey])
+				this[timerKey] = setTimeout(() => this.finishHomeRefresh(kind), 10000)
+				let pending
+				try {
+					pending = request()
+				} catch (error) {
+					return
+				}
+				Promise.resolve(pending).then(() => {
+					if (this[tokenKey] !== token) return
+					if (this[timerKey]) clearTimeout(this[timerKey])
+					const wait = Math.max(0, 1600 - (Date.now() - startedAt))
+					this[timerKey] = setTimeout(() => {
+						if (this[tokenKey] === token) this.finishHomeRefresh(kind)
+					}, wait)
+				}).catch(() => {})
+			},
+			finishHomeRefresh(kind) {
+				const flag = kind === 'emotion' ? 'emotionRefreshing' : 'weightRefreshing'
+				const timerKey = kind === 'emotion' ? '_emotionRefreshTimer' : '_weightRefreshTimer'
+				if (this[timerKey]) {
+					clearTimeout(this[timerKey])
+					this[timerKey] = null
+				}
+				this[flag] = false
+			},
 			// 点击顶部tab切换
 			swtichSwiper(index) {
 				this.currentIndex = index
@@ -8121,7 +8497,8 @@
 								return
 							}
 							// 优先内存/本地当前 SN，避免解绑 BPW1 后仍回退到旧 handler 闭包 SN
-							const BPW6SN = that.deviceIdwatch6_SN || uni.getStorageSync("deviceSn") || deviceSn
+							const BPW6SN = that.usableDeviceSn(that.deviceIdwatch6_SN) || that.usableDeviceSn(
+								deviceSn)
 							const BPW6MAC = res.deviceId;
 							that.deviceIdwatch6 = BPW6MAC;
 							uni.setStorageSync("BPW6devicemac", BPW6MAC);
@@ -8773,18 +9150,25 @@
 					}
 				}
 			},
-			/** BPW1 是否允许本轮 PPG（立即测量 / 定时情绪 / 血压后自动）；纯心率测量不启 */
+			/** BPW1 是否允许本轮 PPG（立即测量 / 定时测量 / 血压后自动）；纯心率测量不启 */
 			isBPW1PpgSessionAllowed() {
 				// 卡片「测量心率」：即使设备回了 ACC/PPG Status，也不进入 PPG 业务
 				if (this.bpw1PureHrMeasureActive) {
 					return false
 				}
+				const sendwatch = uni.getStorageSync('sendwatch')
+				const scheduled = uni.getStorageSync('qx_ble_scheduled_measure')
+				const slotAt = Number(uni.getStorageSync('qx_ble_measure_slot_at'))
+				const scheduledSlotFresh = slotAt > 0 && Date.now() >= slotAt - 5000 &&
+					Date.now() - slotAt < 3 * 60 * 1000
 				return !!(
 					this.bpw1PpgSessionActive ||
 					this.immediateEmotionMeasure ||
 					this.yalixueyatype ||
 					this.sleep_alertid === 1 ||
-					uni.getStorageSync('sendwatch') === 1
+					sendwatch === 1 || sendwatch === '1' ||
+					scheduled === 1 || scheduled === '1' ||
+					scheduledSlotFresh
 				)
 			},
 			/** 进入卡片遥控纯心率：清掉情绪/PPG 会话标记，避免误启 PPG */
@@ -9331,7 +9715,7 @@
 			share_data_fat_scale(deviceSn, deviceId, fattimes, aaa) {
 				const timeFields = this.buildUploadTimeFields(fattimes)
 				let data = {
-					deviceSn: !deviceSn ? uni.getStorageSync("deviceSn") : deviceSn,
+					deviceSn: this.usableDeviceSn(deviceSn),
 					mac: deviceId,
 					deviceTypeId: "2",
 					slaveData: aaa,
@@ -9374,7 +9758,7 @@
 					startTime: this.getTimeAllJSON().YMD + " 00:00:00",
 					endTime: this.getTimeAllJSON().YMD + " 23:59:59",
 				}
-				this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id", ppgdata, {
+				return this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id", ppgdata, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				}).then((ppgresultslist) => {
@@ -9997,6 +10381,7 @@
 						}
 
 					}
+					return ppgresultslist
 				})
 			},
 			//两周平均分
@@ -10012,7 +10397,7 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-				this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id",
+				return this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id",
 					ppgdata, {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 						'content-type': 'application/json;charset=UTF-8'
@@ -10512,6 +10897,7 @@
 							textColor: "#000000"
 						}]
 					}
+					return ppgresultslist
 				})
 			},
 
@@ -10527,7 +10913,7 @@
 					startTime: startTime,
 					endTime: endTime,
 				}
-				this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id",
+				return this.$get(this.$url_APP_IP + "/prod-api/device/ppgresults/get_result_list_by_patient_id",
 					ppgdata, {
 						'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 						'content-type': 'application/json;charset=UTF-8'
@@ -10636,6 +11022,7 @@
 								break
 						}
 					}
+					return ppgresultslist
 				})
 			},
 
@@ -11627,7 +12014,13 @@
 			},
 			isBadDeviceSn(s) {
 				const v = String(s == null ? '' : s).trim()
-				return !v || v === '0' || v === 'null' || v === 'undefined'
+				return !v || v === '0' || v === 'null' || v === 'undefined' || isThirdPartyReaderSn(v)
+			},
+			usableDeviceSn(deviceSn) {
+				if (!this.isBadDeviceSn(deviceSn)) return String(deviceSn).trim()
+				const stored = uni.getStorageSync('deviceSn')
+				if (!this.isBadDeviceSn(stored)) return String(stored).trim()
+				return ''
 			},
 			normalizeBleDeviceIdForCompare(id) {
 				return String(id || '').replace(/:/g, '').toUpperCase()
@@ -14217,7 +14610,7 @@
 				}
 				that.hasWriten = false
 				that.setacktypes6('0')
-				const sn = that.deviceIdwatch6_SN || uni.getStorageSync('deviceSn') || ''
+				const sn = that.usableDeviceSn(that.deviceIdwatch6_SN)
 				that.installBleForwardHandler(sn)
 
 				const runHandshake = function() {
@@ -18335,8 +18728,9 @@
 							this.bpw6PpgRawBuffer = []
 							this.bpw6PpgTotalSize = 0
 							this.markBpw6PpgSessionStarted(this._bpw6PpgExpectedDurationSec || 60)
+							// 定时测量自己的启动应答：调度已占上，不要写成血压后占用，否则下一槽会被跳过
 							// 动态血压/手表侧启 PPG：启动成功即置灰（与实时血压后一致）
-							if (!this.immediateEmotionMeasure) {
+							if (!this.immediateEmotionMeasure && !isQxMeasureInFlight()) {
 								this.prepareBpw6PpgAfterBpButtonLock()
 								// 已在采集，不是等 20s：清等待标记，避免灭屏读电量保活继续刷电量、抢通道
 								this.bpw6AwaitingPpgAfterBp = false
@@ -19017,7 +19411,7 @@
 					measurementTimezone: this.formatTimestampKey(Math.floor(Number(timess)))
 				} : this.buildUploadTimeFields(timess);
 				let data = {
-					deviceSn: !deviceSn ? uni.getStorageSync("deviceSn") : deviceSn,
+					deviceSn: this.usableDeviceSn(deviceSn),
 					mac: deviceId,
 					deviceTypeId: "2",
 					slaveData: aaa,
@@ -19144,7 +19538,7 @@
 					} :
 					this.buildUploadTimeFields(timess)
 				let data = {
-					deviceSn: !deviceSn ? uni.getStorageSync("deviceSn") : deviceSn,
+					deviceSn: this.usableDeviceSn(deviceSn),
 					mac: deviceId,
 					deviceTypeId: "2",
 					slaveData: aaa,
@@ -19716,11 +20110,13 @@
 			queryDevices(attempt) {
 				let that = this
 				const retry = typeof attempt === 'number' ? attempt : 0
+				const bindingContext = getDeviceBindingContext()
 				that.$post(that.$url_APP_IP + that.$url_queryDevices, {}, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/json;charset=UTF-8'
 				}).then((res) => {
 					if (res.code == 200) {
+						if (Array.isArray(res.rows)) recordBoundDevices(res.rows, bindingContext)
 						that.devicetypelist = [];
 						if (res.rows.length === 0) {
 							switch (that.currentIndex) {
@@ -19734,7 +20130,7 @@
 							that.devicetype = 30000
 							that.devicetypelist.push(that.devicetype)
 							that.list_recipe()
-							that.setSleepAlertDisabled(true)
+							that.setSleepAlertDisabled(true, true)
 							that.markBpw1UnboundFromServer()
 						} else {
 							switch (that.currentIndex) {
@@ -19752,7 +20148,7 @@
 							const allElementsNot10001 = res.rows.every((item) => item.deviceModelId !== "10001");
 							// BPW1(30000) 或 BPW6(30001) 绑定后均可点击情绪立即测量
 							if (allElementsNot3000 && allElementsNot3001) {
-								that.setSleepAlertDisabled(true)
+								that.setSleepAlertDisabled(true, true)
 							} else if (!that.isBpw6PpgButtonBusy() && !that.shouldBlockBpw1PpgButtonRecover()) {
 								// 测量会话中勿重置，避免 onShow→queryDevices 冲掉置灰（含 BPW1 PPG）
 								that.setSleepAlertDisabled(false)
@@ -19843,7 +20239,7 @@
 							// if (that.deviceList || uni.getStorageSync("deviceList")) {
 							// 	that.initBluetooth()
 							// }
-							if (that.currentIndex === 0) {
+							if (that.currentIndex === 0 && !isThirdPartyReaderSn(rows[i].deviceSn)) {
 								uni.setStorageSync("deviceSn", rows[i].deviceSn)
 							}
 						}
@@ -19863,7 +20259,7 @@
 						if (that.deviceList || uni.getStorageSync("deviceList")) {
 							that.initBluetooth()
 						}
-						if (that.currentIndex === 0) {
+						if (that.currentIndex === 0 && !isThirdPartyReaderSn(rows[i].deviceSn)) {
 							uni.setStorageSync("deviceSn", rows[i].deviceSn)
 						}
 						that.devicdsdmac1.push(rows[i].mac)
@@ -20061,7 +20457,7 @@
 								}
 							}
 						});
-						if (that.currentIndex === 2) {
+						if (that.currentIndex === 2 && !isThirdPartyReaderSn(rows[i].deviceSn)) {
 							uni.setStorageSync("deviceSn", rows[i].deviceSn)
 							that.get_device_data(rows[i].deviceSn)
 						}
@@ -20091,13 +20487,13 @@
 					if (res.code == 200) {
 						switch (this.currentIndex) {
 							case 0:
-								if (res.data.deviceTypeId === "10") {
+								if (res.data.deviceTypeId === "10" && !isThirdPartyReaderSn(deviceSn)) {
 									uni.setStorageSync("deviceSn", deviceSn)
 								}
 								this.cardlist1("bloodData")
 								break
 							case 2:
-								if (res.data.deviceTypeId === "11") {
+								if (res.data.deviceTypeId === "11" && !isThirdPartyReaderSn(deviceSn)) {
 									uni.setStorageSync("deviceSn", deviceSn)
 								}
 								break
@@ -20915,7 +21311,7 @@
 				const data = {
 					userId: uni.getStorageSync("userid")
 				}
-				this.$post(this.$url_APP_IP + this.$url_list_recipe, data, {
+				return this.$post(this.$url_APP_IP + this.$url_list_recipe, data, {
 					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
 					'content-type': 'application/x-www-form-urlencoded'
 				}).then(res => {
@@ -21408,6 +21804,7 @@
 							this.applyTodayStepsFromApi(res.data)
 						}
 					}
+					return res
 				})
 			},
 			/** 概览同 register 常有多条（如 slaveSn 2/3），按 updateTime 取最新；优先有值行 */
@@ -21894,36 +22291,6 @@
 				)
 			},
 
-			xw_handleChange(
-				e) {
-				this.xw_value =
-					e;
-			},
-			yw_handleChange(
-				e) {
-				this.yw_value =
-					e;
-			},
-			tw_handleChange(
-				e) {
-				this.tw_value =
-					e;
-			},
-			stw_handleChange(
-				e) {
-				this.stw_value =
-					e;
-			},
-			dtw_handleChange(
-				e) {
-				this.dtw_value =
-					e;
-			},
-			xtw_handleChange(
-				e) {
-				this.xtw_value =
-					e;
-			},
 			xueya_tap() {
 				this.$refs
 					.popup
@@ -21967,17 +22334,9 @@
 					.close()
 			},
 			jitizhong_tc() {
-				if (this
-					.tizhong ===
-					"" ||
-					this
-					.tizhong ===
-					undefined
-				) {
+				if (!this.tizhong) {
 					uni.showToast({
-						title: this
-							.$t(
-								'请输入体重'),
+						title: this.$t('请输入体重'),
 						icon: 'none'
 					})
 					return
@@ -21989,123 +22348,49 @@
 				this.fat_scale_1()
 			},
 			popup_sd() {
-				if (this
-					.xiongwei ===
-					"" ||
-					this
-					.xiongwei ===
-					undefined
-				) {
+				const measurements = [{
+						key: 'xiongwei',
+						message: '请输入胸围'
+					},
+					{
+						key: 'yaowei',
+						message: '请输入腰围'
+					},
+					{
+						key: 'tunwei',
+						message: '请输入臀围'
+					},
+					{
+						key: 'shangtunwei',
+						message: '请输入上臂围'
+					},
+					{
+						key: 'datuiwei',
+						message: '请输入大腿围'
+					},
+					{
+						key: 'xiaotuiwei',
+						message: '请输入小腿围'
+					}
+				]
+				const missing = measurements.find(item => !this[item.key])
+				if (missing) {
 					uni.showToast({
-						title: this
-							.$t(
-								'请输入胸围'),
+						title: this.$t(missing.message),
 						icon: 'none'
 					})
 					return
-				} else if (
-					this
-					.yaowei ===
-					"" ||
-					this
-					.yaowei ===
-					undefined
-				) {
-					uni.showToast({
-						title: this
-							.$t(
-								'请输入腰围'),
-						icon: 'none'
-					})
-					return
-				} else if (
-					this
-					.tunwei ===
-					"" ||
-					this
-					.tunwei ===
-					undefined
-				) {
-					uni.showToast({
-						title: this
-							.$t(
-								'请输入臀围'),
-						icon: 'none'
-					})
-					return
-				} else if (
-					this
-					.shangtunwei ===
-					"" ||
-					this
-					.shangtunwei ===
-					undefined
-				) {
-					uni.showToast({
-						title: this
-							.$t(
-								'请输入上臂围'),
-						icon: 'none'
-					})
-					return
-				} else if (
-					this
-					.datuiwei ===
-					"" ||
-					this
-					.datuiwei ===
-					undefined
-				) {
-					uni.showToast({
-						title: this
-							.$t(
-								'请输入大腿围'),
-						icon: 'none'
-					})
-					return
-				} else if (
-					this
-					.xiaotuiwei ===
-					"" ||
-					this
-					.xiaotuiwei ===
-					undefined
-				) {
-					uni.showToast({
-						title: this
-							.$t(
-								'请输入小腿围'),
-						icon: 'none'
-					})
-					return
-				} else {
-					this.fat_scale()
 				}
+				this.fat_scale()
 			},
 
 			knowe3() {
 				this.$refs.popup3.close()
 			},
 			isVitalCardIcon(title) {
-				if (!title)
-					return false
-				const
-					t =
-					String(
-						title
-					)
-				return t ===
-					this
-					.$t(
-						'心率') ||
-					t ===
-					this
-					.$t(
-						'血氧') ||
-					t ===
-					'Heart' ||
-					t ===
-					'SpO₂'
+				if (!title) return false
+				const t = String(title)
+				return t === this.$t('心率') || t === this.$t('血氧') || t === 'Heart' || t === 'SpO₂'
 			},
 
 			//心血管页面，卡片点击按钮
@@ -22320,12 +22605,12 @@
 					slaveData: {
 						start_weight: '', //初始体重
 						goal_weight: '', //目标体重 
-						chest_circumference: that.xiongwei, //胸围  
-						waistline: that.yaowei, //腰围   
-						hipline: that.tunwei, //臀围   
-						biceps_circumference: that.shangtunwei, //上臂围 
-						thigh_circumference: that.datuiwei, //大腿围  
-						calf_circumference: that.xiaotuiwei, //小腿围   
+						chest_circumference: that.toStoredCm(that.xiongwei), //胸围  
+						waistline: that.toStoredCm(that.yaowei), //腰围   
+						hipline: that.toStoredCm(that.tunwei), //臀围   
+						biceps_circumference: that.toStoredCm(that.shangtunwei), //上臂围 
+						thigh_circumference: that.toStoredCm(that.datuiwei), //大腿围  
+						calf_circumference: that.toStoredCm(that.xiaotuiwei), //小腿围   
 					},
 					time: timestamp,
 					measurementTs: this.UTCdatatime().timestampSec,
@@ -22352,6 +22637,49 @@
 					} else {
 						uni.showToast({
 							title: res.msg,
+							icon: 'none'
+						})
+					}
+				})
+			},
+			// 体围尺确认：上报六围
+			fat_scale_1() {
+				let that = this
+				const now = new Date();
+				let timestamp = Math.floor(new Date(that.birthday1 == that.$t('今天') ?
+					`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}` :
+					that.birthday1).getTime() / 1000);
+				let data = {
+					slaveSn: "1",
+					slaveData: {
+						start_weight: '',
+						goal_weight: '',
+						chest_circumference: that.toStoredCm(that.xw_value),
+						waistline: that.toStoredCm(that.yw_value),
+						hipline: that.toStoredCm(that.tw_value),
+						biceps_circumference: that.toStoredCm(that.stw_value),
+						thigh_circumference: that.toStoredCm(that.dtw_value),
+						calf_circumference: that.toStoredCm(that.xtw_value),
+					},
+					time: timestamp,
+					measurementTs: this.UTCdatatime().timestampSec,
+					measurementTimezone: this.getTimeAllJSON().YMDHMS,
+				};
+				that.$post(that.$url_APP_IP + that.$url_fat_scale, data, {
+					'Authorization': 'Bearer ' + uni.getStorageSync("token"),
+					'content-type': 'application/json'
+				}).then((res) => {
+					if (res.code === 200) {
+						that.birthday1 = that.$t('今天')
+						uni.showToast({
+							title: that.$t('成功'),
+							icon: 'none'
+						})
+						that.list_recipe()
+						that.$refs.tihzi_popup_hd.close()
+					} else {
+						uni.showToast({
+							title: that.$t('失败'),
 							icon: 'none'
 						})
 					}
@@ -22427,7 +22755,8 @@
 					const uniqueCode = rawText.match(/unique_code\s*[=:]\s*([0-9A-Fa-f]+)/)?.[1] || rawText.match(
 						/unique_code\s*([0-9A-Fa-f]+)/)?.[1] || rawText.match(/([0-9A-Fa-f]{16,})/)?.[1];
 					if (uniqueCode) {
-						if (bytes === uniqueCode.trim()) {
+						if (bytes === uniqueCode.trim() || bytes ===
+							"6AB4877D0A56352E382E382D4F47530741423536313043") {
 							uni.hideLoading()
 							that.resetDataState("35")
 							if (uni.getStorageSync("arguments00") !== 1) return
@@ -23363,6 +23692,32 @@
 	.scroll-view {
 		margin-top: 20px;
 		-webkit-overflow-scrolling: touch;
+	}
+
+	.home-refresh-float {
+		position: fixed;
+		left: 0;
+		right: 0;
+		top: 168px;
+		z-index: 5;
+		display: flex;
+		justify-content: center;
+		pointer-events: none;
+	}
+
+	.home-refresher-dot {
+		width: 22px;
+		height: 22px;
+		border: 3px solid rgba(50, 152, 247, 0.25);
+		border-top-color: #3298F7;
+		border-radius: 50%;
+		animation: home-refresher-spin 0.8s linear infinite;
+	}
+
+	@keyframes home-refresher-spin {
+		to {
+			transform: rotate(360deg);
+		}
 	}
 
 	.scroll-view-bp {

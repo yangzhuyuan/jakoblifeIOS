@@ -23,7 +23,7 @@
 
 			<!-- 主按钮 -->
 			<view class="main-button" :style="mainButtonStyle" @tap="handleMainClick">
-				<image class="button-icon" src="/static/page_icon/aipbg.jpg" mode="aspectFit" />
+				<image class="button-icon" src="/static/page_icon/aipbg.png" mode="aspectFit" />
 			</view>
 		</view>
 	</view>

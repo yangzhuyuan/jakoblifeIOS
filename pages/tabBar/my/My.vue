@@ -42,7 +42,7 @@
 					<view class="menu-row" @click="onMenuItemClick(item)">
 						<view class="icon-box">
 							<image v-if="item.title === '生成健康报告'" class="menu-icon-img menu-icon-ai"
-								src="/static/page_icon/aipbg.jpg" mode="aspectFit"></image>
+								src="/static/page_icon/aipbg.png" mode="aspectFit"></image>
 							<uni-icons v-else-if="item.title === '设置'" type="gear-filled" size="20"
 								color="#3298F7"></uni-icons>
 							<image v-else-if="item.title === '设备管理'" class="menu-icon-img"
@@ -61,8 +61,22 @@
 					</view>
 					<view v-if="index !== menuItems.length - 4" class="row-line"></view>
 				</view>
+				<view class="row-line"></view>
+				<view class="menu-row shop-row" hover-class="shop-row-hover"
+					@click="navigateToPage('/pages/tabBar/my/JakoblifeShop')">
+					<view class="icon-box shop-icon-box">
+						<image class="shop-cart-img" src="/static/page_icon/shop_cart.png" mode="aspectFit"></image>
+					</view>
+					<view class="row-main">
+						<view class="shop-title-row">
+							<text class="row-label">{{$t('Jakoblife商城')}}</text>
+							<text class="shop-new-badge">{{$t('商城新标记')}}</text>
+						</view>
+						<text class="row-sub">{{$t('购买Jakoblife智能健康设备')}}</text>
+					</view>
+					<uni-icons type="right" size="16" color="#5B94C4"></uni-icons>
+				</view>
 			</view>
-
 			<view class="menu-card">
 				<view v-for="(item, index) in menuItems.slice(-3)" :key="'help-' + index">
 					<view class="menu-row" @click="navigateToPage(item.url)">
@@ -592,5 +606,76 @@
 		font-size: 12px;
 		color: #9ba3af;
 		line-height: 1.4;
+	}
+
+
+	.menu-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		padding: 14px 0;
+		min-height: 56px;
+		box-sizing: border-box;
+	}
+
+	.push-row {
+		padding-right: 0;
+	}
+
+	.shop-row {
+		margin: 4px -8px 2px;
+		padding: 10px 8px;
+		border-radius: 14px;
+		background: #e5f3fe;
+	}
+
+	.shop-row-hover {
+		background: #d3ebfb;
+	}
+
+	.shop-row .shop-icon-box {
+		width: 40px;
+		height: 40px;
+		border-radius: 12px;
+		background: #d1eaff;
+	}
+
+	.shop-cart-img {
+		width: 20px;
+		height: 20px;
+	}
+
+	.shop-title-row {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		flex-wrap: nowrap;
+	}
+
+	.shop-new-badge {
+		margin-left: 6px;
+		padding: 0 6px;
+		height: 16px;
+		border-radius: 8px;
+		background: #e33842;
+		color: #ffffff;
+		font-size: 10px;
+		font-weight: 600;
+		line-height: 16px;
+		flex-shrink: 0;
+	}
+
+	.shop-row .row-sub {
+		margin-top: 2px;
+		color: #8b97a8;
+	}
+
+	.push-switch {
+		transform: scale(0.82);
+		flex-shrink: 0;
+	}
+
+	.row-main .row-label {
+		flex: none;
 	}
 </style>

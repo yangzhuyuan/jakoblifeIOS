@@ -14,6 +14,9 @@
 
 		<view class="weight-cards-row">
 			<view class="weight-card current-card" @click="$emit('new-latest')">
+				<view class="current-edit" @click.stop="$emit('body-measure-click')">
+					<uni-icons type="compose" size="18" color="#3298F7"></uni-icons>
+				</view>
 				<view class="current-icon-wrap">
 					<image src="../../../static/icons/6.png" class="current-icon-img" mode="aspectFit"></image>
 				</view>
@@ -636,6 +639,7 @@
 	}
 
 	.current-card {
+		position: relative;
 		flex: 1.05;
 		min-width: 0;
 		display: flex;
@@ -643,6 +647,18 @@
 		align-items: center;
 		justify-content: center;
 		padding: 16px 14px 14px;
+	}
+
+	.current-edit {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		width: 28px;
+		height: 28px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 2;
 	}
 
 	.goals-card {

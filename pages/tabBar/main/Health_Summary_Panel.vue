@@ -25,9 +25,12 @@
 			</view>
 			<text class="status-updated">{{ $t('今日更新') }}</text>
 		</view>
-
+		<HealthReminderCard v-if="embedded" :active="tabActive" />
 		<view class="metric-grid">
 			<view class="metric-card" v-for="(m, i) in metrics" :key="i">
+				<view v-if="embedded && m.help === 'bp'" class="metric-camera" @click.stop="openBPMeasure">
+					<uni-icons type="scan" size="16" color="#FFFFFF"></uni-icons>
+				</view>
 				<view class="metric-left" @click="onMetricTap(m)">
 					<view class="metric-icon-wrap">
 						<image lazy-load class="metric-icon" :src="m.icon" mode="aspectFit" />
@@ -80,12 +83,15 @@
 				<text class="ai-detail-btn-arrow">›</text>
 			</view>
 		</view>
-
+		<view class="shop-banner" @click="onShopTap">
+			<image class="shop-banner-image" :src="shopBannerImage" mode="widthFix" :aria-label="$t('Jakoblife商城')" />
+		</view>
 		<text class="footer-note">{{ $t('健康摘要免责声明') }}</text>
 	</view>
 </template>
 
 <script>
+	import HealthReminderCard from './Reminders/HealthReminderCard.vue'
 	import WeightConverter from '@/pages/api/unitls/weightConverter.js'
 	import {
 		getChinaTimeAllJSON
@@ -93,6 +99,9 @@
 
 	export default {
 		name: 'HealthSummaryPanel',
+		components: {
+			HealthReminderCard
+		},
 		props: {
 			embedded: {
 				type: Boolean,
@@ -137,6 +146,10 @@
 			syncHeightDate: {
 				type: String,
 				default: ''
+			},
+			tabActive: {
+				type: Boolean,
+				default: true
 			}
 		},
 		data() {
@@ -272,6 +285,15 @@
 			};
 		},
 		computed: {
+			isShopBannerChinese() {
+				const locale = (this.$i18n && this.$i18n.locale) || uni.getLocale() || '';
+				return locale.toLowerCase().indexOf('zh') === 0;
+			},
+			shopBannerImage() {
+				return this.isShopBannerChinese ?
+					'/static/image/jakoblife-shop-banner-zh.jpg' :
+					'/static/image/jakoblife-shop-banner-en.jpg';
+			},
 			bloodUnit() {
 				return this.bloodUnitIndex === 0 ? 'mmHg' : 'kPa';
 			},
@@ -520,7 +542,8 @@
 						key: 'hr',
 						name: this.$t('心率'),
 						icon: '/static/icons/5.png',
-						opts: this.withSparkYAxis(this.sparkOptsByTone[hr.tone] || this.sparkOptsByTone.mute, this.sparkYHr),
+						opts: this.withSparkYAxis(this.sparkOptsByTone[hr.tone] || this.sparkOptsByTone.mute, this
+							.sparkYHr),
 						chartData: this.sparkChartHr,
 						status: hr.text,
 						tone: hr.tone
@@ -591,6 +614,12 @@
 			}
 		},
 		methods: {
+
+			onShopTap() {
+				uni.navigateTo({
+					url: '/pages/tabBar/my/JakoblifeShop'
+				});
+			},
 			syncUnitSettings() {
 				const blood = uni.getStorageSync('Blood');
 				this.bloodUnitIndex = blood === 0 || blood === '' ? 0 : 1;
@@ -1086,7 +1115,8 @@
 					startTime: weekStart,
 					endTime: todayEnd
 				}, header).then(res => {
-					if (res && (res.code == 200) && res.data && res.data.avg && this.weekAvgHasValue(res.data.avg)) {
+					if (res && (res.code == 200) && res.data && res.data.avg && this.weekAvgHasValue(res.data
+							.avg)) {
 						finish(res.data.avg);
 						return;
 					}
@@ -1105,7 +1135,8 @@
 						startTime: weekStart,
 						endTime: todayEnd
 					}, header).then(res2 => {
-						if (res2 && res2.code == 200 && res2.data && res2.data.avg && this.weekAvgHasValue(res2.data
+						if (res2 && res2.code == 200 && res2.data && res2.data.avg && this.weekAvgHasValue(
+								res2.data
 								.avg)) {
 							finish(res2.data.avg);
 							return;
@@ -1370,7 +1401,8 @@
 					// 血氧与 Main.pickLatestRecipeByRegister 一致：扫全部 slaveSn，避免非 2/3 时摘要空白
 					const latestO2Row = this.getLatestRegisterFromList(data, 'oxygen');
 					const latestO2 = latestO2Row ? {
-						value: this.isValidRegisterVal(latestO2Row.registerVal) ? latestO2Row.registerVal : '-/-',
+						value: this.isValidRegisterVal(latestO2Row.registerVal) ? latestO2Row.registerVal :
+							'-/-',
 						time: Number(latestO2Row.updateTime) || 0
 					} : {
 						value: '-/-',
@@ -1466,7 +1498,12 @@
 				uni.navigateTo({
 					url: '/pages/tabBar/main/report_all_type/report_all_type'
 				});
-			}
+			},
+			openBPMeasure() {
+				uni.navigateTo({
+					url: '/pages/tabBar/main/BPMeasure'
+				});
+			},
 		}
 	};
 </script>
@@ -1675,6 +1712,7 @@
 		display: flex;
 		flex-direction: row;
 		align-items: center;
+		position: relative;
 	}
 
 	.metric-left {
@@ -1728,6 +1766,20 @@
 		margin-bottom: 2px;
 		line-height: 1.3;
 		text-align: left;
+	}
+
+	.metric-camera {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		width: 24px;
+		height: 24px;
+		border-radius: 4px;
+		background: #3298F7;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		z-index: 2;
 	}
 
 	.metric-value-num {
@@ -1977,5 +2029,17 @@
 		color: #AEAEB2;
 		line-height: 1.6;
 		padding: 0 16px;
+	}
+
+	.shop-banner {
+		margin-bottom: 32rpx;
+		border-radius: 32rpx;
+		overflow: hidden;
+		background: #168ff5;
+	}
+
+	.shop-banner-image {
+		display: block;
+		width: 100%;
 	}
 </style>

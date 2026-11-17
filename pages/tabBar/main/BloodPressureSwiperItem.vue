@@ -1,6 +1,6 @@
 <template>
 	<view class="home-bp-page">
-		<HealthSummaryPanel ref="panel" :embedded="true" :syncHighPressure="highPressure" :syncLowPressure="lowPressure"
+		<HealthSummaryPanel ref="panel" :embedded="true" :tabActive="tabActive" :syncHighPressure="highPressure" :syncLowPressure="lowPressure"
 			:syncPulse="pulse" :syncHrDate="hrDate" :syncSpo2="spo2" :syncSpo2Date="spo2Date" :syncBpDate="bpDate"
 			:syncHeight="heightVal" :syncHeightDate="heightDate" @measure-link="$emit('bp-measure-link', $event)"
 			@xueya-tap="$emit('xueya-tap')" @bmi-tap="$emit('bmi-tap', $event)" />
@@ -93,6 +93,10 @@
 			button_show: {
 				type: Boolean,
 				default: false
+			},
+			tabActive: {
+				type: Boolean,
+				default: true
 			}
 		},
 		computed: {

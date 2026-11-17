@@ -754,10 +754,10 @@
 					return
 				}
 				this.overseasProfYmd = ''
-				// 国内：过凌晨 7 点为前天 06:00→昨天 06:00；未过则再往前一天。接口日期不变。
+				// 国内：过早上 7 点为昨天 06:00→今天 06:00；未过则为前天 06:00→昨天 06:00。接口日期不变。
 				const chinaNow = getChinaTimeAllJSON()
 				const chinaHour = Number(String(chinaNow.YMDHMS || '').slice(11, 13))
-				const endYmd = addChinaYmdDays(chinaNow.YMD, chinaHour >= 7 ? -1 : -2)
+				const endYmd = addChinaYmdDays(chinaNow.YMD, chinaHour >= 7 ? 0 : -1)
 				const startYmd = addChinaYmdDays(endYmd, -1)
 				this.monitorInfo.startTime = `${startYmd} 06:00:00`
 				this.monitorInfo.endTime = `${endYmd} 06:00:00`
