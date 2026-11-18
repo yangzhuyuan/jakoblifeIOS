@@ -975,7 +975,7 @@
 						red: true
 					}
 				],
-				types_index: Number(uni.getStorageSync("types_index") || 0),
+				types_index: Number(uni.getStorageSync("emotion_types_index") || 0),
 				types_array: [this.$t("心情指数"), this.$t("抑郁风险评分"), this.$t("压力指数"), this.$t("疲劳指数"), this.$t("恢复指数")],
 				ppgnewpoint: "",
 				mood_Description: '',
@@ -11076,7 +11076,7 @@
 				this.ppgresultslist(this.types_index)
 				this.ppgresultslist2(this.types_index)
 				this.ppgresultslist3(this.types_index)
-				uni.setStorageSync("types_index", this.types_index)
+				uni.setStorageSync("emotion_types_index", this.types_index)
 			},
 
 			toggleDebug() {

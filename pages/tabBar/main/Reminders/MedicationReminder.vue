@@ -217,19 +217,69 @@
 		return !!item && (item.origin === 'medication' || String(item.id || '').startsWith('bp-med-'))
 	}
 
-	function medicationBloodPressureRows(reminders) {
+	const MEDICATION_BP_OFFSETS = [
+		{ delta: -30, min: -30, max: 0 },
+		{ delta: 120, min: 1, max: 120 }
+	]
+
+	function clockMinutes(time) {
+		const [hour, minute] = String(time).split(':').map(Number)
+		return hour * 60 + minute
+	}
+
+	function bpOffsetMinutes(medDay, medTime, bpDay, bpTime) {
+		let dayDelta = Number(bpDay) - Number(medDay)
+		if (dayDelta > 3) dayDelta -= 7
+		if (dayDelta < -3) dayDelta += 7
+		return dayDelta * 1440 + clockMinutes(bpTime) - clockMinutes(medTime)
+	}
+
+	function medicationSlotCovered(existingReminders, medDay, medTime, minOffset, maxOffset) {
+		return (existingReminders || []).some(item => {
+			const bpTime = item && item.times && item.times[0]
+			if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(bpTime || '')) return false
+			return (item.weekdays || []).some(day => {
+				const offset = bpOffsetMinutes(medDay, medTime, day, bpTime)
+				return offset >= minOffset && offset <= maxOffset
+			})
+		})
+	}
+
+	function sameDaySet(left, right) {
+		const a = [...(left || [])].sort((x, y) => x - y)
+		const b = [...(right || [])].sort((x, y) => x - y)
+		return a.length === b.length && a.every((day, index) => day === b[index])
+	}
+
+	function autoWeekdaysToKeep(item, medication, manuals) {
+		const time = item && item.times && item.times[0]
+		if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time || '')) return []
+		return (item.weekdays || []).filter(day => (medication || []).some(med => (med.times || []).some(medTime => {
+			if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(medTime)) return false
+			return (med.weekdays || []).some(medDay => {
+				const offset = bpOffsetMinutes(medDay, medTime, day, time)
+				if (offset >= -30 && offset <= 0) return !medicationSlotCovered(manuals, medDay, medTime, -30, 0)
+				if (offset >= 1 && offset <= 120) return !medicationSlotCovered(manuals, medDay, medTime, 1, 120)
+				return false
+			})
+		}))).sort((a, b) => a - b)
+	}
+
+	function medicationBloodPressureRows(reminders, existingReminders) {
 		const slots = new Map()
 		const add = (time, weekdays) => {
 			if (!slots.has(time)) slots.set(time, new Set())
 			weekdays.forEach(day => slots.get(time).add(day))
 		}
-		for (const offset of [-30, 120]) {
+		for (const slot of MEDICATION_BP_OFFSETS) {
 			for (const item of reminders) {
 				for (const time of item.times || []) {
 					if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) continue
-					const shifted = shiftClock(time, offset)
-					const days = (item.weekdays || []).map(day => shiftWeekday(day, shifted.dayShift)).filter(day => day >= 1 && day <= 7)
-					if (days.length) add(shifted.time, days)
+					const days = (item.weekdays || []).filter(day => !medicationSlotCovered(existingReminders, day, time, slot.min, slot.max))
+					if (!days.length) continue
+					const shifted = shiftClock(time, slot.delta)
+					const shiftedDays = days.map(day => shiftWeekday(day, shifted.dayShift)).filter(day => day >= 1 && day <= 7)
+					if (shiftedDays.length) add(shifted.time, shiftedDays)
 				}
 			}
 		}
@@ -244,54 +294,127 @@
 	}
 
 	function mergeMedicationBloodPressure(existing, reminders) {
-		const manual = (existing && existing.reminders || []).filter(item => !isAutoBloodPressureReminder(item))
+		const masterOn = !!(existing && existing.enabled === true)
+		const desired = medicationBloodPressureRows(reminders)
+		const desiredTimes = new Set(desired.map(item => item.times[0]))
+		const adopted = new Set()
+		let changed = false
+		const manual = (existing && existing.reminders || []).filter(item => !isAutoBloodPressureReminder(item)).map(item => {
+			const time = item.times && item.times[0]
+			if (desiredTimes.has(time) && !adopted.has(time)) {
+				adopted.add(time)
+				if (masterOn && item.enabled === true) return { ...item }
+				changed = true
+				const next = { ...item, enabled: true }
+				if (item.enabled !== true) next.armedByMedication = true
+				return next
+			}
+			const enabled = masterOn && item.enabled === true
+			if (enabled !== (item.enabled === true)) changed = true
+			const next = { ...item, enabled }
+			if (!enabled && item.enabled === true) next.resumeChecked = true
+			return next
+		})
 		const occupied = new Set()
 		for (const item of manual.filter(item => item.enabled)) for (const day of item.weekdays || []) occupied.add(day + '|' + item.times[0])
+		for (const slot of desired) if (adopted.has(slot.times[0])) for (const day of slot.weekdays) occupied.add(day + '|' + slot.times[0])
 		const auto = []
-		for (const item of medicationBloodPressureRows(reminders)) {
+		for (const item of desired) {
 			if (manual.length + auto.length >= MAX_BP_REMINDERS) break
 			const weekdays = item.weekdays.filter(day => !occupied.has(day + '|' + item.times[0]))
 			if (!weekdays.length) continue
 			weekdays.forEach(day => occupied.add(day + '|' + item.times[0]))
 			auto.push({ ...item, weekdays })
+			changed = true
 		}
-		if (!auto.length) return null
+		if (!changed) return null
 		const rows = [...manual, ...auto]
-		const enabled = (existing && existing.enabled === true || auto.length > 0) && rows.some(item => item.enabled)
-		return { version: 1, enabled, reminders: rows }
+		return { version: 1, enabled: rows.some(item => item.enabled), reminders: rows, ...(!masterOn ? { resumeMaster: false } : {}) }
 	}
 
 	function appendMissingMedicationBloodPressure(existing, reminders) {
 		const current = (existing && existing.reminders || []).slice()
+		const manuals = current.filter(item => !isAutoBloodPressureReminder(item))
+		const enabledManuals = manuals.filter(item => item.enabled)
+		let changed = false
+		const kept = []
+		for (const item of current) {
+			if (!isAutoBloodPressureReminder(item)) {
+				kept.push(item)
+				continue
+			}
+			const weekdays = autoWeekdaysToKeep(item, reminders, enabledManuals)
+			if (!weekdays.length) {
+				changed = true
+				continue
+			}
+			if (!sameDaySet(weekdays, item.weekdays)) {
+				changed = true
+				kept.push({ ...item, weekdays })
+			} else kept.push(item)
+		}
+		const exactTimes = new Set(medicationBloodPressureRows(reminders).map(item => item.times[0]))
+		const adopted = new Set(kept.filter(item => !isAutoBloodPressureReminder(item) && item.enabled && exactTimes.has(item.times && item.times[0])).map(item => item.times[0]))
+		for (let index = 0; index < kept.length; index++) {
+			const item = kept[index]
+			const time = item.times && item.times[0]
+			if (isAutoBloodPressureReminder(item) || item.enabled || !exactTimes.has(time) || adopted.has(time)) continue
+			adopted.add(time)
+			changed = true
+			kept.splice(index, 1, { ...item, enabled: true, armedByMedication: true })
+		}
+		for (let index = kept.length - 1; index >= 0; index--) {
+			const item = kept[index]
+			if (isAutoBloodPressureReminder(item) && adopted.has(item.times && item.times[0])) {
+				kept.splice(index, 1)
+				changed = true
+			}
+		}
 		const occupied = new Set()
-		for (const item of current.filter(item => item.enabled)) for (const day of item.weekdays || []) occupied.add(day + '|' + item.times[0])
+		for (const item of kept.filter(item => item.enabled)) for (const day of item.weekdays || []) occupied.add(day + '|' + item.times[0])
+		for (const slot of medicationBloodPressureRows(reminders)) if (adopted.has(slot.times[0])) for (const day of slot.weekdays) occupied.add(day + '|' + slot.times[0])
 		const auto = []
-		for (const item of medicationBloodPressureRows(reminders)) {
-			if (current.length + auto.length >= MAX_BP_REMINDERS) break
+		for (const item of medicationBloodPressureRows(reminders, kept)) {
+			if (kept.length + auto.length >= MAX_BP_REMINDERS) break
 			const weekdays = item.weekdays.filter(day => !occupied.has(day + '|' + item.times[0]))
 			if (!weekdays.length) continue
 			weekdays.forEach(day => occupied.add(day + '|' + item.times[0]))
 			auto.push({ ...item, weekdays })
 		}
-		if (!auto.length) return null
-		const rows = [...current, ...auto]
-		return { version: 1, enabled: rows.some(item => item.enabled), reminders: rows }
+		if (!auto.length && !changed) return null
+		const rows = [...kept, ...auto]
+		return { version: 1, enabled: rows.some(item => item.enabled), reminders: rows, ...(existing && existing.resumeMaster === false ? { resumeMaster: false } : {}) }
 	}
 
 	function withoutAutoBloodPressure(existing) {
-		const reminders = (existing && existing.reminders || []).filter(item => !isAutoBloodPressureReminder(item))
-		if (reminders.length === (existing && existing.reminders || []).length) return null
-		const enabled = existing.enabled === true && reminders.some(item => item.enabled)
+		const source = existing && existing.reminders || []
+		let changed = false
+		const reminders = []
+		for (const item of source) {
+			if (isAutoBloodPressureReminder(item)) {
+				changed = true
+				continue
+			}
+			if (item && item.resumeChecked) {
+				changed = true
+				const next = { ...item, enabled: true }
+				delete next.resumeChecked
+				delete next.armedByMedication
+				reminders.push(next)
+				continue
+			}
+			if (item && item.armedByMedication) {
+				changed = true
+				const next = { ...item, enabled: false }
+				delete next.armedByMedication
+				reminders.push(next)
+				continue
+			}
+			reminders.push(item)
+		}
+		if (!changed && existing.resumeMaster !== false) return null
+		const enabled = existing.resumeMaster === false ? false : existing.enabled === true && reminders.some(item => item.enabled)
 		return { version: 1, enabled, reminders }
-	}
-
-	function bloodPressureMatchesMedication(bpReminders, medication) {
-		const enabled = (bpReminders || []).filter(item => item.enabled && item.times && item.times[0])
-		return medication.every(item => (item.times || []).every(time => {
-			if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(time)) return true
-			const shifted = shiftClock(time, -30)
-			return (item.weekdays || []).every(day => enabled.some(bp => bp.times[0] === shifted.time && (bp.weekdays || []).includes(shiftWeekday(day, shifted.dayShift))))
-		}))
 	}
 
 	export default {
@@ -525,26 +648,12 @@
 					const settings = await store.loadBloodPressure()
 					if (this._disposed || !store.isCurrent() || base !== this.$url_APP_IP) return false
 					if (settings.enabled && settings.reminders.some(item => item.enabled)) {
-						if (!active.length || bloodPressureMatchesMedication(settings.reminders, active)) {
-							if (active.length) {
-								try {
-									await this.appendMissingMedicationBloodPressureTimes(store, base, active)
-								} catch (error) {}
-							}
-							return false
+						if (active.length) {
+							try {
+								await this.appendMissingMedicationBloodPressureTimes(store, base, active)
+							} catch (error) {}
 						}
-						const reset = await this.askReminderModal({
-							title: this.hrt('notice'),
-							content: this.$t('健康提醒血压时间偏差'),
-							confirmText: this.$t('确定'),
-							cancelText: this.$t('健康提醒忽略')
-						})
-						if (!reset || this._disposed || !store.isCurrent() || base !== this.$url_APP_IP) return false
-						try {
-							await this.applyMedicationBloodPressureTimes(store, base, active)
-						} catch (error) {}
-						if (!this._disposed && store.isCurrent() && base === this.$url_APP_IP) this.openBloodPressureReminder()
-						return true
+						return false
 					}
 					let scheduled = false
 					if (active.length) {
@@ -566,15 +675,6 @@
 					// 建议弹窗不影响已经保存的提醒；读取失败时不误判为未设置血压提醒。
 					return false
 				}
-			},
-			askReminderModal(options) {
-				return new Promise(resolve => {
-					uni.showModal({
-						...options,
-						success: result => resolve(!!(result && result.confirm)),
-						fail: () => resolve(false)
-					})
-				})
 			},
 			async boundReminderDeviceKind() {
 				try {

@@ -16,7 +16,7 @@ export function normalizeBloodPressureSettings(value = {}) {
 		if (!BP_REMINDER_SOUNDS.includes(sound)) throw new Error('Invalid BP reminder sound')
 		const soundSeconds = alarmSoundSeconds({ sound, soundSeconds: item.soundSeconds })
 		const linked = item.origin === 'medication' || String(item.id).startsWith('bp-med-')
-		return { id: item.id, enabled: item.enabled === true, times: item.times.slice(), weekdays: [...new Set(item.weekdays)].sort(), sound, ...(sound === 'alarm' ? { soundSeconds } : {}), ...(linked ? { origin: 'medication' } : {}) }
+		return { id: item.id, enabled: item.enabled === true, times: item.times.slice(), weekdays: [...new Set(item.weekdays)].sort(), sound, ...(sound === 'alarm' ? { soundSeconds } : {}), ...(linked ? { origin: 'medication' } : {}), ...(item.armedByMedication === true && !linked ? { armedByMedication: true } : {}), ...(item.resumeChecked === true && !linked ? { resumeChecked: true } : {}) }
 	})
 	if (enabled && !reminders.some(item => item.enabled)) throw new Error('Enable at least one BP reminder')
 	const slots = new Set()
@@ -25,7 +25,7 @@ export function normalizeBloodPressureSettings(value = {}) {
 		if (slots.has(key)) throw new Error('Duplicate BP reminder time')
 		slots.add(key)
 	}
-	return { version: 1, enabled, reminders, ...(value.origin === 'medication' ? { origin: 'medication' } : {}) }
+	return { version: 1, enabled, reminders, ...(value.origin === 'medication' ? { origin: 'medication' } : {}), ...(value.resumeMaster === false ? { resumeMaster: false } : {}) }
 }
 
 export function activeBloodPressureReminders(settings, name = 'Measure blood pressure') {

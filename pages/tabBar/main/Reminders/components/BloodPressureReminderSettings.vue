@@ -9,7 +9,7 @@
 			<template v-else>
 				<view class="bp-enable"><text>{{ hrt('bpEnable') }}</text>
 					<switch :checked="settings.enabled" :disabled="saving" color="#22c344"
-						@change="settings.enabled = $event.detail.value" />
+						@change="setEnabled" />
 				</view>
 				<view v-if="settings.enabled && warning" class="bp-warning"><text>{{ hrt(warning) }}</text><text
 						v-if="notification.available && notification.healthActions" class="open-settings"
@@ -211,10 +211,6 @@
 					this._base = base
 					this._linkedBloodPressure = settings.origin === 'medication'
 					this._linkedBloodPressureEnabled = settings.enabled === true
-					if (!settings.reminders.length) {
-						this.add('08:00');
-						this.add('20:00')
-					}
 				} catch (e) {
 					if (!this._disposed) this.failed = true
 				} finally {
@@ -277,6 +273,15 @@
 						title: this.hrt('nativeUpdate'),
 						icon: 'none'
 					})
+				}
+			},
+			setEnabled(event) {
+				if (this.saving) return
+				const enabled = !!(event && event.detail && event.detail.value)
+				this.settings.enabled = enabled
+				if (enabled && !this.settings.reminders.length) {
+					this.add('08:00')
+					this.add('20:00')
 				}
 			},
 			add(time) {
